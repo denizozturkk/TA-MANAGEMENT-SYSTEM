@@ -4,4 +4,5 @@ public class TA {
 
     private int id;
     private String name;
+    private String department;
 }
