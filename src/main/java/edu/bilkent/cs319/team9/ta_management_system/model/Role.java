@@ -1,5 +1,5 @@
 package edu.bilkent.cs319.team9.ta_management_system.model;
-
+// bunu auth da kullanacaksın galiba diye dokunmadım.
 public enum Role {
     ROLE_TA,
     ROLE_FACULTY,

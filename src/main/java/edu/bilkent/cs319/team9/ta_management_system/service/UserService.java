@@ -5,9 +5,13 @@ import edu.bilkent.cs319.team9.ta_management_system.dto.LoginResponse;
 import edu.bilkent.cs319.team9.ta_management_system.dto.PasswordChangeRequest;
 import edu.bilkent.cs319.team9.ta_management_system.dto.RegisterRequest;
 
+import edu.bilkent.cs319.team9.ta_management_system.model.User;
+import java.util.List;
+
 public interface UserService {
-//    LoginResponse login(LoginRequest req);
-//    void register(RegisterRequest req);
-//    void changePassword(Long userId, PasswordChangeRequest req);
-//
+    User create(User user);
+    User findById(Long id);
+    List<User> findAll();
+    User update(Long id, User user);
+    void delete(Long id);
 }
