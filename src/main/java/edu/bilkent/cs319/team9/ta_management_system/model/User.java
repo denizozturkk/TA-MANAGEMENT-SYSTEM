@@ -24,4 +24,5 @@ public abstract class User {
     private String userName;
     private String passwordHash;
     private String photoURL;
+    private Role role;
 }
