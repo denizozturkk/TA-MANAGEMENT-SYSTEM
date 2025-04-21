@@ -15,7 +15,8 @@ import lombok.experimental.SuperBuilder;
 public abstract class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long userID;
+    @Column(name = "user_id", nullable = false, updatable = false)
+    private Long user_id;
 
     private String firstName;
     private String lastName;

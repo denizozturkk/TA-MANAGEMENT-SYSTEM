@@ -12,6 +12,7 @@ import java.util.Set;
 @NoArgsConstructor
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)
+@PrimaryKeyJoinColumn(name="user_id")
 public class FacultyMember extends User {
     @OneToMany(mappedBy = "instructor")
     private Set<Offering> offerings;

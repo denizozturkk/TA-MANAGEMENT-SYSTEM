@@ -25,6 +25,10 @@ public class Exam {
     @ManyToOne @JoinColumn(name = "offering_id")
     private Offering offering;
 
+    @ManyToOne
+    @JoinColumn(name = "faculty_member_id")
+    private FacultyMember faculty;
+
     @OneToMany(mappedBy = "exam")
     private Set<ProctorAssignment> proctorAssignments;
 }

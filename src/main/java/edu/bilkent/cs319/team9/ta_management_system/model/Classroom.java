@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -18,5 +19,5 @@ public class Classroom {
     private Integer examCapacity;
 
     @OneToMany(mappedBy = "classroom")
-    private Set<ProctorAssignment> proctorAssignments;
+    private List<ProctorAssignment> proctorAssignments;
 }

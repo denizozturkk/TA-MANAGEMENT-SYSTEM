@@ -37,7 +37,7 @@ public class TAServiceImpl implements TAService {
     @Override
     public TA update(Long id, TA ta) {
         if (!repo.existsById(id)) throw new NotFoundException("TA", id);
-        ta.setUserID(id);
+        ta.setUser_id(id);
         return repo.save(ta);
     }
 
