@@ -10,7 +10,6 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)
-@PrimaryKeyJoinColumn(name="user_id")
 public class DepartmentStaff extends User {
     // nothing extra
 }

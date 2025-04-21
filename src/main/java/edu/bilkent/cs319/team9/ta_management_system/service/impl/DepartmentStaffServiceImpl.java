@@ -37,7 +37,7 @@ public class DepartmentStaffServiceImpl implements DepartmentStaffService {
     @Override
     public DepartmentStaff update(Long id, DepartmentStaff s) {
         if (!repo.existsById(id)) throw new NotFoundException("DepartmentStaff", id);
-        s.setUser_id(id);
+        s.setId(id);
         return repo.save(s);
     }
 

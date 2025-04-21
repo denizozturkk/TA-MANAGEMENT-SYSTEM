@@ -38,7 +38,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public User update(Long id, User user) {
         if (!repo.existsById(id)) throw new NotFoundException("User", id);
-        user.setUser_id(id);
+        user.setId(id);
         return repo.save(user);
     }
 

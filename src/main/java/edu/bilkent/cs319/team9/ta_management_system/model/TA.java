@@ -12,7 +12,6 @@ import java.util.Set;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder
-@PrimaryKeyJoinColumn(name="user_id")
 public class TA extends User {
     private Float totalWorkload;
     private String department;

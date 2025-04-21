@@ -38,7 +38,7 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
     @Override
     public FacultyMember update(Long id, FacultyMember f) {
         if (!repo.existsById(id)) throw new NotFoundException("FacultyMember", id);
-        f.setUser_id(id);
+        f.setId(id);
         return repo.save(f);
     }
 

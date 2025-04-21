@@ -38,7 +38,7 @@ public class CoordinatorServiceImpl implements CoordinatorService {
     @Override
     public Coordinator update(Long id, Coordinator c) {
         if (!repo.existsById(id)) throw new NotFoundException("Coordinator", id);
-        c.setUser_id(id);
+        c.setId(id);
         return repo.save(c);
     }
 

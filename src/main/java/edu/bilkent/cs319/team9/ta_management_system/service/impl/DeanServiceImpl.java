@@ -37,7 +37,7 @@ public class DeanServiceImpl implements DeanService {
     @Override
     public Dean update(Long id, Dean d) {
         if (!repo.existsById(id)) throw new NotFoundException("Dean", id);
-        d.setUser_id(id);
+        d.setId(id);
         return repo.save(d);
     }
 

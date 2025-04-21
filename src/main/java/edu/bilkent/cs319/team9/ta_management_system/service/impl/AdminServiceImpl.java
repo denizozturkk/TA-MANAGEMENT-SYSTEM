@@ -37,7 +37,7 @@ public class AdminServiceImpl implements AdminService {
     @Override
     public Admin update(Long id, Admin a) {
         if (!repo.existsById(id)) throw new NotFoundException("Admin", id);
-        a.setUser_id(id);
+        a.setId(id);
         return repo.save(a);
     }
 
