@@ -20,10 +20,6 @@ public class ProctorAssignment {
     @ManyToOne @JoinColumn(name = "exam_id")
     private Exam exam;
 
-    @ManyToOne
-    @JoinColumn(name = "roomNumber")
-    private Classroom classroom;
-
     @OneToOne(mappedBy = "proctorAssignment")
     private SwapRequest swapRequest;
 }

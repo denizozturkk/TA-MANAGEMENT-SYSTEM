@@ -4,12 +4,19 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
+import java.util.List;
+
 @Entity
 @DiscriminatorValue("DepartmentStaff")
 @Data
 @NoArgsConstructor
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)
-public class DepartmentStaff extends User {
-    // nothing extra
+public class DepartmentStaff extends FacultyMember {
+    private String department;
+
+    @OneToMany(mappedBy = "definedBy", cascade = CascadeType.ALL)
+    private List<Exam> examsDefined;
+
+
 }

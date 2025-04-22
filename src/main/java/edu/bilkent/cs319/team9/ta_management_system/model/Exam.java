@@ -22,6 +22,10 @@ public class Exam {
     private String examType;
     private Integer numProctors;
 
+    @ManyToOne
+    @JoinColumn(name = "roomNumber")
+    private Classroom classroom;
+
     @ManyToOne @JoinColumn(name = "offering_id")
     private Offering offering;
 

@@ -21,4 +21,6 @@ public class FacultyMember extends User {
 
     @OneToMany(mappedBy = "faculty")
     private Set<Exam> exams;
+
+    private String department;
 }
