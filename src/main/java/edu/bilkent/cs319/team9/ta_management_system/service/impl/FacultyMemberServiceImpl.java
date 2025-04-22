@@ -4,6 +4,7 @@ import edu.bilkent.cs319.team9.ta_management_system.model.*;
 import edu.bilkent.cs319.team9.ta_management_system.repository.*;
 import edu.bilkent.cs319.team9.ta_management_system.service.ExcelFileService;
 import edu.bilkent.cs319.team9.ta_management_system.service.FacultyMemberService;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -66,72 +67,24 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
     }
 
     @Override
-    public void assignProctor(Long examId) {
+    public void assignProctor(Long examId, @NonNull AssignmentType mode, Long taId) {
         Exam exam = examRepository.findById(examId)
                 .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "No such exam found with id " + examId));;
-        assignManually(exam, 0);
-    }
-
-
-    @Override
-    public void assignAutomatically(Exam exam) {
-        int numProctors = Optional.ofNullable(exam.getNumProctors())
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST,
-                        "Number of proctors not specified for exam " + exam.getId()
-                ));
-
-        for (int i = 0; i < numProctors; i++) {
-            List<TA> eligible = taRepository.findAll().stream()
-                    .filter(ta -> !hasConflict(ta, exam))       // your conflict‐check here
-                    .sorted(Comparator.comparing(TA::getTotalWorkload))
-                    .toList();
-
-            if (eligible.isEmpty()) {
-                throw new ResponseStatusException(
-                        HttpStatus.CONFLICT,
-                        "No available TAs to assign for exam " + exam.getId()
-                );
+                        HttpStatus.NOT_FOUND,
+                        "No such exam found with id " + examId));
+        switch (mode) {
+            case AUTOMATIC_ASSIGNMENT -> assignAutomatically(exam);
+            case MANUAL_ASSIGNMENT -> {
+                if (taId == null) {
+                    throw new ResponseStatusException(
+                            HttpStatus.BAD_REQUEST,
+                            "Must supply a TA ID for manual assignment");
+                }
+                assignManually(exam, taId);
             }
-
-            TA chosen = eligible.get(0);
-
-            ProctorAssignment pa = ProctorAssignment.builder()
-                    .exam(exam)
-                    .assignedTA(chosen)
-                    .status(AssignmentType.AUTOMATIC_ASSIGNMENT.name())
-                    .build();
-            proctorAssignmentRepository.save(pa);
-
-            float addedLoad = Optional.ofNullable(exam.getDuration()).orElse(0f);
-            chosen.setTotalWorkload(chosen.getTotalWorkload() + addedLoad);
-            taRepository.save(chosen);
-        }
-    }
-
-    private boolean hasConflict(TA ta, Exam exam) {
-        // TA classindaki conflict checkini sadece exam parametresiyle cagirip sonucu dondurecek
-        return false;
-    }
-
-
-    @Override
-    public void assignManually(Exam exam, long taID) {
-        Optional<TA> taTemp = taRepository.findById(taID);
-        if (taTemp.isPresent()) {
-            TA ta = taTemp.get();
-            ProctorAssignment proctorAssignment = new ProctorAssignment();
-            proctorAssignment.setExam(exam);
-            proctorAssignment.setAssignedTA(ta);
-            proctorAssignmentRepository.save(proctorAssignment);
-
-            //Buraya taIdsi verilen ta e proctoring assignment ekleyen method gelecek
-            taRepository.save(ta);
-
-            }
-        else{
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No such TA found with id " + taID);
+            default -> throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Unknown assignment mode: " + mode);
         }
     }
 
@@ -205,4 +158,65 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
             );
         }
     }
+
+    private void assignManually(Exam exam, long taID) {
+        Optional<TA> taTemp = taRepository.findById(taID);
+        if (taTemp.isPresent()) {
+            TA ta = taTemp.get();
+            ProctorAssignment proctorAssignment = new ProctorAssignment();
+            proctorAssignment.setExam(exam);
+            proctorAssignment.setAssignedTA(ta);
+            proctorAssignmentRepository.save(proctorAssignment);
+
+            // Buraya taIdsi verilen ta e proctoring assignment ekleyen method gelecek
+            // Bir de TA schedule conflict checki burada da  yapilacak
+            taRepository.save(ta);
+
+        }
+        else{
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No such TA found with id " + taID);
+        }
+    }
+
+    private void assignAutomatically(Exam exam) {
+        int numProctors = Optional.ofNullable(exam.getNumProctors())
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Number of proctors not specified for exam " + exam.getId()
+                ));
+
+        for (int i = 0; i < numProctors; i++) {
+            List<TA> eligible = taRepository.findAll().stream()
+                    .filter(ta -> !hasConflict(ta, exam))
+                    .sorted(Comparator.comparing(TA::getTotalWorkload))
+                    .toList();
+
+            if (eligible.isEmpty()) {
+                throw new ResponseStatusException(
+                        HttpStatus.CONFLICT,
+                        "No available TAs to assign for exam " + exam.getId()
+                );
+            }
+
+            TA chosen = eligible.get(0);
+
+            ProctorAssignment pa = ProctorAssignment.builder()
+                    .exam(exam)
+                    .assignedTA(chosen)
+                    .status(AssignmentType.AUTOMATIC_ASSIGNMENT.name())
+                    .build();
+            proctorAssignmentRepository.save(pa);
+
+            float addedLoad = Optional.ofNullable(exam.getDuration()).orElse(0f);
+            chosen.setTotalWorkload(chosen.getTotalWorkload() + addedLoad);
+            taRepository.save(chosen);
+        }
+    }
+
+    private boolean hasConflict(TA ta, Exam exam) {
+        // TA classindaki conflict checkini sadece exam parametresiyle cagirip sonucu dondurecek
+        return false;
+    }
 }
+
+

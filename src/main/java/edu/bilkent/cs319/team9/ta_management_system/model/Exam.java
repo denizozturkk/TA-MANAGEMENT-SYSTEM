@@ -35,4 +35,9 @@ public class Exam {
 
     @OneToMany(mappedBy = "exam")
     private Set<ProctorAssignment> proctorAssignments;
+
+    @ManyToOne
+    @JoinColumn(name = "defined_by_id")
+    private DepartmentStaff definedBy;
+
 }

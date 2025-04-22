@@ -17,6 +17,9 @@ public abstract class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "password", nullable = false)
+    private String password;
+
     private String firstName;
     private String lastName;
     private String email;

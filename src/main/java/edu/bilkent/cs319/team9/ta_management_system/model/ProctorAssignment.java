@@ -22,4 +22,8 @@ public class ProctorAssignment {
 
     @OneToOne(mappedBy = "proctorAssignment")
     private SwapRequest swapRequest;
+
+    @ManyToOne
+    @JoinColumn(name = "classroom_id")
+    private Classroom classroom;
 }

@@ -18,10 +18,8 @@ public interface FacultyMemberService {
     void delete(Long id);
 
 
-    void assignProctor(Long examId);
+    void assignProctor(Long examId, AssignmentType mode, Long taId);
 
-    void assignAutomatically(Exam exam);
-    void assignManually(Exam exam, long taID);
     void printStudentDistribution();
     void printRandomly();
     void printAlphabetically();
