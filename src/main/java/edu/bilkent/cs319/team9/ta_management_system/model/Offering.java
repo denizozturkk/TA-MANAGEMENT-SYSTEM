@@ -15,7 +15,7 @@ public class Offering {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String offeringID;
+    private String section;
     private String semester;
     private Integer year;
 

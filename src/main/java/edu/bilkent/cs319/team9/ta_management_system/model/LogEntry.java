@@ -14,6 +14,8 @@ public class LogEntry {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Enumerated(EnumType.STRING)
+    private LogType type;
     private LocalDateTime timestamp;
     private String event;
     private String actorID;

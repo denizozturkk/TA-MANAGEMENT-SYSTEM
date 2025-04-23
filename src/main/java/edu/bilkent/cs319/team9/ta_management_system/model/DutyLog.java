@@ -17,6 +17,7 @@ public class DutyLog {
 
     private LocalDateTime dateTime;
     private String taskType;
+    private int workload;
     private Float duration;
 
     @Enumerated(EnumType.STRING)

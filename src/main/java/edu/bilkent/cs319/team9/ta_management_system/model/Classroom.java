@@ -12,9 +12,12 @@ import java.util.Set;
 @NoArgsConstructor
 @SuperBuilder
 public class Classroom {
-    @Id
-    private String roomNumber;
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "classroom_id")   // maps to your DB column
+    private Long id;
 
+    private String building;
+    private String roomNumber;
     private Integer capacity;
     private Integer examCapacity;
 

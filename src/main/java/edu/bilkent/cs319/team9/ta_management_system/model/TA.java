@@ -37,4 +37,10 @@ public class TA extends User {
 
     @OneToMany(mappedBy = "assignedTA")
     private Set<ProctorAssignment> proctorAssignments;
+
+     /*
+     + each TA can register multiple busy‐hour slots
+     */
+    @OneToMany(mappedBy = "ta", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<BusyHour> busyHours;
 }
