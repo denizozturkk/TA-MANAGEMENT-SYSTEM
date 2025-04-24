@@ -27,5 +27,7 @@ public abstract class User {
     private String userName;
     private String passwordHash;
     private String photoURL;
+
+    @Enumerated(EnumType.STRING)
     private Role role;
 }

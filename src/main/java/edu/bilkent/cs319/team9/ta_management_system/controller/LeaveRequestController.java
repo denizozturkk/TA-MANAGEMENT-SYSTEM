@@ -1,5 +1,7 @@
 package edu.bilkent.cs319.team9.ta_management_system.controller;
 
+import edu.bilkent.cs319.team9.ta_management_system.dto.LeaveRequestDto;
+import edu.bilkent.cs319.team9.ta_management_system.mapper.EntityMapperService;
 import edu.bilkent.cs319.team9.ta_management_system.model.LeaveRequest;
 import edu.bilkent.cs319.team9.ta_management_system.model.LeaveStatus;
 import edu.bilkent.cs319.team9.ta_management_system.model.ProctorAssignment;
@@ -19,53 +21,58 @@ public class LeaveRequestController {
     private final LeaveRequestService leaveRequestService;
     private final TAService taService;
     private final ProctorAssignmentService paService;
+    private final EntityMapperService mapper;
 
-    public LeaveRequestController(LeaveRequestService lrs,
-                                  TAService taService,
-                                  ProctorAssignmentService paService) {
+    public LeaveRequestController(LeaveRequestService lrs, TAService taService,
+                                  ProctorAssignmentService paService, EntityMapperService mapper) {
         this.leaveRequestService = lrs;
         this.taService = taService;
         this.paService = paService;
+        this.mapper = mapper;
     }
 
     @PostMapping
-    public ResponseEntity<LeaveRequest> create(@RequestBody LeaveRequest lr) {
-        // 1) Validate TA
-        Long taId = lr.getTa().getId();
-        TA ta = taService.findById(taId);
+    public ResponseEntity<LeaveRequestDto> create(
+            @RequestParam("taId") Long taId,
+            @RequestParam("proctorAssignmentId") Long proctorAssignmentId,
+            @RequestBody LeaveRequestDto dto) {
 
-        // 2) (Optional) Validate proctorAssignment belongs to TA
-        if (lr.getProctorAssignment() != null) {
-            Long paId = lr.getProctorAssignment().getId();
-            ProctorAssignment pa = paService.findById(paId);
-            if (pa.getAssignedTA() == null || !pa.getAssignedTA().getId().equals(taId)) {
-                return ResponseEntity.badRequest().build();
-            }
-            lr.setProctorAssignment(pa);
+        TA ta = taService.findById(taId);
+        ProctorAssignment pa = paService.findById(proctorAssignmentId);
+
+        // validation
+        if (pa.getAssignedTA() == null || !pa.getAssignedTA().getId().equals(taId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        // 3) Wire in the TA and default the status
-        lr.setTa(ta);
-        lr.setStatus(LeaveStatus.WAITING_RESPONSE);
+        //
+        LeaveRequest entity = mapper.toEntity(dto);
+        entity.setTa(ta);
+        entity.setProctorAssignment(pa);
+        entity.setStatus(LeaveStatus.WAITING_RESPONSE);
 
-        LeaveRequest created = leaveRequestService.create(lr);
-        return new ResponseEntity<>(created, HttpStatus.CREATED);
+        LeaveRequest created = leaveRequestService.create(entity);
+        return new ResponseEntity<>(mapper.toDto(created), HttpStatus.CREATED);
     }
 
+
+
     @GetMapping("/{id}")
-    public ResponseEntity<LeaveRequest> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(leaveRequestService.findById(id));
+    public ResponseEntity<LeaveRequestDto> getById(@PathVariable Long id) {
+        return ResponseEntity.ok(mapper.toDto(leaveRequestService.findById(id)));
     }
 
     @GetMapping
-    public ResponseEntity<List<LeaveRequest>> getAll() {
-        return ResponseEntity.ok(leaveRequestService.findAll());
+    public ResponseEntity<List<LeaveRequestDto>> getAll() {
+        return ResponseEntity.ok(
+                leaveRequestService.findAll().stream().map(mapper::toDto).toList()
+        );
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<LeaveRequest> update(@PathVariable Long id,
-                                               @RequestBody LeaveRequest lr) {
-        return ResponseEntity.ok(leaveRequestService.update(id, lr));
+    public ResponseEntity<LeaveRequestDto> update(@PathVariable Long id, @RequestBody LeaveRequestDto dto) {
+        LeaveRequest updated = leaveRequestService.update(id, mapper.toEntity(dto));
+        return ResponseEntity.ok(mapper.toDto(updated));
     }
 
     @DeleteMapping("/{id}")
@@ -74,3 +81,4 @@ public class LeaveRequestController {
         return ResponseEntity.noContent().build();
     }
 }
+

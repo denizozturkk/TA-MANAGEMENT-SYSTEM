@@ -4,7 +4,8 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class TaManagementSystemApplication {
+public class
+TaManagementSystemApplication {
 
 	public static void main(String[] args) {
 		SpringApplication.run(TaManagementSystemApplication.class, args);

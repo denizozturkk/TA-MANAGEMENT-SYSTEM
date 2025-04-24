@@ -1,5 +1,7 @@
 package edu.bilkent.cs319.team9.ta_management_system.controller;
 
+import edu.bilkent.cs319.team9.ta_management_system.dto.TADto;
+import edu.bilkent.cs319.team9.ta_management_system.mapper.EntityMapperService;
 import edu.bilkent.cs319.team9.ta_management_system.model.TA;
 import edu.bilkent.cs319.team9.ta_management_system.service.TAService;
 import org.springframework.http.HttpStatus;
@@ -11,29 +13,40 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/ta")
 public class TAController {
+
     private final TAService taService;
-    public TAController(TAService ts) {
-        this.taService = ts;
+    private final EntityMapperService mapper;
+
+    public TAController(TAService taService, EntityMapperService mapper) {
+        this.taService = taService;
+        this.mapper = mapper;
     }
 
     @PostMapping
-    public ResponseEntity<TA> create(@RequestBody TA ta) {
-        return new ResponseEntity<>(taService.create(ta), HttpStatus.CREATED);
+    public ResponseEntity<TADto> create(@RequestBody TADto taDto) {
+        TA createdTA = taService.create(mapper.toEntity(taDto));
+        return new ResponseEntity<>(mapper.toDto(createdTA), HttpStatus.CREATED);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<TA> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(taService.findById(id));
+    public ResponseEntity<TADto> getById(@PathVariable Long id) {
+        TA ta = taService.findById(id);
+        return ResponseEntity.ok(mapper.toDto(ta));
     }
 
     @GetMapping
-    public ResponseEntity<List<TA>> getAll() {
-        return ResponseEntity.ok(taService.findAll());
+    public ResponseEntity<List<TADto>> getAll() {
+        List<TADto> dtoList = taService.findAll()
+                .stream()
+                .map(mapper::toDto)
+                .toList();
+        return ResponseEntity.ok(dtoList);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<TA> update(@PathVariable Long id, @RequestBody TA ta) {
-        return ResponseEntity.ok(taService.update(id, ta));
+    public ResponseEntity<TADto> update(@PathVariable Long id, @RequestBody TADto taDto) {
+        TA updated = taService.update(id, mapper.toEntity(taDto));
+        return ResponseEntity.ok(mapper.toDto(updated));
     }
 
     @DeleteMapping("/{id}")
