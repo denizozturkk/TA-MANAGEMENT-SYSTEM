@@ -3,6 +3,7 @@ package edu.bilkent.cs319.team9.ta_management_system.controller;
 import edu.bilkent.cs319.team9.ta_management_system.model.AssignmentType;
 import edu.bilkent.cs319.team9.ta_management_system.model.FacultyMember;
 import edu.bilkent.cs319.team9.ta_management_system.model.LeaveRequest;
+import edu.bilkent.cs319.team9.ta_management_system.model.ProctorAssignment;
 import edu.bilkent.cs319.team9.ta_management_system.service.FacultyMemberService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -66,12 +67,14 @@ public class FacultyMemberController {
     /**
      * Assign proctors for an exam, based on mode and optional TA selection
      */
-    @PostMapping("/assign-proctor")
-    public ResponseEntity<Void> assignProctor(
-            @RequestParam Long examId,
+    @PostMapping("/{facultyId}/exams/{examId}/proctor")
+    public ResponseEntity<ProctorAssignment> assignProctor(
+            @PathVariable Long facultyId,
+            @PathVariable Long examId,
             @RequestParam AssignmentType mode,
             @RequestParam(required = false) Long taId
-    ) {
+    )
+    {
         facultyMemberService.assignProctor(examId, mode, taId);
         return ResponseEntity.ok().build();
     }

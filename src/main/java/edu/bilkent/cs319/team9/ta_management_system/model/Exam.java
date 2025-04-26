@@ -35,4 +35,7 @@ public class Exam {
 
     @OneToMany(mappedBy = "exam", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<ExamRoom> examRooms;
+
+    @ManyToOne
+    private DepartmentStaff definedBy;
 }

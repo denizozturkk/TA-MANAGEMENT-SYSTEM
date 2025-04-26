@@ -2,8 +2,8 @@ package edu.bilkent.cs319.team9.ta_management_system.service.impl;
 
 import edu.bilkent.cs319.team9.ta_management_system.model.*;
 import edu.bilkent.cs319.team9.ta_management_system.repository.*;
-import edu.bilkent.cs319.team9.ta_management_system.service.ExcelFileService;
-import edu.bilkent.cs319.team9.ta_management_system.service.FacultyMemberService;
+import edu.bilkent.cs319.team9.ta_management_system.service.*;
+import jakarta.validation.constraints.Null;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -14,7 +14,9 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 @Service
@@ -29,6 +31,12 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
     private final ProctorAssignmentRepository proctorAssignmentRepository;
     private final ClassroomRepository classroomRepository;
     private final LeaveRequestRepository leaveRequestRepository;
+    private final BusyHourService busyHourService;
+    private final ExamService examService;
+    private final TAService taService;
+    private final ProctorAssignmentService paService;
+    private final ExamRoomService examRoomService;
+
     @Override
     public FacultyMember create(FacultyMember f) {
         return facultyMemberRepository.save(f);
@@ -68,23 +76,13 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
 
     @Override
     public void assignProctor(Long examId, @NonNull AssignmentType mode, Long taId) {
-        Exam exam = examRepository.findById(examId)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "No such exam found with id " + examId));
         switch (mode) {
-            case AUTOMATIC_ASSIGNMENT -> assignAutomatically(exam);
-            case MANUAL_ASSIGNMENT -> {
-                if (taId == null) {
-                    throw new ResponseStatusException(
-                            HttpStatus.BAD_REQUEST,
-                            "Must supply a TA ID for manual assignment");
-                }
-                assignManually(exam, taId);
-            }
+            case AUTOMATIC_ASSIGNMENT -> assignAutomatically(examId);
+            case MANUAL_ASSIGNMENT    -> assignManually(examId, taId);
             default -> throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "Unknown assignment mode: " + mode);
+                    "Unknown assignment mode: " + mode
+            );
         }
     }
 
@@ -99,24 +97,24 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
         List<Offering> offerings = offeringRepository.findAll();
         Collections.shuffle(offerings);
         offerings.forEach(off -> {
-            String tas = off.getTas().stream()
-                    .map(TA::getId)
+            String students = off.getStudents().stream()
+                    .map(Student::getId)
                     .map(Object::toString)
                     .collect(Collectors.joining(", "));
-            System.out.println(off.getCourse().getCourseID() + " -> [" + tas + "]");
+            System.out.println(off.getCourse().getId() + " -> [" + students + "]");
         });
     }
 
     @Override
     public void printAlphabetically() {
         List<Offering> offerings = offeringRepository.findAll();
-        offerings.sort(Comparator.comparing(off -> off.getCourse().getCourseID()));
+        offerings.sort(Comparator.comparing(off -> off.getCourse().getId()));
         offerings.forEach(off -> {
-            String tas = off.getTas().stream()
-                    .map(TA::getId)
+            String students = off.getStudents().stream()
+                    .map(Student::getId)
                     .map(Object::toString)
                     .collect(Collectors.joining(", "));
-            System.out.println(off.getCourse().getCourseID() + " -> [" + tas + "]");
+            System.out.println(off.getCourse().getId() + " -> [" + students + "]");
         });
     }
 
@@ -159,58 +157,123 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
         }
     }
 
-    private void assignManually(Exam exam, long taID) {
-        Optional<TA> taTemp = taRepository.findById(taID);
-        if (taTemp.isPresent()) {
-            TA ta = taTemp.get();
-            ProctorAssignment proctorAssignment = new ProctorAssignment();
-            proctorAssignment.setExam(exam);
-            proctorAssignment.setAssignedTA(ta);
-            proctorAssignmentRepository.save(proctorAssignment);
+    /**
+     * Manually assigns a single TA to the first available proctor slot for the given exam.
+     * @param examId  the ID of the exam to proctor
+     * @param taId    the ID of the TA to assign
+     * @return        the created ProctorAssignment
+     */
+    private ProctorAssignment assignManually(Long examId, long taId) {
+        // 1) load exam and its rooms
+        Exam exam = examService.findById(examId);
+        List<ExamRoom> rooms = examRoomService.findByExamId(examId);
 
-            // Buraya taIdsi verilen ta e proctoring assignment ekleyen method gelecek
-            // Bir de TA schedule conflict checki burada da  yapilacak
-            taRepository.save(ta);
+        // 2) compute exam window for conflict checking
+        LocalDateTime start = exam.getDateTime();
+        LocalDateTime end   = start.plusMinutes((long)(exam.getDuration() * 60));
 
+        // 3) load TA and verify existence
+        TA ta = taService.findById(taId);
+        if (ta == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "No such TA found with id " + taId
+            );
         }
-        else{
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No such TA found with id " + taID);
+
+        // 4) check for scheduling conflicts
+        boolean hasConflict = busyHourService.findByTaId(taId).stream()
+                .anyMatch(bh -> bh.overlaps(start, end));
+        if (hasConflict) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "TA with id " + taId + " has a scheduling conflict during the exam window"
+            );
         }
+
+        // 5) find the first room that still needs a proctor and assign
+        for (ExamRoom er : rooms) {
+            Classroom room = er.getClassroom();
+            int needed     = er.getNumProctors();
+
+            long alreadyAssigned = paService.findAll().stream()
+                    .filter(pa -> pa.getExam().getId().equals(examId))
+                    .filter(pa -> pa.getClassroom().getId().equals(room.getId()))
+                    .count();
+
+            if (alreadyAssigned < needed) {
+                ProctorAssignment pa = paService.create(
+                        ProctorAssignment.builder()
+                                .assignedTA(ta)
+                                .exam(exam)
+                                .classroom(room)
+                                .status(ProctorStatus.ASSIGNED)
+                                .build()
+                );
+                return pa;
+            }
+        }
+
+        // 6) if every room is full, complain
+        throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "All proctor slots are already filled for exam " + examId
+        );
     }
 
-    private void assignAutomatically(Exam exam) {
-        int numProctors = Optional.ofNullable(exam.getNumProctors())
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST,
-                        "Number of proctors not specified for exam " + exam.getId()
-                ));
 
-        for (int i = 0; i < numProctors; i++) {
-            List<TA> eligible = taRepository.findAll().stream()
-                    .filter(ta -> !hasConflict(ta, exam))
+    private List<ProctorAssignment> assignAutomatically(Long examId) {
+
+        // 1) load exam and its rooms
+        Exam exam = examService.findById(examId);
+        List<ExamRoom> rooms = examRoomService.findByExamId(examId);
+
+        // 2) compute exam window
+        LocalDateTime start = exam.getDateTime();
+        LocalDateTime end = start.plusMinutes((long)(exam.getDuration() * 60));
+
+        List<ProctorAssignment> result = new ArrayList<>();
+        Set<Long> chosenTAIds = new HashSet<>();
+        String examDept = exam.getDepartment();
+
+        // for each room, fill its seats
+        for (ExamRoom er : rooms) {
+            Classroom room = er.getClassroom();
+            int needed = er.getNumProctors();
+
+            // count already assigned for this room
+            long already = paService.findAll().stream()
+                    .filter(pa -> pa.getExam().getId().equals(examId))
+                    .filter(pa -> pa.getClassroom().getId().equals(room.getId()))
+                    .count();
+
+            int toAssign = needed - (int)already;
+            if (toAssign <= 0) continue;
+
+            // ==== in-dept candidates ====
+            List<TA> inDept = taService.findAll().stream()
+                    .filter(ta -> examDept.equals(ta.getDepartment()))
+                    .filter(ta -> !chosenTAIds.contains(ta.getId()))
+                    .filter(ta -> busyHourService.findByTaId(ta.getId()).stream()
+                            .noneMatch(bh -> bh.overlaps(start, end)))
                     .sorted(Comparator.comparing(TA::getTotalWorkload))
-                    .toList();
+                    .collect(Collectors.toList());
 
-            if (eligible.isEmpty()) {
-                throw new ResponseStatusException(
-                        HttpStatus.CONFLICT,
-                        "No available TAs to assign for exam " + exam.getId()
-                );
+            Iterator<TA> itr = inDept.iterator();
+            while (toAssign > 0 && itr.hasNext()) {
+                TA ta = itr.next();
+                chosenTAIds.add(ta.getId());
+                result.add(paService.create(ProctorAssignment.builder()
+                        .assignedTA(ta)
+                        .exam(exam)
+                        .classroom(room)
+                        .status(ProctorStatus.ASSIGNED)
+                        .build()));
+                toAssign--;
             }
-
-            TA chosen = eligible.get(0);
-
-            ProctorAssignment pa = ProctorAssignment.builder()
-                    .exam(exam)
-                    .assignedTA(chosen)
-                    .status(AssignmentType.AUTOMATIC_ASSIGNMENT.name())
-                    .build();
-            proctorAssignmentRepository.save(pa);
-
-            float addedLoad = Optional.ofNullable(exam.getDuration()).orElse(0f);
-            chosen.setTotalWorkload(chosen.getTotalWorkload() + addedLoad);
-            taRepository.save(chosen);
         }
+
+        return result;
     }
 
     private boolean hasConflict(TA ta, Exam exam) {
