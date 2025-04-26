@@ -1,5 +1,7 @@
 package edu.bilkent.cs319.team9.ta_management_system.controller;
 
+import edu.bilkent.cs319.team9.ta_management_system.dto.ProctorAssignmentDto;
+import edu.bilkent.cs319.team9.ta_management_system.mapper.EntityMapperService;
 import edu.bilkent.cs319.team9.ta_management_system.model.ProctorAssignment;
 import edu.bilkent.cs319.team9.ta_management_system.service.ProctorAssignmentService;
 import org.springframework.http.HttpStatus;
@@ -12,29 +14,35 @@ import java.util.List;
 @RequestMapping("/api/proctor-assignments")
 public class ProctorAssignmentController {
     private final ProctorAssignmentService paService;
-    public ProctorAssignmentController(ProctorAssignmentService pas) {
-        this.paService = pas;
+    private final EntityMapperService mapper;
+
+    public ProctorAssignmentController(ProctorAssignmentService paService, EntityMapperService mapper) {
+        this.paService = paService;
+        this.mapper = mapper;
     }
 
     @PostMapping
-    public ResponseEntity<ProctorAssignment> create(@RequestBody ProctorAssignment pa) {
-        return new ResponseEntity<>(paService.create(pa), HttpStatus.CREATED);
+    public ResponseEntity<ProctorAssignmentDto> create(@RequestBody ProctorAssignmentDto dto) {
+        ProctorAssignment created = paService.create(mapper.toEntity(dto));
+        return new ResponseEntity<>(mapper.toDto(created), HttpStatus.CREATED);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ProctorAssignment> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(paService.findById(id));
+    public ResponseEntity<ProctorAssignmentDto> getById(@PathVariable Long id) {
+        return ResponseEntity.ok(mapper.toDto(paService.findById(id)));
     }
 
     @GetMapping
-    public ResponseEntity<List<ProctorAssignment>> getAll() {
-        return ResponseEntity.ok(paService.findAll());
+    public ResponseEntity<List<ProctorAssignmentDto>> getAll() {
+        return ResponseEntity.ok(
+                paService.findAll().stream().map(mapper::toDto).toList()
+        );
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ProctorAssignment> update(@PathVariable Long id,
-                                                    @RequestBody ProctorAssignment pa) {
-        return ResponseEntity.ok(paService.update(id, pa));
+    public ResponseEntity<ProctorAssignmentDto> update(@PathVariable Long id, @RequestBody ProctorAssignmentDto dto) {
+        ProctorAssignment updated = paService.update(id, mapper.toEntity(dto));
+        return ResponseEntity.ok(mapper.toDto(updated));
     }
 
     @DeleteMapping("/{id}")

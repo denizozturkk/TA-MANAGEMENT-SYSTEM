@@ -16,15 +16,12 @@ public class Exam {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String examID;
+    private String examName;
+    private String department;
     private LocalDateTime dateTime;
     private Float duration;
     private String examType;
     private Integer numProctors;
-
-    @ManyToOne
-    @JoinColumn(name = "roomNumber")
-    private Classroom classroom;
 
     @ManyToOne @JoinColumn(name = "offering_id")
     private Offering offering;
@@ -36,8 +33,6 @@ public class Exam {
     @OneToMany(mappedBy = "exam")
     private Set<ProctorAssignment> proctorAssignments;
 
-    @ManyToOne
-    @JoinColumn(name = "defined_by_id")
-    private DepartmentStaff definedBy;
-
+    @OneToMany(mappedBy = "exam", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<ExamRoom> examRooms;
 }

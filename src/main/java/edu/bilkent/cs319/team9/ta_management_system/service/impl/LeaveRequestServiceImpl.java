@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -44,5 +45,13 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
     @Override
     public void delete(Long id) {
         repo.deleteById(id);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<LeaveRequest> findByTaId(Long taId) {
+        return repo.findAll().stream()
+                .filter(lr -> lr.getTa() != null && lr.getTa().getId().equals(taId))
+                .collect(Collectors.toList());
     }
 }

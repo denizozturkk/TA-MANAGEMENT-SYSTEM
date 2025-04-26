@@ -12,7 +12,8 @@ public class ProctorAssignment {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String status;
+    @Enumerated(EnumType.STRING)
+    private ProctorStatus status;
 
     @ManyToOne @JoinColumn(name = "ta_id")
     private TA assignedTA;
@@ -20,10 +21,10 @@ public class ProctorAssignment {
     @ManyToOne @JoinColumn(name = "exam_id")
     private Exam exam;
 
-    @OneToOne(mappedBy = "proctorAssignment")
-    private SwapRequest swapRequest;
-
     @ManyToOne
     @JoinColumn(name = "classroom_id")
     private Classroom classroom;
+
+    @OneToOne(mappedBy = "proctorAssignment")
+    private SwapRequest swapRequest;
 }
