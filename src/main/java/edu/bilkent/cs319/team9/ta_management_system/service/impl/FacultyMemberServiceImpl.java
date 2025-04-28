@@ -1,9 +1,9 @@
 package edu.bilkent.cs319.team9.ta_management_system.service.impl;
 
+import edu.bilkent.cs319.team9.ta_management_system.dto.DistributionDto;
 import edu.bilkent.cs319.team9.ta_management_system.model.*;
 import edu.bilkent.cs319.team9.ta_management_system.repository.*;
 import edu.bilkent.cs319.team9.ta_management_system.service.*;
-import jakarta.validation.constraints.Null;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -16,7 +16,6 @@ import org.springframework.web.server.ResponseStatusException;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 @Service
@@ -25,11 +24,7 @@ import java.util.stream.Collectors;
 public class FacultyMemberServiceImpl implements FacultyMemberService {
     private final FacultyMemberRepository facultyMemberRepository;
     private final ExcelFileService excelFileService;
-    private final TARepository taRepository;
     private final OfferingRepository offeringRepository;
-    private final ExamRepository examRepository;
-    private final ProctorAssignmentRepository proctorAssignmentRepository;
-    private final ClassroomRepository classroomRepository;
     private final LeaveRequestRepository leaveRequestRepository;
     private final BusyHourService busyHourService;
     private final ExamService examService;
@@ -87,35 +82,29 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
     }
 
     @Override
-    public void printStudentDistribution() {
-        System.out.println("Student Distribution (Alphabetical by offering):");
-        printAlphabetically();
-    }
-
-    @Override
-    public void printRandomly() {
+    public List<DistributionDto> getRandomStudentDistribution() {
         List<Offering> offerings = offeringRepository.findAll();
         Collections.shuffle(offerings);
-        offerings.forEach(off -> {
-            String students = off.getStudents().stream()
-                    .map(Student::getId)
-                    .map(Object::toString)
-                    .collect(Collectors.joining(", "));
-            System.out.println(off.getCourse().getId() + " -> [" + students + "]");
-        });
+        return mapToDto(offerings);
     }
 
     @Override
-    public void printAlphabetically() {
+    public List<DistributionDto> getAlphabeticalStudentDistribution() {
         List<Offering> offerings = offeringRepository.findAll();
         offerings.sort(Comparator.comparing(off -> off.getCourse().getId()));
-        offerings.forEach(off -> {
-            String students = off.getStudents().stream()
-                    .map(Student::getId)
-                    .map(Object::toString)
-                    .collect(Collectors.joining(", "));
-            System.out.println(off.getCourse().getId() + " -> [" + students + "]");
-        });
+        return mapToDto(offerings);
+    }
+
+    private List<DistributionDto> mapToDto(List<Offering> offerings) {
+        return offerings.stream()
+                .map(off -> {
+                    List<String> ids = off.getStudents().stream()
+                            .map(Student::getId)
+                            .map(Object::toString)
+                            .collect(Collectors.toList());
+                    return new DistributionDto(off.getCourse().getCourseCode(), ids);
+                })
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -144,18 +133,6 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
                 .findByProctorAssignmentExamFacultyIdAndStatus(facultyId, LeaveStatus.WAITING_RESPONSE);
     }
 
-    @Override
-    public ResponseEntity<?> uploadExcelFile(MultipartFile file) {
-        try {
-            Long uploadId = excelFileService.store(file);
-            return ResponseEntity.ok(Map.of("uploadId", uploadId));
-        } catch (IOException e) {
-            throw new ResponseStatusException(
-                    HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Failed to store file: " + e.getMessage(), e
-            );
-        }
-    }
 
     /**
      * Manually assigns a single TA to the first available proctor slot for the given exam.
@@ -202,7 +179,7 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
                     .count();
 
             if (alreadyAssigned < needed) {
-                ProctorAssignment pa = paService.create(
+                return paService.create(
                         ProctorAssignment.builder()
                                 .assignedTA(ta)
                                 .exam(exam)
@@ -210,7 +187,6 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
                                 .status(ProctorStatus.ASSIGNED)
                                 .build()
                 );
-                return pa;
             }
         }
 
@@ -274,11 +250,6 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
         }
 
         return result;
-    }
-
-    private boolean hasConflict(TA ta, Exam exam) {
-        // TA classindaki conflict checkini sadece exam parametresiyle cagirip sonucu dondurecek
-        return false;
     }
 }
 

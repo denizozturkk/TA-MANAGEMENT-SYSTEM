@@ -1,5 +1,6 @@
 package edu.bilkent.cs319.team9.ta_management_system.controller;
 
+import edu.bilkent.cs319.team9.ta_management_system.dto.DistributionDto;
 import edu.bilkent.cs319.team9.ta_management_system.model.AssignmentType;
 import edu.bilkent.cs319.team9.ta_management_system.model.FacultyMember;
 import edu.bilkent.cs319.team9.ta_management_system.model.LeaveRequest;
@@ -103,29 +104,15 @@ public class FacultyMemberController {
         return ResponseEntity.ok(facultyMemberService.rejectLeaveRequest(requestId));
     }
 
-    /**
-     * Upload semester data via Excel
-     */
-    @PostMapping("/upload")
-    public ResponseEntity<?> uploadExcel(@RequestParam("file") MultipartFile file) {
-        return facultyMemberService.uploadExcelFile(file);
+
+    @GetMapping("/{facultyId}/distribution/random")
+    public ResponseEntity<List<DistributionDto>> randomDistribution(@PathVariable Long facultyId) {
+        // (optionally check that facultyId exists or has permissions)
+        return ResponseEntity.ok(facultyMemberService.getRandomStudentDistribution());
     }
 
-    /**
-     * Trigger random student distribution print (for UI, consider replacing with JSON response)
-     */
-    @GetMapping("/distribution/random")
-    public ResponseEntity<Void> printRandomDistribution() {
-        facultyMemberService.printRandomly();
-        return ResponseEntity.ok().build();
-    }
-
-    /**
-     * Trigger alphabetical student distribution print (for UI, consider replacing with JSON response)
-     */
-    @GetMapping("/distribution/alphabetical")
-    public ResponseEntity<Void> printAlphabeticalDistribution() {
-        facultyMemberService.printAlphabetically();
-        return ResponseEntity.ok().build();
+    @GetMapping("/{facultyId}/distribution/alpha")
+    public ResponseEntity<List<DistributionDto>> alphabeticalDistribution(@PathVariable Long facultyId) {
+        return ResponseEntity.ok(facultyMemberService.getAlphabeticalStudentDistribution());
     }
 }

@@ -1,5 +1,6 @@
 package edu.bilkent.cs319.team9.ta_management_system.service;
 
+import edu.bilkent.cs319.team9.ta_management_system.dto.DistributionDto;
 import edu.bilkent.cs319.team9.ta_management_system.model.AssignmentType;
 import edu.bilkent.cs319.team9.ta_management_system.model.Exam;
 import edu.bilkent.cs319.team9.ta_management_system.model.FacultyMember;
@@ -20,12 +21,9 @@ public interface FacultyMemberService {
 
     void assignProctor(Long examId, AssignmentType mode, Long taId);
 
-    void printStudentDistribution();
-    void printRandomly();
-    void printAlphabetically();
+    public List<DistributionDto> getRandomStudentDistribution();
+    public List<DistributionDto> getAlphabeticalStudentDistribution();
     LeaveRequest approveLeaveRequest(Long requestId);
     LeaveRequest rejectLeaveRequest(Long requestId);
     List<LeaveRequest> listLeaveRequests(Long facultyId);
-
-    ResponseEntity<?> uploadExcelFile(@RequestParam("file") MultipartFile file);
 }
