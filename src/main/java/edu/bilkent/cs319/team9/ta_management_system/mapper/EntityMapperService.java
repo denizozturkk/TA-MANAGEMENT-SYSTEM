@@ -171,4 +171,12 @@ public class EntityMapperService {
         }
         return pa;
     }
+
+    public LogEntryDto toDto(LogEntry logEntry) {
+        return modelMapper.map(logEntry, LogEntryDto.class);
+    }
+
+    public LogEntry toEntity(LogEntryDto dto) {
+        return modelMapper.map(dto, LogEntry.class);
+    }
 }
