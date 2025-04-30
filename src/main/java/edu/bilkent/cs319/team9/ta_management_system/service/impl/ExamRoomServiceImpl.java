@@ -58,4 +58,11 @@ public class ExamRoomServiceImpl implements ExamRoomService {
     public List<ExamRoom> findByClassroomId(Long classroomId) {
         return repo.findByClassroom_Id(classroomId);
     }
+
+    @Override
+    public void deleteByExamIdAndClassroomId(Long examId, Long classroomId) {
+        ExamRoomId id = new ExamRoomId(examId, classroomId);
+        repo.deleteById(id);
+    }
+
 }

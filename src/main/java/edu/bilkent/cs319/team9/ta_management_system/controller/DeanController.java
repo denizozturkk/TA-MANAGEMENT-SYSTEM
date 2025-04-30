@@ -2,13 +2,16 @@ package edu.bilkent.cs319.team9.ta_management_system.controller;
 
 import edu.bilkent.cs319.team9.ta_management_system.dto.DeanDto;
 import edu.bilkent.cs319.team9.ta_management_system.mapper.EntityMapperService;
-import edu.bilkent.cs319.team9.ta_management_system.model.Dean;
-import edu.bilkent.cs319.team9.ta_management_system.model.ProctorAssignment;
+import edu.bilkent.cs319.team9.ta_management_system.model.*;
 import edu.bilkent.cs319.team9.ta_management_system.service.DeanService;
+import edu.bilkent.cs319.team9.ta_management_system.service.ExamRoomService;
+import edu.bilkent.cs319.team9.ta_management_system.service.ExamService;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -16,10 +19,19 @@ import java.util.List;
 public class DeanController {
 
     private final DeanService deanService;
+    private final ExamService examService;
+    private final ExamRoomService examRoomService;
     private final EntityMapperService mapper;
 
-    public DeanController(DeanService deanService, EntityMapperService mapper) {
+    public DeanController(
+            DeanService deanService,
+            ExamService examService,
+            ExamRoomService examRoomService,
+            EntityMapperService mapper
+    ) {
         this.deanService = deanService;
+        this.examService = examService;
+        this.examRoomService = examRoomService;
         this.mapper = mapper;
     }
 
@@ -60,6 +72,65 @@ public class DeanController {
     ) {
         List<ProctorAssignment> assigned = deanService.assignProctors(deanId, examId);
         return ResponseEntity.status(HttpStatus.CREATED).body(assigned);
+    }
+
+    @PutMapping("/{deanId}/reschedule")
+    public ResponseEntity<Void> rescheduleExam(
+            @PathVariable Long deanId,
+            @RequestParam Long examId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime newDateTime
+    ) {
+        deanService.findById(deanId); // check dean exists
+        Exam exam = examService.findById(examId);
+        exam.setDateTime(newDateTime);
+        examService.update(exam.getId(), exam);
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/{deanId}/update-proctor-count")
+    public ResponseEntity<Void> updateProctorCount(
+            @PathVariable Long deanId,
+            @RequestParam Long examId,
+            @RequestParam Integer newProctorCount
+    ) {
+        deanService.findById(deanId); // check dean exists
+        Exam exam = examService.findById(examId);
+        exam.setNumProctors(newProctorCount);
+        examService.update(exam.getId(), exam);
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/{deanId}/exam-classrooms/add")
+    public ResponseEntity<Void> addClassroomToExam(
+            @PathVariable Long deanId,
+            @RequestParam Long examId,
+            @RequestParam Long classroomId,
+            @RequestParam Integer proctorCount
+    ) {
+        deanService.findById(deanId);
+        Exam exam = examService.findById(examId);
+
+        ExamRoom er = new ExamRoom();
+        er.setId(new ExamRoomId(examId, classroomId));
+        er.setExam(exam);
+        Classroom classroom = new Classroom(); classroom.setId(classroomId);
+        er.setClassroom(classroom);
+        er.setNumProctors(proctorCount);
+
+        exam.getExamRooms().add(er);
+        examService.update(examId, exam); // or call ExamRoomService.create(er)
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/{deanId}/exam-classrooms/remove")
+    public ResponseEntity<Void> removeClassroomFromExam(
+            @PathVariable Long deanId,
+            @RequestParam Long examId,
+            @RequestParam Long classroomId
+    ) {
+        deanService.findById(deanId);
+        examRoomService.deleteByExamIdAndClassroomId(examId, classroomId);
+        return ResponseEntity.noContent().build();
     }
 }
 
