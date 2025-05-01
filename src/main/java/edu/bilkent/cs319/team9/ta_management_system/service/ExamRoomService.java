@@ -11,7 +11,7 @@ public interface ExamRoomService {
     List<ExamRoom> findAll();
     ExamRoom update(ExamRoomId id, ExamRoom examRoom);
     void delete(ExamRoomId id);
-
+    void deleteByExamIdAndClassroomId(Long examId, Long classroomId);
     List<ExamRoom> findByExamId(Long examId);
     List<ExamRoom> findByClassroomId(Long classroomId);
 }

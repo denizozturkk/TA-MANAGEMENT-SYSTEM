@@ -1,66 +1,109 @@
 package edu.bilkent.cs319.team9.ta_management_system.service.impl;
 
-import edu.bilkent.cs319.team9.ta_management_system.exception.NotFoundException;
-import edu.bilkent.cs319.team9.ta_management_system.model.ExcelImport;
-import edu.bilkent.cs319.team9.ta_management_system.repository.ExcelImportRepository;
+import edu.bilkent.cs319.team9.ta_management_system.exception.BadRequestException;
+import edu.bilkent.cs319.team9.ta_management_system.model.Role;
+import edu.bilkent.cs319.team9.ta_management_system.model.TA;
+import edu.bilkent.cs319.team9.ta_management_system.repository.TARepository;
 import edu.bilkent.cs319.team9.ta_management_system.service.ExcelImportService;
-import lombok.RequiredArgsConstructor;
+import org.apache.poi.ss.usermodel.DataFormatter;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 @Service
-@Transactional
-@RequiredArgsConstructor
 public class ExcelImportServiceImpl implements ExcelImportService {
-    private final ExcelImportRepository repo;
+    private static final Set<String> ALLOWED_EXT = Set.of("xls","xlsx");
+    private static final Set<String> ALLOWED_CT = Set.of(
+            "application/vnd.ms-excel",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+
+    @Autowired
+    private TARepository taRepository;
 
     @Override
-    public ExcelImport create(ExcelImport e) {
-        return repo.save(e);
-    }
+    @Transactional
+    public void importTaSheet(MultipartFile file) throws IOException {
 
-    @Override
-    @Transactional(readOnly = true)
-    public ExcelImport findById(Long id) {
-        return repo.findById(id)
-                .orElseThrow(() -> new NotFoundException("ExcelImport", id));
-    }
+        // 1) Empty?
+        if (file.isEmpty())
+            throw new BadRequestException("No file uploaded");
 
-    @Override
-    @Transactional(readOnly = true)
-    public List<ExcelImport> findAll() {
-        return repo.findAll();
-    }
 
-    @Override
-    public ExcelImport update(Long id, ExcelImport e) {
-        if (!repo.existsById(id)) throw new NotFoundException("ExcelImport", id);
-        e.setId(id);
-        return repo.save(e);
-    }
+        // file size check
+        long MAX = 5 * 1024 * 1024; // 5 MB
+        if (file.getSize() > MAX) {
+            throw new BadRequestException("File too large: max 5 MB allowed");
+        }
 
-    @Override
-    public void delete(Long id) {
-        repo.deleteById(id);
-    }
+        // 2) Content-type check (optional, best-effort)
+        String ct = file.getContentType();
+        if (ct == null || !ALLOWED_CT.contains(ct)) {
+            // maybe warn/log, but not fatal
+        }
 
-    @Override
-    public void importExcel(MultipartFile file) {
-        // TODO: your real parsing logic here.
-        // For now, just store the original file bytes + metadata:
-        try {
-            ExcelImport record = ExcelImport.builder()
-                    .fileName(file.getOriginalFilename())
-                    .contentType(file.getContentType())
-                    .data(file.getBytes())
-                    .build();
-            repo.save(record);
-        } catch (IOException ex) {
-            throw new RuntimeException("Failed to read Excel file", ex);
+        // 3) Extension check (stronger)
+        String name = file.getOriginalFilename();
+        String ext = name == null
+                ? ""
+                : name.contains(".")
+                ? name.substring(name.lastIndexOf('.')+1).toLowerCase()
+                : "";
+        if (!ALLOWED_EXT.contains(ext)) {
+            throw new BadRequestException("Only Excel files (.xls/.xlsx) are supported");
+        }
+
+        DataFormatter fmt = new DataFormatter();
+
+        try (Workbook wb = WorkbookFactory.create(file.getInputStream())) {
+            Sheet sheet = wb.getSheetAt(0);
+            boolean headerRow = true;
+
+            for (Row row : sheet) {
+                if (headerRow) {
+                    headerRow = false;
+                    continue;
+                }
+                if (row == null || row.getCell(0) == null) {
+                    continue;
+                }
+
+                // Read ID cell as text
+                String idText = fmt.formatCellValue(row.getCell(0)).trim();
+                TA ta;
+                if (!idText.isEmpty()) {
+                    long id;
+                    try {
+                        id = Long.parseLong(idText);
+                    } catch (NumberFormatException ex) {
+                        throw new IllegalStateException("Invalid TA ID '" + idText + "' at row " + row.getRowNum());
+                    }
+                    Optional<TA> existing = taRepository.findById(id);
+                    ta = existing.orElseGet(TA::new);
+                } else {
+                    ta = new TA();
+                }
+
+                // Set / override fields
+                ta.setFirstName(fmt.formatCellValue(row.getCell(1)));
+                ta.setLastName(fmt.formatCellValue(row.getCell(2)));
+                ta.setEmail(fmt.formatCellValue(row.getCell(3)));
+                ta.setPhoneNumber(fmt.formatCellValue(row.getCell(4)));
+                ta.setDepartment(fmt.formatCellValue(row.getCell(5)));
+                ta.setRole(Role.ROLE_TA);
+
+                taRepository.save(ta);
+            }
         }
     }
 }

@@ -5,28 +5,33 @@ import lombok.*; // Lombok for getters and setters.
 import lombok.experimental.SuperBuilder;
 
 @Entity
-@Table(name = "users")
+@Table(name = "users",
+        uniqueConstraints = @UniqueConstraint(columnNames = "email"))
 @Inheritance(strategy = InheritanceType.JOINED)
-@DiscriminatorColumn(name = "user_type")
+@DiscriminatorColumn(name="dtype")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
 public abstract class User {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id @GeneratedValue(strategy=GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "password", nullable = false)
-    private String password;
-
+    @Column(name = "first_name")
     private String firstName;
+
+    @Column(name = "last_name")
     private String lastName;
-    private String email;
+
+    private String email; // becomes `email` by default
+
+    @Column(name = "phone_number")
     private String phoneNumber;
-    private String userName;
-    private String passwordHash;
-    private String photoURL;
+
+    private String password; // `password`
+
+    @Column(name = "photourl")
+    private String photoURL;  // explicitly map to `photourl`
 
     @Enumerated(EnumType.STRING)
     private Role role;

@@ -171,4 +171,46 @@ public class EntityMapperService {
         }
         return pa;
     }
+
+    public LogEntryDto toDto(LogEntry logEntry) {
+        return modelMapper.map(logEntry, LogEntryDto.class);
+    }
+
+    public LogEntry toEntity(LogEntryDto dto) {
+        return modelMapper.map(dto, LogEntry.class);
+    }
+
+    public DutyExtensionRequestDto toDto(DutyExtensionRequest e) {
+        DutyExtensionRequestDto dto = modelMapper.map(e, DutyExtensionRequestDto.class);
+        dto.setTaId(e.getTa() != null ? e.getTa().getId() : null);
+        dto.setInstructorId(e.getInstructor() != null ? e.getInstructor().getId() : null);
+        dto.setDutyLogId(e.getDutyLog() != null ? e.getDutyLog().getId() : null);
+        return dto;
+    }
+
+    public DutyExtensionRequest toEntity(DutyExtensionRequestDto dto) {
+        DutyExtensionRequest e = modelMapper.map(dto, DutyExtensionRequest.class);
+
+        if (dto.getTaId() != null) {
+            TA ta = new TA(); ta.setId(dto.getTaId());
+            e.setTa(ta);
+        }
+        if (dto.getInstructorId() != null) {
+            FacultyMember fm = new FacultyMember(); fm.setId(dto.getInstructorId());
+            e.setInstructor(fm);
+        }
+        if (dto.getDutyLogId() != null) {
+            DutyLog dl = new DutyLog(); dl.setId(dto.getDutyLogId());
+            e.setDutyLog(dl);
+        }
+        return e;
+    }
+
+    public TutorGraderApplicationDto toDto(TutorGraderApplication app) {
+        return modelMapper.map(app, TutorGraderApplicationDto.class);
+    }
+
+    public TutorGraderApplication toEntity(TutorGraderApplicationDto dto) {
+        return modelMapper.map(dto, TutorGraderApplication.class);
+    }
 }
