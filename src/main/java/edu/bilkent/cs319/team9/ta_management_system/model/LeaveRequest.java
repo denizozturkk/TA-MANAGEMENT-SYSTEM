@@ -21,6 +21,11 @@ public class LeaveRequest {
     @Enumerated(EnumType.STRING)
     private LeaveStatus status;
 
+    // Should store a Proctoring Assignment object as well
+    @OneToOne
+    @JoinColumn(name = "proctor_assignment_id")
+    private ProctorAssignment proctorAssignment;
+
     @ManyToOne @JoinColumn(name = "ta_id")
     private TA ta;
 }

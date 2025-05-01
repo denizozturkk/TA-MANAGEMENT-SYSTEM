@@ -9,4 +9,6 @@ public interface LeaveRequestService {
     List<LeaveRequest> findAll();
     LeaveRequest update(Long id, LeaveRequest l);
     void delete(Long id);
+    List<LeaveRequest> findByTaId(Long taId);
+
 }

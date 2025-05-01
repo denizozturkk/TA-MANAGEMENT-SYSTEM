@@ -1,6 +1,8 @@
 package edu.bilkent.cs319.team9.ta_management_system.service;
 
 import edu.bilkent.cs319.team9.ta_management_system.model.Dean;
+import edu.bilkent.cs319.team9.ta_management_system.model.ProctorAssignment;
+
 import java.util.List;
 
 public interface DeanService {
@@ -9,4 +11,9 @@ public interface DeanService {
     List<Dean> findAll();
     Dean update(Long id, Dean d);
     void delete(Long id);
+    /**
+     * Auto‐assigns proctors for the given exam across its rooms.
+     * First uses same‐department TAs, then cross‐dept fallback.
+     */
+    List<ProctorAssignment> assignProctors(Long deanId, Long examId);
 }

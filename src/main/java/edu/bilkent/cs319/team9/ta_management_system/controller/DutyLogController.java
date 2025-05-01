@@ -1,6 +1,9 @@
 package edu.bilkent.cs319.team9.ta_management_system.controller;
 
+import edu.bilkent.cs319.team9.ta_management_system.dto.DutyLogDto;
+import edu.bilkent.cs319.team9.ta_management_system.mapper.EntityMapperService;
 import edu.bilkent.cs319.team9.ta_management_system.model.DutyLog;
+import edu.bilkent.cs319.team9.ta_management_system.model.DutyStatus;
 import edu.bilkent.cs319.team9.ta_management_system.service.DutyLogService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -11,34 +14,60 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/duty-logs")
 public class DutyLogController {
+
     private final DutyLogService dutyLogService;
-    public DutyLogController(DutyLogService dutyLogService) {
+    private final EntityMapperService mapper;
+
+    public DutyLogController(DutyLogService dutyLogService, EntityMapperService mapper) {
         this.dutyLogService = dutyLogService;
+        this.mapper = mapper;
     }
 
     @PostMapping
-    public ResponseEntity<DutyLog> create(@RequestBody DutyLog dl) {
-        return new ResponseEntity<>(dutyLogService.create(dl), HttpStatus.CREATED);
+    public ResponseEntity<DutyLogDto> create(@RequestBody DutyLogDto dto) {
+        DutyLog created = dutyLogService.create(mapper.toEntity(dto));
+        return new ResponseEntity<>(mapper.toDto(created), HttpStatus.CREATED);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<DutyLog> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(dutyLogService.findById(id));
+    public ResponseEntity<DutyLogDto> getById(@PathVariable Long id) {
+        return ResponseEntity.ok(mapper.toDto(dutyLogService.findById(id)));
     }
 
     @GetMapping
-    public ResponseEntity<List<DutyLog>> getAll() {
-        return ResponseEntity.ok(dutyLogService.findAll());
+    public ResponseEntity<List<DutyLogDto>> getAll() {
+        return ResponseEntity.ok(
+                dutyLogService.findAll().stream().map(mapper::toDto).toList()
+        );
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<DutyLog> update(@PathVariable Long id, @RequestBody DutyLog dl) {
-        return ResponseEntity.ok(dutyLogService.update(id, dl));
+    public ResponseEntity<DutyLogDto> update(@PathVariable Long id, @RequestBody DutyLogDto dto) {
+        DutyLog updated = dutyLogService.update(id, mapper.toEntity(dto));
+        return ResponseEntity.ok(mapper.toDto(updated));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         dutyLogService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/submit")
+    public ResponseEntity<DutyLogDto> submit(
+            @PathVariable Long id,
+            @RequestParam("taId") Long taId) {
+
+        DutyLog dl = dutyLogService.findById(id);
+        if (dl == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+        if (dl.getTa() == null || !dl.getTa().getId().equals(taId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        dl.setStatus(DutyStatus.SUBMITTED);
+        DutyLog updated = dutyLogService.update(id, dl);
+        return ResponseEntity.ok(mapper.toDto(updated));
     }
 }

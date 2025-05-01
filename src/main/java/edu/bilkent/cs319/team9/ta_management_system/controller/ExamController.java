@@ -1,5 +1,7 @@
 package edu.bilkent.cs319.team9.ta_management_system.controller;
 
+import edu.bilkent.cs319.team9.ta_management_system.dto.ExamDto;
+import edu.bilkent.cs319.team9.ta_management_system.mapper.EntityMapperService;
 import edu.bilkent.cs319.team9.ta_management_system.model.Exam;
 import edu.bilkent.cs319.team9.ta_management_system.service.ExamService;
 import org.springframework.http.HttpStatus;
@@ -12,28 +14,35 @@ import java.util.List;
 @RequestMapping("/api/exams")
 public class ExamController {
     private final ExamService examService;
-    public ExamController(ExamService examService) {
+    private final EntityMapperService mapper;
+
+    public ExamController(ExamService examService, EntityMapperService mapper) {
         this.examService = examService;
+        this.mapper = mapper;
     }
 
     @PostMapping
-    public ResponseEntity<Exam> create(@RequestBody Exam e) {
-        return new ResponseEntity<>(examService.create(e), HttpStatus.CREATED);
+    public ResponseEntity<ExamDto> create(@RequestBody ExamDto dto) {
+        Exam created = examService.create(mapper.toEntity(dto));
+        return new ResponseEntity<>(mapper.toDto(created), HttpStatus.CREATED);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Exam> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(examService.findById(id));
+    public ResponseEntity<ExamDto> getById(@PathVariable Long id) {
+        return ResponseEntity.ok(mapper.toDto(examService.findById(id)));
     }
 
     @GetMapping
-    public ResponseEntity<List<Exam>> getAll() {
-        return ResponseEntity.ok(examService.findAll());
+    public ResponseEntity<List<ExamDto>> getAll() {
+        return ResponseEntity.ok(
+                examService.findAll().stream().map(mapper::toDto).toList()
+        );
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Exam> update(@PathVariable Long id, @RequestBody Exam e) {
-        return ResponseEntity.ok(examService.update(id, e));
+    public ResponseEntity<ExamDto> update(@PathVariable Long id, @RequestBody ExamDto dto) {
+        Exam updated = examService.update(id, mapper.toEntity(dto));
+        return ResponseEntity.ok(mapper.toDto(updated));
     }
 
     @DeleteMapping("/{id}")

@@ -16,7 +16,8 @@ public class Exam {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String examID;
+    private String examName;
+    private String department;
     private LocalDateTime dateTime;
     private Float duration;
     private String examType;
@@ -31,4 +32,7 @@ public class Exam {
 
     @OneToMany(mappedBy = "exam")
     private Set<ProctorAssignment> proctorAssignments;
+
+    @OneToMany(mappedBy = "exam", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<ExamRoom> examRooms;
 }

@@ -22,7 +22,12 @@ public class SwapRequest {
     @ManyToOne @JoinColumn(name = "ta_id")
     private TA ta;
 
-    @OneToOne @JoinColumn(name = "proctor_assignment_id")
+    /** the assignment A wants to give up */
+    @OneToOne @JoinColumn(name = "proctor_assignment_id", nullable = false)
     private ProctorAssignment proctorAssignment;
+
+    /** the assignment A would like to take over (belongs to B) */
+    @OneToOne @JoinColumn(name = "target_proctor_assignment_id", nullable = false)
+    private ProctorAssignment targetProctorAssignment;
 }
 

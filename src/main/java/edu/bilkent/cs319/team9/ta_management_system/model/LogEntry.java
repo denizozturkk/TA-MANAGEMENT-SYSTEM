@@ -20,6 +20,7 @@ import java.time.LocalDateTime;
 @Builder
 public class LogEntry {
 
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;                  // this will map to your table’s `id` column
@@ -45,3 +46,4 @@ public class LogEntry {
     @Column(length = 1000)
     private String details;           // maps to `details`
 }
+
