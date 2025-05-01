@@ -6,7 +6,7 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 @Entity
-@DiscriminatorValue("Admin")
+@DiscriminatorValue("ADMIN")
 @Data
 @NoArgsConstructor
 @SuperBuilder
