@@ -11,7 +11,7 @@ public class DutyLogDto {
     private Long id;
     private String taskType;
     private int workload;
-    private Float duration;
+    private LocalDateTime startTime;
     private LocalDateTime dateTime;
     private DutyStatus status;
 

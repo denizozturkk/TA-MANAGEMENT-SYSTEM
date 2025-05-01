@@ -205,4 +205,12 @@ public class EntityMapperService {
         }
         return e;
     }
+
+    public TutorGraderApplicationDto toDto(TutorGraderApplication app) {
+        return modelMapper.map(app, TutorGraderApplicationDto.class);
+    }
+
+    public TutorGraderApplication toEntity(TutorGraderApplicationDto dto) {
+        return modelMapper.map(dto, TutorGraderApplication.class);
+    }
 }
