@@ -7,6 +7,10 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.List;
+
 public interface ProctorAssignmentRepository extends JpaRepository<ProctorAssignment, Long> {
     @Modifying
     @Transactional
@@ -20,4 +24,6 @@ public interface ProctorAssignmentRepository extends JpaRepository<ProctorAssign
             @Param("paId")    Long paId,
             @Param("newTaId") Long newTaId
     );
+
+    List<ProctorAssignment> findByExam_DateTimeBetween(LocalDateTime from, LocalDateTime to);
 }
