@@ -1,5 +1,6 @@
 package edu.bilkent.cs319.team9.ta_management_system.service.impl;
 
+import edu.bilkent.cs319.team9.ta_management_system.exception.BadRequestException;
 import edu.bilkent.cs319.team9.ta_management_system.model.Role;
 import edu.bilkent.cs319.team9.ta_management_system.model.TA;
 import edu.bilkent.cs319.team9.ta_management_system.repository.TARepository;
@@ -15,10 +16,17 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 public class ExcelImportServiceImpl implements ExcelImportService {
+    private static final Set<String> ALLOWED_EXT = Set.of("xls","xlsx");
+    private static final Set<String> ALLOWED_CT = Set.of(
+            "application/vnd.ms-excel",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
 
     @Autowired
     private TARepository taRepository;
@@ -26,6 +34,35 @@ public class ExcelImportServiceImpl implements ExcelImportService {
     @Override
     @Transactional
     public void importTaSheet(MultipartFile file) throws IOException {
+
+        // 1) Empty?
+        if (file.isEmpty())
+            throw new BadRequestException("No file uploaded");
+
+
+        // file size check
+        long MAX = 5 * 1024 * 1024; // 5 MB
+        if (file.getSize() > MAX) {
+            throw new BadRequestException("File too large: max 5 MB allowed");
+        }
+
+        // 2) Content-type check (optional, best-effort)
+        String ct = file.getContentType();
+        if (ct == null || !ALLOWED_CT.contains(ct)) {
+            // maybe warn/log, but not fatal
+        }
+
+        // 3) Extension check (stronger)
+        String name = file.getOriginalFilename();
+        String ext = name == null
+                ? ""
+                : name.contains(".")
+                ? name.substring(name.lastIndexOf('.')+1).toLowerCase()
+                : "";
+        if (!ALLOWED_EXT.contains(ext)) {
+            throw new BadRequestException("Only Excel files (.xls/.xlsx) are supported");
+        }
+
         DataFormatter fmt = new DataFormatter();
 
         try (Workbook wb = WorkbookFactory.create(file.getInputStream())) {

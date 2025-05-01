@@ -60,9 +60,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     && SecurityContextHolder.getContext().getAuthentication() == null
                     && valid) {
 
+                UserDetails ud = userDetailsService.loadUserByUsername(username);
                 var authToken = new UsernamePasswordAuthenticationToken(
-                        username, null, userDetails.getAuthorities()
+                        ud,                   // ← principal is now your CustomUserDetails
+                        null,
+                        ud.getAuthorities()
                 );
+
                 SecurityContextHolder.getContext().setAuthentication(authToken);
                 logger.debug(">>> Authentication set for [{}]", username);
             }

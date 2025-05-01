@@ -45,7 +45,8 @@ public class UserServiceImpl implements UserService {
                 u.getLastName(),
                 u.getEmail(),
                 u.getPhoneNumber(),
-                u.getPhotoURL()
+                u.getPhotoURL(),
+                u.getRole()
         );
     }
 

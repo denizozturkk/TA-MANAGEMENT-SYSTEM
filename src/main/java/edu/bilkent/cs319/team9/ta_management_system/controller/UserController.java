@@ -10,6 +10,13 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
+
+@CrossOrigin(
+        origins = "http://localhost:3000",
+        allowedHeaders = "*",           // allow Authorization (and any other header)
+        exposedHeaders = "Authorization",
+        allowCredentials = "true"       // if you ever send cookies
+)
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
@@ -40,12 +47,12 @@ public class UserController {
         return ResponseEntity.ok(userService.getMyNotifications());
     }
 
-    /** Recover & Logout **/
-    @PostMapping("/recover-password")
-    public ResponseEntity<Void> recoverPassword(@RequestBody Map<String,String> body) {
-        userService.recoverPassword(body.get("email"));
-        return ResponseEntity.ok().build();
-    }
+//    /** Recover & Logout **/
+//    @PostMapping("/recover-password")
+//    public ResponseEntity<Void> recoverPassword(@RequestBody Map<String,String> body) {
+//        userService.recoverPassword(body.get("email"));
+//        return ResponseEntity.ok().build();
+//    }
 
     @PostMapping("/logout")
     public ResponseEntity<Void> logout() {

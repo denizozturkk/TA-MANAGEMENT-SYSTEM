@@ -1,5 +1,6 @@
 package edu.bilkent.cs319.team9.ta_management_system.dto;
 
+import edu.bilkent.cs319.team9.ta_management_system.model.Role;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -17,6 +18,7 @@ public class UserProfileDto {
     private String email;
     private String phoneNumber;
     private String photoURL;
+    private Role role;
 
 
 }
