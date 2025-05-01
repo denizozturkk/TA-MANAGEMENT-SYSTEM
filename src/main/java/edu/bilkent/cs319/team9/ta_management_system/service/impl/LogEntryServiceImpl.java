@@ -48,19 +48,19 @@ public class LogEntryServiceImpl implements LogEntryService {
         repo.deleteById(id);
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public List<LogEntry> findByActorId(String actorId) {
-        return repo.findByActorID(actorId);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<LogEntry> searchLogs(String actorId, LogType type, LocalDateTime startDate, LocalDateTime endDate, Integer limit) {
-        List<LogEntry> logs = repo.searchLogs(actorId, type, startDate, endDate);
-        if (limit != null && logs.size() > limit) {
-            return logs.subList(0, limit);
-        }
-        return logs;
-    }
+//    @Override
+//    @Transactional(readOnly = true)
+//    public List<LogEntry> findByActorId(String actorId) {
+//        return repo.findByActorID(actorId);
+//    }
+//
+//    @Override
+//    @Transactional(readOnly = true)
+//    public List<LogEntry> searchLogs(String actorId, LogType type, LocalDateTime startDate, LocalDateTime endDate, Integer limit) {
+//        List<LogEntry> logs = repo.searchLogs(actorId, type, startDate, endDate);
+//        if (limit != null && logs.size() > limit) {
+//            return logs.subList(0, limit);
+//        }
+//        return logs;
+//    }
 }

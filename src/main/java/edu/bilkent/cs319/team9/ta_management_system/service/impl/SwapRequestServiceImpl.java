@@ -107,7 +107,7 @@ public class SwapRequestServiceImpl implements SwapRequestService {
 
         req.setStatus(newStatus);
 
-        if (newStatus == SwapStatus.ACCEPTED) {
+        if (newStatus == SwapStatus.APPROVED) {
             // perform the swap
             ProctorAssignment aAssign = req.getProctorAssignment();
             ProctorAssignment bAssign = req.getTargetProctorAssignment();

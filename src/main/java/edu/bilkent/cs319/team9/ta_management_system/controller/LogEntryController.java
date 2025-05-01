@@ -55,19 +55,5 @@ public class LogEntryController {
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/ta/{taId}")
-    public ResponseEntity<List<LogEntryDto>> getPastTasksByTa(
-            @PathVariable Long taId,
-            @RequestParam(required = false) LogType type,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
-            @RequestParam(required = false) Integer limit
-    ) {
-        String actorId = String.valueOf(taId);
-        List<LogEntryDto> logs = logEntryService.searchLogs(actorId, type, startDate, endDate, limit)
-                .stream()
-                .map(mapper::toDto)
-                .toList();
-        return ResponseEntity.ok(logs);
-    }
+
 }
