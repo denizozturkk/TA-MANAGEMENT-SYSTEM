@@ -8,14 +8,33 @@ import lombok.experimental.SuperBuilder;
 import java.time.LocalDateTime;
 
 @Entity
+@Table(name = "reports")
 @Data
 @NoArgsConstructor
 @SuperBuilder
 public class Report {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String type;
+    // store your enum as a VARCHAR in the DB:
+    @Enumerated(EnumType.STRING)
+    @Column(name = "report_type", nullable = false)
+    private ReportType reportType;
+
+    // join out to the Admin table via a foreign key:
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "sender_id", nullable = false)
+    private Admin sender;
+
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "receiver_id", nullable = false)
+    private Dean receiver;
+
+    @Column(name = "generated_on", nullable = false)
     private LocalDateTime generatedOn;
+
 }
 
