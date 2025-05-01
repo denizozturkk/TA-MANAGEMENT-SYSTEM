@@ -2,9 +2,12 @@
 package edu.bilkent.cs319.team9.ta_management_system.controller;
 
 import edu.bilkent.cs319.team9.ta_management_system.dto.*;
+import edu.bilkent.cs319.team9.ta_management_system.model.Admin;
+import edu.bilkent.cs319.team9.ta_management_system.model.FacultyMember;
 import edu.bilkent.cs319.team9.ta_management_system.service.AdminService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,6 +21,13 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class AdminController {
     private final AdminService adminService;
+
+
+    // FOR TESTING CREATE SOME ADMIN
+    @PostMapping
+    public ResponseEntity<Admin> create(@RequestBody Admin a) {
+        return new ResponseEntity<>(adminService.create(a), HttpStatus.CREATED);
+    }
 
     // --- Report Requests ---
     @GetMapping("/report-requests")
