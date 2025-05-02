@@ -3,6 +3,8 @@ package edu.bilkent.cs319.team9.ta_management_system.service.impl;
 
 import edu.bilkent.cs319.team9.ta_management_system.dto.*;
 import edu.bilkent.cs319.team9.ta_management_system.exception.NotFoundException;
+import edu.bilkent.cs319.team9.ta_management_system.model.Admin;
+import edu.bilkent.cs319.team9.ta_management_system.model.FacultyMember;
 import edu.bilkent.cs319.team9.ta_management_system.model.ReportRequestStatus;
 import edu.bilkent.cs319.team9.ta_management_system.repository.*;
 import edu.bilkent.cs319.team9.ta_management_system.service.AdminService;
@@ -24,6 +26,16 @@ public class AdminServiceImpl implements AdminService {
     private final ProctorAssignmentRepository proctorRepo;
     private final UserRepository           userRepo;
 
+
+    private final AdminRepository repo;
+
+    //test
+    @Override
+    public Admin create(Admin a) {
+        return repo.save(a);
+    }
+    ///
+
     @Override
     @Transactional(readOnly = true)
     public List<ReportRequestDto> getPendingReportRequests() {
@@ -39,6 +51,8 @@ public class AdminServiceImpl implements AdminService {
         var req = reportRequestRepo.findById(requestId)
                 .orElseThrow(() -> new NotFoundException("ReportRequest not found"));
         req.setStatus(ReportRequestStatus.APPROVED);
+
+
         reportRequestRepo.save(req);
     }
 

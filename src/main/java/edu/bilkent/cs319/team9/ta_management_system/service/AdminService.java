@@ -2,10 +2,16 @@
 package edu.bilkent.cs319.team9.ta_management_system.service;
 
 import edu.bilkent.cs319.team9.ta_management_system.dto.*;
+import edu.bilkent.cs319.team9.ta_management_system.model.Admin;
+import edu.bilkent.cs319.team9.ta_management_system.model.FacultyMember;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 public interface AdminService {
+
+    // test
+    Admin create(Admin a);
 
     // --- report requests ---
     List<ReportRequestDto> getPendingReportRequests();
