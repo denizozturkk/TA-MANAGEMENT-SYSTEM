@@ -175,6 +175,51 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
         }
     }
 
+    @Override
+    public DutyLog uploadDutyLogAutomatic(
+            Long facultyId,
+            MultipartFile file,
+            DutyType taskType,
+            Long workload,
+            LocalDateTime startTime,
+            Long duration,
+            DutyStatus status,
+            Set<Classroom> classrooms) {
+        // 1) find faculty
+        FacultyMember faculty = facultyMemberRepository.findById(facultyId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "FacultyMember not found with id " + facultyId
+                ));
+
+        // 2) determine exam window (to avoid conflicts)
+        LocalDateTime endTime = startTime.plusMinutes(duration);
+
+        // 3) pick the first available TA in the same department with lowest workload
+        TA assigned = taService.findAll().stream()
+                // only same department
+                .filter(ta -> faculty.getDepartment().equals(ta.getDepartment()))
+                // no busy-hour overlap
+                .filter(ta -> busyHourService.findByTaId(ta.getId()).stream()
+                        .noneMatch(bh -> bh.overlaps(startTime, endTime))).min(Comparator.comparing(TA::getTotalWorkload))
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "No available TA found for automatic assignment"
+                ));
+        
+        return uploadDutyLog(
+                facultyId,
+                assigned.getId(),
+                file,
+                taskType,
+                workload,
+                startTime,
+                duration,
+                status,
+                classrooms
+        );
+    }
+
     /**
      * Manually assigns a single TA to the first available proctor slot for the given exam.
      * @param examId  the ID of the exam to proctor
@@ -291,6 +336,60 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
         }
 
         return result;
+    }
+
+
+    @Override
+    public DutyLog reviewDutyLog(Long facultyId,
+                                 Long taId,
+                                 Long dutyLogId,
+                                 DutyStatus status) {
+        // 1) Verify faculty exists
+        FacultyMember faculty = facultyMemberRepository.findById(facultyId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "FacultyMember not found with id " + facultyId
+                ));
+        // 2) Verify TA exists
+        TA ta = taService.findById(taId);
+        if (ta == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "TA not found with id " + taId
+            );
+        }
+        // 3) Load DutyLog
+        DutyLog dutyLog = dutyLogRepository.findById(dutyLogId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "DutyLog not found with id " + dutyLogId
+                ));
+        // 4) Check ownership
+        if (!dutyLog.getTa().getId().equals(taId)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "DutyLog " + dutyLogId + " does not belong to TA " + taId
+            );
+        }
+        if (!dutyLog.getFaculty().getId().equals(facultyId)) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "FacultyMember " + facultyId + " not authorized to review this DutyLog"
+            );
+        }
+        // 5) Update status
+        dutyLog.setStatus(status);
+        DutyLog updatedLog = dutyLogRepository.save(dutyLog);
+
+        // 6) If approved, bump the TA’s workload
+        if (status == DutyStatus.APPROVED) {
+            Float current = ta.getTotalWorkload() != null ? ta.getTotalWorkload() : 0f;
+            ta.setTotalWorkload(current + dutyLog.getWorkload());
+            // Persist change (either via TAService or directly via repository)
+            taService.update(ta.getId(), ta);  // assume TAService has an update method
+        }
+
+        return updatedLog;
     }
 
 }
