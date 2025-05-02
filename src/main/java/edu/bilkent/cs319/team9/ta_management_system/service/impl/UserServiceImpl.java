@@ -110,4 +110,10 @@ public class UserServiceImpl implements UserService {
     public void logout() {
         // stateless JWT: client just discards the token
     }
+
+    @Override
+    public User findById(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("No user with id " + id));
+    }
 }
