@@ -9,4 +9,7 @@ public interface NotificationService {
     List<Notification> findAll();
     Notification update(Long id, Notification n);
     void delete(Long id);
+    void notifyUser(Long recipientId, String recipientEmail, String subject, String body);
+    public List<Notification> fetchFor(Long recipientId);
+    public void markRead(Long notificationId);
 }

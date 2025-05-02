@@ -11,7 +11,9 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/coordinators")
 public class CoordinatorController {
+
     private final CoordinatorService coordinatorService;
+
     public CoordinatorController(CoordinatorService coordinatorService) {
         this.coordinatorService = coordinatorService;
     }
@@ -41,5 +43,30 @@ public class CoordinatorController {
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         coordinatorService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Swap one TA for another in a specific offering.
+     * Example: PUT /api/coordinators/5/offerings/42/replace-ta?oldTaId=17&newTaId=23
+     */
+    @PutMapping("/{coordId}/offerings/{offeringId}/replace-ta")
+    public ResponseEntity<Void> replaceTa(
+            @PathVariable Long coordId,
+            @PathVariable Long offeringId,
+            @RequestParam Long oldTaId,
+            @RequestParam Long newTaId) {
+
+        coordinatorService.replaceTa(coordId, offeringId, oldTaId, newTaId);
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/{coordId}/proctor-assignments/{paId}/replace-ta")
+    public ResponseEntity<Void> replaceProctorTa(
+            @PathVariable Long coordId,
+            @PathVariable Long paId,
+            @RequestParam Long newTaId) {
+
+        coordinatorService.replaceProctorAssignmentTa(coordId, paId, newTaId);
+        return ResponseEntity.ok().build();
     }
 }

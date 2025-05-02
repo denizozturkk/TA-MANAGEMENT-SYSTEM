@@ -13,7 +13,7 @@ import java.util.Set;
 @SuperBuilder
 public class Classroom {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "classroom_id")   // maps to your DB column
+    @Column(name = "classroom_id")
     private Long id;
 
     private String building;

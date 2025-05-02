@@ -13,4 +13,5 @@ public interface UserService {
     List<NotificationDto> getMyNotifications();
     void recoverPassword(String email);
     void logout();
+    User findById(Long id);
 }

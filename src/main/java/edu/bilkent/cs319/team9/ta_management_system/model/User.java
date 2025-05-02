@@ -34,5 +34,6 @@ public abstract class User {
     private String photoURL;  // explicitly map to `photourl`
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private Role role;
 }
