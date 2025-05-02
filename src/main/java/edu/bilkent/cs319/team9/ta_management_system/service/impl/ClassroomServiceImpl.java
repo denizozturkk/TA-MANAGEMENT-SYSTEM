@@ -27,9 +27,9 @@ public class ClassroomServiceImpl implements ClassroomService {
 
     @Override
     @Transactional(readOnly = true)
-    public Classroom getClassroom(String roomNumber) {
-        return classroomRepository.findById(roomNumber)
-                .orElseThrow(() -> new EntityNotFoundException("Classroom not found: " + roomNumber));
+    public Classroom getClassroom(Long  id) {
+        return classroomRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Classroom not found: " + id));
     }
 
     @Override
@@ -39,16 +39,16 @@ public class ClassroomServiceImpl implements ClassroomService {
     }
 
     @Override
-    public Classroom updateClassroom(String roomNumber, Classroom details) {
-        Classroom classroom = getClassroom(roomNumber);
+    public Classroom updateClassroom(Long id, Classroom details) {
+        Classroom classroom = getClassroom(id);
         classroom.setCapacity(details.getCapacity());
         classroom.setExamCapacity(details.getExamCapacity());
         return classroomRepository.save(classroom);
     }
 
     @Override
-    public void deleteClassroom(String roomNumber) {
-        Classroom classroom = getClassroom(roomNumber);
+    public void deleteClassroom(Long id) {
+        Classroom classroom = getClassroom(id);
         classroomRepository.delete(classroom);
     }
 }
