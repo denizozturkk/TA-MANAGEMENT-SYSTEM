@@ -1,6 +1,7 @@
 package edu.bilkent.cs319.team9.ta_management_system.controller;
 
 import edu.bilkent.cs319.team9.ta_management_system.dto.DeanDto;
+import edu.bilkent.cs319.team9.ta_management_system.dto.ReportRequestDto;
 import edu.bilkent.cs319.team9.ta_management_system.mapper.EntityMapperService;
 import edu.bilkent.cs319.team9.ta_management_system.model.*;
 import edu.bilkent.cs319.team9.ta_management_system.service.DeanService;
@@ -132,5 +133,31 @@ public class DeanController {
         examRoomService.deleteByExamIdAndClassroomId(examId, classroomId);
         return ResponseEntity.noContent().build();
     }
+
+    @PostMapping("/{deanId}/report‐requests")
+    public ResponseEntity<ReportRequestDto> createReportRequest(
+            @PathVariable Long deanId,
+            @RequestBody ReportRequestDto dto
+    ) {
+        // dto.fromTime, dto.toTime, dto.reportType, dto.details must be populated by client
+        dto.setRequesterId(deanId);
+        ReportRequest saved = deanService.createReportRequest(dto.toEntity());
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(ReportRequestDto.fromEntity(saved));
+    }
+
+    /**
+     * Dean lists all of their own report requests.
+     */
+    @GetMapping("/{deanId}/report‐requests")
+    public ResponseEntity<List<ReportRequestDto>> getMyReportRequests(@PathVariable Long deanId) {
+        List<ReportRequest> requests = deanService.findRequestsByRequester(deanId);
+        List<ReportRequestDto> dtos = requests.stream()
+                .map(ReportRequestDto::fromEntity)
+                .toList();
+        return ResponseEntity.ok(dtos);
+    }
+
 }
 

@@ -28,9 +28,6 @@ public class ReportRequest {
     @Column(name = "requester_id", nullable = false)
     private Long requesterId;
 
-    @Column(name = "receiver_id", nullable = false)
-    private Long receiverId;
-
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ReportRequestStatus status;
@@ -38,6 +35,12 @@ public class ReportRequest {
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    @Column(name = "from_time", nullable = false)
+    private LocalDateTime fromTime;
+
+    @Column(name = "to_time", nullable = false)
+    private LocalDateTime toTime;
 
     @Column(length = 1000)
     private String details;

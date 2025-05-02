@@ -8,4 +8,5 @@ import java.util.List;
 
 public interface ReportRequestRepository  extends JpaRepository<ReportRequest, Long> {
     List<ReportRequest> findByStatusOrderByCreatedAtDesc(ReportRequestStatus status);
+    List<ReportRequest> findAllByRequesterId(Long requesterId);
 }

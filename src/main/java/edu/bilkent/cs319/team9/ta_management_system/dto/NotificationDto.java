@@ -8,9 +8,11 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Accessors(chain = true)     // <— enables your chained .setXxx() calls
+@Builder
 public class NotificationDto {
     private Long id;
     private String message;
+    private Long recipientId;
     private LocalDateTime timestamp;
     private boolean read;
 }
