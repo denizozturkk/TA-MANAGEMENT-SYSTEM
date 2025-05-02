@@ -226,4 +226,25 @@ public class EntityMapperService {
         );
         return dto;
     }
+
+    /**
+     * Map from the service-layer model to the DTO.
+     */
+    public ClassroomDistributionDto toDto(ClassroomDistribution cd) {
+        ClassroomDistributionDto dto = new ClassroomDistributionDto();
+        dto.setExamId(cd.getExamId());
+        dto.setDistributions(cd.getDistributions());
+        return dto;
+    }
+
+
+    /**
+     * Map back from DTO to the model (if needed).
+     */
+    public ClassroomDistribution toEntity(ClassroomDistributionDto dto) {
+        return new ClassroomDistribution(
+                dto.getExamId(),
+                dto.getDistributions()
+        );
+    }
 }

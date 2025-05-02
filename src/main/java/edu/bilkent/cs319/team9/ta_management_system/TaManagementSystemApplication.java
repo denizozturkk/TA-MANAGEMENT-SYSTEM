@@ -28,9 +28,6 @@ TaManagementSystemApplication {
 //		String base64Key = Encoders.BASE64.encode(keyBytes);
 //		System.out.println(base64Key);
 
-
-
-
 		SpringApplication.run(TaManagementSystemApplication.class, args);
 	}
 

@@ -18,4 +18,6 @@ public class DistributionDto {
         this.classroomId = classroomId;
         this.studentIds  = studentIds;
     }
+
 }
+

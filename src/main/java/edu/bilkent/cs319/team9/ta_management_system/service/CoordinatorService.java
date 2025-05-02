@@ -9,4 +9,13 @@ public interface CoordinatorService {
     List<Coordinator> findAll();
     Coordinator update(Long id, Coordinator c);
     void delete(Long id);
+
+    void replaceTa(Long coordinatorId,
+                   Long offeringId,
+                   Long oldTaId,
+                   Long newTaId);
+
+    void replaceProctorAssignmentTa(Long coordinatorId,
+                                    Long proctorAssignmentId,
+                                    Long newTaId);
 }

@@ -3,7 +3,9 @@ package edu.bilkent.cs319.team9.ta_management_system.service.impl;
 import edu.bilkent.cs319.team9.ta_management_system.exception.NotFoundException;
 import edu.bilkent.cs319.team9.ta_management_system.model.*;
 import edu.bilkent.cs319.team9.ta_management_system.repository.DeanRepository;
+import edu.bilkent.cs319.team9.ta_management_system.repository.ReportRequestRepository;
 import edu.bilkent.cs319.team9.ta_management_system.service.*;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +25,7 @@ public class DeanServiceImpl implements DeanService {
     private final BusyHourService busyHourService;
     private final ProctorAssignmentService paService;
     private final ExamRoomService examRoomService;
+    private final ReportRequestRepository reportRequestRepo;
 
     @Override
     public Dean create(Dean d) {
@@ -136,5 +139,20 @@ public class DeanServiceImpl implements DeanService {
         }
 
         return result;
+    }
+
+
+    @Override
+    public ReportRequest createReportRequest(ReportRequest request) {
+        // you might validate that the requester actually exists and is a Dean:
+        repo.findById(request.getRequesterId())
+                .orElseThrow(() -> new EntityNotFoundException("Dean not found"));
+        request.setStatus(ReportRequestStatus.PENDING);
+        return reportRequestRepo.save(request);
+    }
+
+    @Override
+    public List<ReportRequest> findRequestsByRequester(Long deanId) {
+        return reportRequestRepo.findAllByRequesterId(deanId);
     }
 }

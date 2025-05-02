@@ -9,11 +9,14 @@ import java.time.LocalDateTime;
 import java.util.Set;
 
 @Entity
-@Data
 @NoArgsConstructor
 @SuperBuilder
+@Data
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Exam {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
     private Long id;
 
     private String examName;
