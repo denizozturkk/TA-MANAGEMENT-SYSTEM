@@ -1,17 +1,20 @@
 package edu.bilkent.cs319.team9.ta_management_system.controller;
 
 import edu.bilkent.cs319.team9.ta_management_system.dto.DistributionDto;
-import edu.bilkent.cs319.team9.ta_management_system.model.AssignmentType;
-import edu.bilkent.cs319.team9.ta_management_system.model.FacultyMember;
-import edu.bilkent.cs319.team9.ta_management_system.model.LeaveRequest;
-import edu.bilkent.cs319.team9.ta_management_system.model.ProctorAssignment;
+import edu.bilkent.cs319.team9.ta_management_system.mapper.EntityMapperService;
+import edu.bilkent.cs319.team9.ta_management_system.model.*;
+import edu.bilkent.cs319.team9.ta_management_system.repository.ClassroomRepository;
 import edu.bilkent.cs319.team9.ta_management_system.service.FacultyMemberService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/faculty-members")
@@ -19,6 +22,8 @@ import java.util.List;
 public class FacultyMemberController {
 
     private final FacultyMemberService facultyMemberService;
+    private final EntityMapperService mapper;
+    private final ClassroomRepository classroomRepository;
 
     /**
      * Create a new FacultyMember
@@ -91,6 +96,7 @@ public class FacultyMemberController {
     /**
      * Approve a specific leave request
      */
+
     @PostMapping("/leave-requests/{requestId}/approve")
     public ResponseEntity<LeaveRequest> approveLeave(@PathVariable Long requestId) {
         return ResponseEntity.ok(facultyMemberService.approveLeaveRequest(requestId));
@@ -104,15 +110,38 @@ public class FacultyMemberController {
         return ResponseEntity.ok(facultyMemberService.rejectLeaveRequest(requestId));
     }
 
+    @PostMapping("/{facultyId}/tas/{taId}/duty-logs")
+    public ResponseEntity<DutyLog> uploadDutyLog(
+            @PathVariable Long facultyId,
+            @PathVariable Long taId,
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("taskType") DutyType taskType,
+            @RequestParam("workload") Long workload,
+            @RequestParam("startTime")
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startTime,
+            @RequestParam("duration") Long duration,
+            @RequestParam("status") DutyStatus status,
+            @RequestParam("classroomIds") List<Long> classroomIds
+    ) {
+        // fetch classrooms
+        Set<Classroom> classrooms = new HashSet<>( classroomRepository.findAllById(classroomIds) );
 
-    @GetMapping("/{facultyId}/distribution/random")
-    public ResponseEntity<List<DistributionDto>> randomDistribution(@PathVariable Long facultyId) {
-        // (optionally check that facultyId exists or has permissions)
-        return ResponseEntity.ok(facultyMemberService.getRandomStudentDistribution());
+        // call service
+        DutyLog created = facultyMemberService.uploadDutyLog(
+                facultyId,
+                taId,
+                file,
+                taskType,
+                workload,
+                startTime,
+                duration,
+                status,
+                classrooms
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(created);
     }
 
-    @GetMapping("/{facultyId}/distribution/alpha")
-    public ResponseEntity<List<DistributionDto>> alphabeticalDistribution(@PathVariable Long facultyId) {
-        return ResponseEntity.ok(facultyMemberService.getAlphabeticalStudentDistribution());
-    }
 }

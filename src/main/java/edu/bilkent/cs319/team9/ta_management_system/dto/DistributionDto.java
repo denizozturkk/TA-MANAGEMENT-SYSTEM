@@ -1,15 +1,21 @@
 package edu.bilkent.cs319.team9.ta_management_system.dto;
 
+import lombok.Data;
+
 import java.util.List;
 
+@Data
 public class DistributionDto {
-    private String courseCode;
-    private List<String> studentIds;
+    private Long examId;
+    private Long classroomId;
+    private List<Long> studentIds;
 
-    public DistributionDto(String courseCode, List<String> studentIds) {
-        this.courseCode = courseCode;
-        this.studentIds = studentIds;
+
+
+    public DistributionDto() {}
+    public DistributionDto(Long examId, Long classroomId, List<Long> studentIds) {
+        this.examId      = examId;
+        this.classroomId = classroomId;
+        this.studentIds  = studentIds;
     }
-
-    // getters & setters
 }

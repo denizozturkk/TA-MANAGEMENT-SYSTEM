@@ -1,15 +1,13 @@
 package edu.bilkent.cs319.team9.ta_management_system.service;
 
 import edu.bilkent.cs319.team9.ta_management_system.dto.DistributionDto;
-import edu.bilkent.cs319.team9.ta_management_system.model.AssignmentType;
-import edu.bilkent.cs319.team9.ta_management_system.model.Exam;
-import edu.bilkent.cs319.team9.ta_management_system.model.FacultyMember;
-import edu.bilkent.cs319.team9.ta_management_system.model.LeaveRequest;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestParam;
+import edu.bilkent.cs319.team9.ta_management_system.model.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public interface FacultyMemberService {
     FacultyMember create(FacultyMember f);
@@ -21,9 +19,17 @@ public interface FacultyMemberService {
 
     void assignProctor(Long examId, AssignmentType mode, Long taId);
 
-    public List<DistributionDto> getRandomStudentDistribution();
-    public List<DistributionDto> getAlphabeticalStudentDistribution();
+
     LeaveRequest approveLeaveRequest(Long requestId);
     LeaveRequest rejectLeaveRequest(Long requestId);
     List<LeaveRequest> listLeaveRequests(Long facultyId);
+    public DutyLog uploadDutyLog(Long facultyId,
+                                 Long taId,
+                                 MultipartFile file,
+                                 DutyType taskType,
+                                 Long workload,
+                                 LocalDateTime startTime,
+                                 Long duration,
+                                 DutyStatus status,
+                                 Set<Classroom> classrooms);
 }

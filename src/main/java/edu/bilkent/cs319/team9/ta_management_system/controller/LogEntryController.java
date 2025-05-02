@@ -55,6 +55,7 @@ public class LogEntryController {
         return ResponseEntity.noContent().build();
     }
 
+    /*
     @GetMapping("/ta/{taId}")
     public ResponseEntity<List<LogEntryDto>> getPastTasksByTa(
             @PathVariable Long taId,
@@ -69,5 +70,5 @@ public class LogEntryController {
                 .map(mapper::toDto)
                 .toList();
         return ResponseEntity.ok(logs);
-    }
+    }*/
 }

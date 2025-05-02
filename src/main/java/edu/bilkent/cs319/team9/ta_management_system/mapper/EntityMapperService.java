@@ -6,6 +6,7 @@ import edu.bilkent.cs319.team9.ta_management_system.model.*;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -212,5 +213,17 @@ public class EntityMapperService {
 
     public TutorGraderApplication toEntity(TutorGraderApplicationDto dto) {
         return modelMapper.map(dto, TutorGraderApplication.class);
+    }
+
+    public DistributionDto toDto(ExamRoomId examRoomId, List<Student> students) {
+        DistributionDto dto = new DistributionDto();
+        dto.setExamId(examRoomId.getExamId());
+        dto.setClassroomId(examRoomId.getClassroomId());
+        dto.setStudentIds(
+                students.stream()
+                        .map(Student::getId)
+                        .collect(Collectors.toList())
+        );
+        return dto;
     }
 }

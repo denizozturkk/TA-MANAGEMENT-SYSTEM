@@ -1,13 +1,11 @@
 package edu.bilkent.cs319.team9.ta_management_system.service.impl;
 
-import edu.bilkent.cs319.team9.ta_management_system.dto.DistributionDto;
 import edu.bilkent.cs319.team9.ta_management_system.model.*;
 import edu.bilkent.cs319.team9.ta_management_system.repository.*;
 import edu.bilkent.cs319.team9.ta_management_system.service.*;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -16,22 +14,21 @@ import org.springframework.web.server.ResponseStatusException;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class FacultyMemberServiceImpl implements FacultyMemberService {
     private final FacultyMemberRepository facultyMemberRepository;
-    private final ExcelFileService excelFileService;
-    private final OfferingRepository offeringRepository;
     private final LeaveRequestRepository leaveRequestRepository;
     private final BusyHourService busyHourService;
     private final ExamService examService;
     private final TAService taService;
     private final ProctorAssignmentService paService;
     private final ExamRoomService examRoomService;
-
+    private final DutyLogRepository dutyLogRepository;
     @Override
     public FacultyMember create(FacultyMember f) {
         return facultyMemberRepository.save(f);
@@ -81,31 +78,6 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
         }
     }
 
-    @Override
-    public List<DistributionDto> getRandomStudentDistribution() {
-        List<Offering> offerings = offeringRepository.findAll();
-        Collections.shuffle(offerings);
-        return mapToDto(offerings);
-    }
-
-    @Override
-    public List<DistributionDto> getAlphabeticalStudentDistribution() {
-        List<Offering> offerings = offeringRepository.findAll();
-        offerings.sort(Comparator.comparing(off -> off.getCourse().getId()));
-        return mapToDto(offerings);
-    }
-
-    private List<DistributionDto> mapToDto(List<Offering> offerings) {
-        return offerings.stream()
-                .map(off -> {
-                    List<String> ids = off.getStudents().stream()
-                            .map(Student::getId)
-                            .map(Object::toString)
-                            .collect(Collectors.toList());
-                    return new DistributionDto(off.getCourse().getCourseCode(), ids);
-                })
-                .collect(Collectors.toList());
-    }
 
     @Override
     public LeaveRequest approveLeaveRequest(Long requestId) {
@@ -133,6 +105,75 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
                 .findByProctorAssignmentExamFacultyIdAndStatus(facultyId, LeaveStatus.WAITING_RESPONSE);
     }
 
+    @Override
+    public DutyLog uploadDutyLog(Long facultyId,
+                                 Long taId,
+                                 MultipartFile file,
+                                 DutyType taskType,
+                                 Long workload,
+                                 LocalDateTime startTime,
+                                 Long duration,
+                                 DutyStatus status,
+                                 Set<Classroom> classrooms) {
+        // 1) Verify faculty exists
+        FacultyMember faculty = facultyMemberRepository.findById(facultyId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "FacultyMember not found with id " + facultyId
+                ));
+
+        // 2) Verify TA exists
+        TA ta = taService.findById(taId);
+        if (ta == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "TA not found with id " + taId
+            );
+        }
+
+        // 3) Validate file
+        if (file.isEmpty()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Uploaded file is empty"
+            );
+        }
+        if (!"application/pdf".equalsIgnoreCase(file.getContentType())) {
+            throw new ResponseStatusException(
+                    HttpStatus.UNSUPPORTED_MEDIA_TYPE,
+                    "Only PDF files are allowed"
+            );
+        }
+
+        try {
+            // 4) Build and save the DutyLog
+            DutyLog dutyLog = DutyLog.builder()
+                    .faculty(faculty)
+                    .ta(ta)
+                    .dateTime(LocalDateTime.now())
+                    .taskType(taskType)
+                    .workload(workload)
+                    .startTime(startTime)
+                    .duration(duration)
+                    .status(status)
+                    .classrooms(classrooms)
+                    // — PDF fields —
+                    .fileName(file.getOriginalFilename())
+                    .contentType(file.getContentType())
+                    .data(file.getBytes())
+                    .build();
+
+            return dutyLogRepository.save(dutyLog);
+
+        } catch (IOException e) {
+            log.error("Failed to store PDF in DutyLog for facultyId={} taId={}", facultyId, taId, e);
+            throw new ResponseStatusException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Failed to store PDF in duty log",
+                    e
+            );
+        }
+    }
 
     /**
      * Manually assigns a single TA to the first available proctor slot for the given exam.
@@ -233,7 +274,7 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
                     .filter(ta -> busyHourService.findByTaId(ta.getId()).stream()
                             .noneMatch(bh -> bh.overlaps(start, end)))
                     .sorted(Comparator.comparing(TA::getTotalWorkload))
-                    .collect(Collectors.toList());
+                    .toList();
 
             Iterator<TA> itr = inDept.iterator();
             while (toAssign > 0 && itr.hasNext()) {
@@ -251,6 +292,7 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
 
         return result;
     }
+
 }
 
 
