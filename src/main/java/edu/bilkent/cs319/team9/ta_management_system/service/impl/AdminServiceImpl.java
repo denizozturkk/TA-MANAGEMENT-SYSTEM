@@ -51,6 +51,8 @@ public class AdminServiceImpl implements AdminService {
         var req = reportRequestRepo.findById(requestId)
                 .orElseThrow(() -> new NotFoundException("ReportRequest not found"));
         req.setStatus(ReportRequestStatus.APPROVED);
+
+
         reportRequestRepo.save(req);
     }
 
