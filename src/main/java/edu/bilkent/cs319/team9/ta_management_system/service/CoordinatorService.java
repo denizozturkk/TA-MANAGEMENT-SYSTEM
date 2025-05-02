@@ -18,4 +18,6 @@ public interface CoordinatorService {
     void replaceProctorAssignmentTa(Long coordinatorId,
                                     Long proctorAssignmentId,
                                     Long newTaId);
+    void swapProctorAssignments(Long coordId, Long paId1, Long paId2);
+
 }

@@ -56,4 +56,11 @@ public class DutyLog {
             nullable       = false
     )
     private byte[] data;
+
+    private String fileNameTa;
+    private String contentTypeTa;
+
+    @Lob
+    @Column(name = "data_ta", columnDefinition = "LONGBLOB", nullable = false)
+    private byte[] dataTa;
 }

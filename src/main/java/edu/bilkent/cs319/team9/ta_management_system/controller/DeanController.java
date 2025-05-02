@@ -18,7 +18,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/deans")
 public class DeanController {
-
     private final DeanService deanService;
     private final ExamService examService;
     private final ExamRoomService examRoomService;
@@ -159,5 +158,14 @@ public class DeanController {
         return ResponseEntity.ok(dtos);
     }
 
+    @PutMapping("/{deanId}/assign-ta-to-offering")
+    public ResponseEntity<Void> assignTaToOffering(
+            @PathVariable Long deanId,
+            @RequestParam Long taId,
+            @RequestParam Long offeringId
+    ) {
+        deanService.addTaToOffering(deanId, taId, offeringId);
+        return ResponseEntity.ok().build();
+    }
 }
 

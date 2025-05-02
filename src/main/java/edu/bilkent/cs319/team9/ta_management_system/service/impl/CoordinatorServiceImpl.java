@@ -10,9 +10,12 @@ import edu.bilkent.cs319.team9.ta_management_system.repository.OfferingRepositor
 import edu.bilkent.cs319.team9.ta_management_system.repository.TARepository;
 import edu.bilkent.cs319.team9.ta_management_system.repository.ProctorAssignmentRepository;
 import edu.bilkent.cs319.team9.ta_management_system.service.CoordinatorService;
+import edu.bilkent.cs319.team9.ta_management_system.service.ProctorAssignmentService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -25,6 +28,7 @@ public class CoordinatorServiceImpl implements CoordinatorService {
     private final OfferingRepository   offeringRepo;
     private final TARepository         taRepo;
     private final ProctorAssignmentRepository     paRepo;
+    private final ProctorAssignmentService paService;
 
     @Override
     public Coordinator create(Coordinator c) {
@@ -89,5 +93,28 @@ public class CoordinatorServiceImpl implements CoordinatorService {
             throw new IllegalArgumentException(
                     "No ProctorAssignment with id=" + paId + " to reassign");
         }
+    }
+    @Override
+    public void swapProctorAssignments(Long coordId, Long paId1, Long paId2) {
+        ProctorAssignment pa1 = paService.findById(paId1);
+        if (pa1 == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "ProctorAssignment 1 not found");
+        }
+
+        ProctorAssignment pa2 = paService.findById(paId2);
+        if (pa2 == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "ProctorAssignment 2 not found");
+        }
+
+        if (!pa1.getExam().getId().equals(pa2.getExam().getId())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Assignments are not for the same exam");
+        }
+
+        TA temp = pa1.getAssignedTA();
+        pa1.setAssignedTA(pa2.getAssignedTA());
+        pa2.setAssignedTA(temp);
+
+        paService.update(pa1.getId(), pa1);
+        paService.update(pa2.getId(), pa2);
     }
 }
