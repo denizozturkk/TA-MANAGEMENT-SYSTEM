@@ -51,16 +51,6 @@ public class EntityMapperService {
         return sr;
     }
 
-    public DutyLogDto toDto(DutyLog d) {
-        DutyLogDto dto = modelMapper.map(d, DutyLogDto.class);
-        dto.setTaId(d.getTa() != null ? d.getTa().getId() : null);
-        dto.setFacultyId(d.getFaculty() != null ? d.getFaculty().getId() : null);
-        dto.setClassroomIds(d.getClassrooms() != null
-                ? d.getClassrooms().stream().map(Classroom::getId).collect(Collectors.toSet())
-                : null);
-        return dto;
-    }
-
     public DutyLog toEntity(DutyLogDto dto) {
         DutyLog d = modelMapper.map(dto, DutyLog.class);
 
@@ -226,24 +216,27 @@ public class EntityMapperService {
         );
         return dto;
     }
-    /**
-     * Map from the service-layer model to the DTO.
-     */
-    public ClassroomDistributionDto toDto(ClassroomDistribution cd) {
-        ClassroomDistributionDto dto = new ClassroomDistributionDto();
-        dto.setExamId(cd.getExamId());
-        dto.setDistributions(cd.getDistributions());
+
+    // Mapper (EntityMapperService)
+    public DutyLogDto toDto(DutyLog dl) {
+        DutyLogDto dto = new DutyLogDto();
+        // Entity fields
+        dto.setId(dl.getId());
+        dto.setTaskType(dl.getTaskType().name());
+        dto.setWorkload(dl.getWorkload().intValue());
+        dto.setStartTime(dl.getStartTime());
+        dto.setDateTime(dl.getDateTime());
+        dto.setStatus(dl.getStatus());
+        // Relationships → just IDs
+        dto.setTaId(dl.getTa().getId());
+        dto.setFacultyId(dl.getFaculty().getId());
+        dto.setClassroomIds(
+                dl.getClassrooms()
+                        .stream()
+                        .map(Classroom::getId)
+                        .collect(Collectors.toSet())
+        );
         return dto;
     }
 
-
-    /**
-     * Map back from DTO to the model (if needed).
-     */
-    public ClassroomDistribution toEntity(ClassroomDistributionDto dto) {
-        return new ClassroomDistribution(
-                dto.getExamId(),
-                dto.getDistributions()
-        );
-    }
 }

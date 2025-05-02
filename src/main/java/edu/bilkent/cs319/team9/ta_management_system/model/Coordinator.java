@@ -10,6 +10,6 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)
-public class Coordinator extends User {
+public class Coordinator extends FacultyMember {
     // nothing extra
 }

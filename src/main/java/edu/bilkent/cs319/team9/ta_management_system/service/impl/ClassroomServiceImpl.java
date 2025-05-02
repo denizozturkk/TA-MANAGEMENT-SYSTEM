@@ -28,6 +28,7 @@ public class ClassroomServiceImpl implements ClassroomService {
     @Override
     @Transactional(readOnly = true)
     public Classroom getClassroom(Long id) {
+
         return classroomRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Classroom not found: " + id));
     }

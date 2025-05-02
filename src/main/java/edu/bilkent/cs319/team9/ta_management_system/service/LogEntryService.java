@@ -12,6 +12,7 @@ public interface LogEntryService {
     List<LogEntry> findAll();
     LogEntry update(Long id, LogEntry l);
     void delete(Long id);
+
 //    List<LogEntry> findByActorId(String actorId);
 //    List<LogEntry> searchLogs(String actorId, LogType type, LocalDateTime startDate, LocalDateTime endDate, Integer limit);
 

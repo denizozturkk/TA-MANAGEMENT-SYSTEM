@@ -1,26 +1,19 @@
 package edu.bilkent.cs319.team9.ta_management_system.controller;
 
-import edu.bilkent.cs319.team9.ta_management_system.dto.ClassroomDistributionDto;
-import edu.bilkent.cs319.team9.ta_management_system.dto.DistributionDto;
+import edu.bilkent.cs319.team9.ta_management_system.dto.DutyLogDto;
 import edu.bilkent.cs319.team9.ta_management_system.mapper.EntityMapperService;
 import edu.bilkent.cs319.team9.ta_management_system.model.*;
 import edu.bilkent.cs319.team9.ta_management_system.repository.ClassroomRepository;
-import edu.bilkent.cs319.team9.ta_management_system.service.ClassroomDistributionService;
 import edu.bilkent.cs319.team9.ta_management_system.service.FacultyMemberService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import com.itextpdf.text.DocumentException;
-import edu.bilkent.cs319.team9.ta_management_system.service.PdfGeneratorService;
 
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/faculty-members")
@@ -30,9 +23,6 @@ public class FacultyMemberController {
     private final FacultyMemberService facultyMemberService;
     private final EntityMapperService mapper;
     private final ClassroomRepository classroomRepository;
-    private final ClassroomDistributionService distributionService;
-    private final PdfGeneratorService pdfGeneratorService;
-
 
     /**
      * Create a new FacultyMember
@@ -78,24 +68,120 @@ public class FacultyMemberController {
         facultyMemberService.delete(id);
         return ResponseEntity.noContent().build();
     }
-    @GetMapping(
-            path = "/{facultyId}/exams/{examId}/distribution/pdf",
-            produces = MediaType.APPLICATION_PDF_VALUE
-    )
-    public ResponseEntity<byte[]> downloadDistributionPdf(
+
+    /**
+     * Assign proctors for an exam, based on mode and optional TA selection
+     */
+    @PostMapping("/{facultyId}/exams/{examId}/proctor")
+    public ResponseEntity<ProctorAssignment> assignProctor(
             @PathVariable Long facultyId,
             @PathVariable Long examId,
-            @RequestParam(defaultValue = "false") boolean random
-    ) {
-        ClassroomDistributionDto dto = distributionService.distribute(examId, random);
-        try {
-            byte[] pdf = pdfGeneratorService.generateDistributionPdf(dto);
-            return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION,
-                            "attachment; filename=distribution_exam_" + examId + ".pdf")
-                    .body(pdf);
-        } catch (DocumentException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
+            @RequestParam AssignmentType mode,
+            @RequestParam(required = false) Long taId
+    )
+    {
+        facultyMemberService.assignProctor(examId, mode, taId);
+        return ResponseEntity.ok().build();
     }
+
+    /**
+     * List pending leave requests for this faculty
+     */
+    @GetMapping("/{facultyId}/leave-requests")
+    public ResponseEntity<List<LeaveRequest>> listLeaveRequests(@PathVariable Long facultyId) {
+        return ResponseEntity.ok(facultyMemberService.listLeaveRequests(facultyId));
+    }
+
+    /**
+     * Approve a specific leave request
+     */
+
+    @PostMapping("/leave-requests/{requestId}/approve")
+    public ResponseEntity<LeaveRequest> approveLeave(@PathVariable Long requestId) {
+        return ResponseEntity.ok(facultyMemberService.approveLeaveRequest(requestId));
+    }
+
+    /**
+     * Reject a specific leave request
+     */
+    @PostMapping("/leave-requests/{requestId}/reject")
+    public ResponseEntity<LeaveRequest> rejectLeave(@PathVariable Long requestId) {
+        return ResponseEntity.ok(facultyMemberService.rejectLeaveRequest(requestId));
+    }
+
+    @PostMapping("/{facultyId}/tas/{taId}/duty-logs")
+    public ResponseEntity<DutyLogDto> uploadDutyLog(
+            @PathVariable Long facultyId,
+            @PathVariable Long taId,
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("taskType") DutyType taskType,
+            @RequestParam("workload") Long workload,
+            @RequestParam("startTime")
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startTime,
+            @RequestParam("duration") Long duration,
+            @RequestParam("status") DutyStatus status,
+            @RequestParam("classroomIds") List<Long> classroomIds
+    ) {
+        // fetch classrooms
+        Set<Classroom> classrooms = new HashSet<>( classroomRepository.findAllById(classroomIds) );
+
+        // call service
+        DutyLog created = facultyMemberService.uploadDutyLog(
+                facultyId,
+                taId,
+                file,
+                taskType,
+                workload,
+                startTime,
+                duration,
+                status,
+                classrooms
+        );
+        DutyLogDto dto = mapper.toDto(created);
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(dto);
+    }
+
+    @PostMapping("/{facultyId}/duty-logs/automatic")
+    public ResponseEntity<DutyLogDto> uploadDutyLogAutomatic(
+            @PathVariable Long facultyId,
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("taskType") DutyType taskType,
+            @RequestParam("workload") Long workload,
+            @RequestParam("startTime")
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startTime,
+            @RequestParam("duration") Long duration,
+            @RequestParam("status") DutyStatus status,
+            @RequestParam("classroomIds") List<Long> classroomIds
+    ) {
+        Set<Classroom> classrooms = new HashSet<>( classroomRepository.findAllById(classroomIds) );
+        DutyLog created = facultyMemberService.uploadDutyLogAutomatic(
+                facultyId,
+                file,
+                taskType,
+                workload,
+                startTime,
+                duration,
+                status,
+                classrooms
+        );
+        DutyLogDto dto = mapper.toDto(created);
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(dto);
+    }
+
+    @PostMapping("/{facultyId}/tas/{taId}/duty-logs/{dutyLogId}/review")
+    public ResponseEntity<DutyLogDto> reviewDutyLog(
+            @PathVariable Long facultyId,
+            @PathVariable Long taId,
+            @PathVariable Long dutyLogId,
+            @RequestParam DutyStatus status) {
+        DutyLog updated = facultyMemberService.reviewDutyLog(facultyId, taId, dutyLogId, status);
+        DutyLogDto dto = mapper.toDto(updated);
+        return ResponseEntity.ok(dto);
+    }
+
+
 }

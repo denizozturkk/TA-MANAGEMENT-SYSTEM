@@ -48,6 +48,7 @@ public class LogEntryServiceImpl implements LogEntryService {
         repo.deleteById(id);
     }
 
+
 //    @Override
 //    @Transactional(readOnly = true)
 //    public List<LogEntry> findByActorId(String actorId) {

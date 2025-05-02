@@ -43,4 +43,17 @@ public class DutyLog {
             inverseJoinColumns = @JoinColumn(name = "classroom_id")
     )
     private Set<Classroom> classrooms;
+
+
+    // --- NEW FIELDS FOR PDF UPLOAD ---
+    private String fileName;
+    private String contentType;
+
+    @Lob
+    @Column(
+            name           = "data",
+            columnDefinition= "LONGBLOB",
+            nullable       = false
+    )
+    private byte[] data;
 }
