@@ -27,8 +27,8 @@ public class ClassroomController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ClassroomDto> get(@PathVariable String roomNumber) {
-        return ResponseEntity.ok(mapper.toDto(classroomService.getClassroom(roomNumber)));
+    public ResponseEntity<ClassroomDto> get(@PathVariable Long id) {
+        return ResponseEntity.ok(mapper.toDto(classroomService.getClassroom(id)));
     }
 
     @GetMapping
@@ -39,15 +39,15 @@ public class ClassroomController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ClassroomDto> update(@PathVariable String roomNumber,
+    public ResponseEntity<ClassroomDto> update(@PathVariable Long id,
                                                @RequestBody ClassroomDto dto) {
-        Classroom updated = classroomService.updateClassroom(roomNumber, mapper.toEntity(dto));
+        Classroom updated = classroomService.updateClassroom(id, mapper.toEntity(dto));
         return ResponseEntity.ok(mapper.toDto(updated));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable String roomNumber) {
-        classroomService.deleteClassroom(roomNumber);
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        classroomService.deleteClassroom(id);
         return ResponseEntity.noContent().build();
     }
 }
