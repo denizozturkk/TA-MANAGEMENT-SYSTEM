@@ -7,11 +7,14 @@ import lombok.experimental.SuperBuilder;
 import java.util.Set;
 
 @Entity
-@Data
 @NoArgsConstructor
 @SuperBuilder
+@Data
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Student {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
     private Long id;
 
     private String studentID;

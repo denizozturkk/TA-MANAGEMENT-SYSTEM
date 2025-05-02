@@ -6,6 +6,7 @@ import edu.bilkent.cs319.team9.ta_management_system.model.*;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -212,5 +213,37 @@ public class EntityMapperService {
 
     public TutorGraderApplication toEntity(TutorGraderApplicationDto dto) {
         return modelMapper.map(dto, TutorGraderApplication.class);
+    }
+
+    public DistributionDto toDto(ExamRoomId examRoomId, List<Student> students) {
+        DistributionDto dto = new DistributionDto();
+        dto.setExamId(examRoomId.getExamId());
+        dto.setClassroomId(examRoomId.getClassroomId());
+        dto.setStudentIds(
+                students.stream()
+                        .map(Student::getId)
+                        .collect(Collectors.toList())
+        );
+        return dto;
+    }
+    /**
+     * Map from the service-layer model to the DTO.
+     */
+    public ClassroomDistributionDto toDto(ClassroomDistribution cd) {
+        ClassroomDistributionDto dto = new ClassroomDistributionDto();
+        dto.setExamId(cd.getExamId());
+        dto.setDistributions(cd.getDistributions());
+        return dto;
+    }
+
+
+    /**
+     * Map back from DTO to the model (if needed).
+     */
+    public ClassroomDistribution toEntity(ClassroomDistributionDto dto) {
+        return new ClassroomDistribution(
+                dto.getExamId(),
+                dto.getDistributions()
+        );
     }
 }
