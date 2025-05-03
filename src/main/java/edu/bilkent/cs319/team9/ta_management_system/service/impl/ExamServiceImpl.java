@@ -18,8 +18,25 @@ public class ExamServiceImpl implements ExamService {
     private final ExamRepository repo;
 
     @Override
-    public Exam create(Exam e) {
-        return repo.save(e);
+    public Exam create(Exam exam) {
+        // Step 1: Detach exam rooms
+        var rooms = exam.getExamRooms();
+        exam.setExamRooms(null);
+
+        // Step 2: Save exam to generate ID
+        Exam saved = repo.save(exam);
+
+        // Step 3: Patch examId into each room's composite key
+        if (rooms != null) {
+            for (var room : rooms) {
+                room.setExam(saved); // set owning side
+                room.getId().setExamId(saved.getId()); // patch composite key
+            }
+            saved.setExamRooms(rooms); // re-attach
+        }
+
+        // Step 4: Save again to persist rooms
+        return repo.save(saved);
     }
 
     @Override
