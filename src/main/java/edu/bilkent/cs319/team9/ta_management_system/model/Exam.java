@@ -40,5 +40,5 @@ public class Exam {
     private Set<ExamRoom> examRooms;
 
     @ManyToOne
-    private DepartmentStaff definedBy;
+    private FacultyMember definedBy;
 }

@@ -109,24 +109,44 @@ public class EntityMapperService {
         return modelMapper.map(dto, Dean.class);
     }
 
-    public ExamDto toDto(Exam e) {
-        ExamDto dto = modelMapper.map(e, ExamDto.class);
-        dto.setOfferingId(e.getOffering() != null ? e.getOffering().getId() : null);
-        dto.setFacultyId(e.getFaculty() != null ? e.getFaculty().getId() : null);
+    public ExamDto toDto(Exam exam) {
+        if ( exam == null ) return null;
+        ExamDto dto = new ExamDto();
+        dto.setId            ( exam.getId() );
+        dto.setExamName      ( exam.getExamName() );
+        dto.setDepartment    ( exam.getDepartment() );
+        dto.setDateTime      ( exam.getDateTime() );
+        dto.setDuration      ( exam.getDuration() );
+        dto.setExamType      ( exam.getExamType() );
+        dto.setNumProctors   ( exam.getNumProctors() );
+        dto.setOfferingId    ( exam.getOffering()      != null ? exam.getOffering().getId() : null );
+        dto.setFacultyId     ( exam.getFaculty()       != null ? exam.getFaculty().getId()  : null );
         return dto;
     }
 
     public Exam toEntity(ExamDto dto) {
-        Exam e = modelMapper.map(dto, Exam.class);
+        if ( dto == null ) return null;
+        Exam exam = Exam.builder()
+                .id           ( dto.getId() )
+                .examName     ( dto.getExamName() )
+                .department   ( dto.getDepartment() )
+                .dateTime     ( dto.getDateTime() )
+                .duration     ( dto.getDuration() )
+                .examType     ( dto.getExamType() )
+                .numProctors  ( dto.getNumProctors() )
+                .build();
+        // you'll need to load these from their services/repositories
         if (dto.getOfferingId() != null) {
-            Offering o = new Offering(); o.setId(dto.getOfferingId());
-            e.setOffering(o);
+            Offering off = new Offering();
+            off.setId(dto.getOfferingId());
+            exam.setOffering(off);
         }
         if (dto.getFacultyId() != null) {
-            FacultyMember fm = new FacultyMember(); fm.setId(dto.getFacultyId());
-            e.setFaculty(fm);
+            FacultyMember fm = new FacultyMember();
+            fm.setId(dto.getFacultyId());
+            exam.setFaculty(fm);
         }
-        return e;
+        return exam;
     }
 
     public ClassroomDto toDto(Classroom c) {
