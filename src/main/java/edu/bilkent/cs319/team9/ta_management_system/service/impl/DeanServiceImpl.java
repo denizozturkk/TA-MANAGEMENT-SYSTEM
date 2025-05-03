@@ -7,6 +7,8 @@ import edu.bilkent.cs319.team9.ta_management_system.repository.ReportRequestRepo
 import edu.bilkent.cs319.team9.ta_management_system.service.*;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +29,9 @@ public class DeanServiceImpl implements DeanService {
     private final OfferingService offeringService;
     private final ExamRoomService examRoomService;
     private final ReportRequestRepository reportRequestRepo;
+    private final AdminService adminService;
+    private final NotificationService notificationService;
+    private final JavaMailSender mailSender;
 
     @Override
     public Dean create(Dean d) {
@@ -145,11 +150,62 @@ public class DeanServiceImpl implements DeanService {
 
     @Override
     public ReportRequest createReportRequest(ReportRequest request) {
-        // you might validate that the requester actually exists and is a Dean:
+        // 1) Validate that the requester exists and is a Dean
         repo.findById(request.getRequesterId())
-                .orElseThrow(() -> new EntityNotFoundException("Dean not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Dean not found: " + request.getRequesterId()));
+
+        // 2) Initialize status and save
         request.setStatus(ReportRequestStatus.PENDING);
-        return reportRequestRepo.save(request);
+        ReportRequest saved = reportRequestRepo.save(request);
+
+        // 3) Look up all admins to notify
+        List<Admin> admins = adminService.findAllAdmins();
+
+        // 4) Build notification and email content
+        String title = "New Report Request";
+        String notifBody = String.format(
+                "Dean (ID %d) requested a %s report from %s to %s.",
+                saved.getRequesterId(),
+                saved.getReportType(),
+                saved.getFromTime().toLocalDate(),
+                saved.getToTime().toLocalDate()
+        );
+        String emailSubject = "Action Required: Report Request Pending";
+        String emailBody = String.format(
+                "Hello Admin,\n\n" +
+                        "A new report request has been submitted:\n" +
+                        "- Request ID: %d\n" +
+                        "- Requested by Dean ID: %d\n" +
+                        "- Report Type: %s\n" +
+                        "- Period: %s to %s\n\n" +
+                        "Please log in to the system to review and approve this request.\n\n" +
+                        "Thank you,\n" +
+                        "TA Management System",
+                saved.getId(),
+                saved.getRequesterId(),
+                saved.getReportType(),
+                saved.getFromTime().toLocalDate(),
+                saved.getToTime().toLocalDate()
+        );
+
+        // 5) Send in-app notifications and emails to each admin
+        for (Admin admin : admins) {
+            // In-app notification
+            notificationService.notifyUser(
+                    admin.getId(),
+                    admin.getEmail(),
+                    title,
+                    notifBody
+            );
+            // Email
+            SimpleMailMessage mail = new SimpleMailMessage();
+            mail.setTo(admin.getEmail());
+            mail.setSubject(emailSubject);
+            mail.setText(emailBody);
+            mailSender.send(mail);
+        }
+
+        return saved;
     }
 
     @Override

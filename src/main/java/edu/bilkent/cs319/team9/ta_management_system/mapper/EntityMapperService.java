@@ -124,21 +124,26 @@ public class EntityMapperService {
             dto.setExamRooms(examRoomDtos);
         }
 
+
         return dto;
     }
 
     public Exam toEntity(ExamDto dto) {
+
         Exam e = modelMapper.map(dto, Exam.class);
 
         if (dto.getOfferingId() != null) {
-            Offering o = new Offering(); o.setId(dto.getOfferingId());
-            e.setOffering(o);
+            Offering off = new Offering();
+            off.setId(dto.getOfferingId());
+            exam.setOffering(off);
         }
 
         if (dto.getFacultyId() != null) {
-            FacultyMember fm = new FacultyMember(); fm.setId(dto.getFacultyId());
-            e.setFaculty(fm);
+            FacultyMember fm = new FacultyMember();
+            fm.setId(dto.getFacultyId());
+            exam.setFaculty(fm);
         }
+
 
         if (dto.getExamRooms() != null) {
             Set<ExamRoom> examRooms = dto.getExamRooms().stream().map(rdto -> {

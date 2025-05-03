@@ -5,6 +5,8 @@ import edu.bilkent.cs319.team9.ta_management_system.mapper.EntityMapperService;
 import edu.bilkent.cs319.team9.ta_management_system.model.DutyLog;
 import edu.bilkent.cs319.team9.ta_management_system.model.DutyStatus;
 import edu.bilkent.cs319.team9.ta_management_system.service.DutyLogService;
+import edu.bilkent.cs319.team9.ta_management_system.service.NotificationService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,6 +21,9 @@ public class DutyLogController {
 
     private final DutyLogService dutyLogService;
     private final EntityMapperService mapper;
+
+    @Autowired
+    private NotificationService notificationService;
 
     public DutyLogController(DutyLogService dutyLogService, EntityMapperService mapper) {
         this.dutyLogService = dutyLogService;
@@ -82,6 +87,21 @@ public class DutyLogController {
 
         dl.setStatus(DutyStatus.SUBMITTED);
         DutyLog updated = dutyLogService.update(id, dl);
+
+
+
+        // Send notification to faculty
+        Long facultyId = updated.getFaculty().getId();
+        String facultyEmail = updated.getFaculty().getEmail();
+        String title = "Duty Log Submitted";
+        String body = String.format(
+                "TA %s has submitted their work for duty ID %d on %s.",
+                updated.getTa().getFirstName(),
+                updated.getId(),
+                updated.getDateTime()
+        );
+        notificationService.notifyUser(facultyId, facultyEmail, title, body);
+
         return ResponseEntity.ok(mapper.toDto(updated));
     }
 }
