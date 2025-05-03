@@ -3,14 +3,15 @@ package edu.bilkent.cs319.team9.ta_management_system.service.impl;
 
 import edu.bilkent.cs319.team9.ta_management_system.dto.*;
 import edu.bilkent.cs319.team9.ta_management_system.exception.NotFoundException;
-import edu.bilkent.cs319.team9.ta_management_system.model.Admin;
-import edu.bilkent.cs319.team9.ta_management_system.model.FacultyMember;
-import edu.bilkent.cs319.team9.ta_management_system.model.ReportRequestStatus;
+import edu.bilkent.cs319.team9.ta_management_system.model.*;
 import edu.bilkent.cs319.team9.ta_management_system.repository.*;
 import edu.bilkent.cs319.team9.ta_management_system.service.AdminService;
+import edu.bilkent.cs319.team9.ta_management_system.service.NotificationService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -25,6 +26,8 @@ public class AdminServiceImpl implements AdminService {
     private final DutyLogRepository        dutyRepo;
     private final ProctorAssignmentRepository proctorRepo;
     private final UserRepository           userRepo;
+    private final DeanRepository deanRepository;
+    private final NotificationService notificationService;
 
 
     private final AdminRepository repo;
@@ -51,9 +54,45 @@ public class AdminServiceImpl implements AdminService {
         var req = reportRequestRepo.findById(requestId)
                 .orElseThrow(() -> new NotFoundException("ReportRequest not found"));
         req.setStatus(ReportRequestStatus.APPROVED);
-
-
         reportRequestRepo.save(req);
+
+        if(req.getReportType() == ReportType.DUTY)
+        {
+            generateDutyReports(req.getFromTime(), req.getToTime());
+        }
+        else if(req.getReportType() == ReportType.PROCTOR)
+        {
+            generateProctorReports(req.getFromTime(), req.getToTime());
+        }
+        else if(req.getReportType() == ReportType.LOG)
+        {
+            generateLogReports(req.getFromTime(), req.getToTime());
+        }
+        else
+        {
+            generateSwapReports(req.getFromTime(), req.getToTime());
+        }
+
+        Dean dean = deanRepository.findById(req.getRequesterId())
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Dean not found: " + req.getRequesterId()));
+
+        String title = "Report Request Approved";
+        String body  = String.format(
+                "Your report request (ID %d) for %s from %s to %s has been approved and generated.",
+                req.getId(),
+                req.getReportType(),
+                req.getFromTime().toLocalDate(),
+                req.getToTime().toLocalDate()
+        );
+
+        notificationService.notifyUser(
+                dean.getId(),
+                dean.getEmail(),
+                title,
+                body
+        );
+
     }
 
     @Override
@@ -114,5 +153,10 @@ public class AdminServiceImpl implements AdminService {
                 .orElseThrow(() -> new NotFoundException("User not found"));
         user.setRole(dto.getNewRole());
         userRepo.save(user);
+    }
+
+    @Override
+    public List<Admin> findAllAdmins() {
+        return repo.findAll();
     }
 }

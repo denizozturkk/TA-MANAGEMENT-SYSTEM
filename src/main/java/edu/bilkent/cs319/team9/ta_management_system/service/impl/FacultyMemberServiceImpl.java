@@ -3,9 +3,13 @@ package edu.bilkent.cs319.team9.ta_management_system.service.impl;
 import edu.bilkent.cs319.team9.ta_management_system.model.*;
 import edu.bilkent.cs319.team9.ta_management_system.repository.*;
 import edu.bilkent.cs319.team9.ta_management_system.service.*;
+import jakarta.mail.internet.MimeMessage;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpStatus;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -15,6 +19,12 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.mail.javamail.MimeMessageHelper;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
+import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.mail.javamail.JavaMailSender;
 
 @Slf4j
 @Service
@@ -29,6 +39,10 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
     private final ProctorAssignmentService paService;
     private final ExamRoomService examRoomService;
     private final DutyLogRepository dutyLogRepository;
+
+    private final JavaMailSender mailSender;
+    private final NotificationService notificationService;
+
     @Override
     public FacultyMember create(FacultyMember f) {
         return facultyMemberRepository.save(f);
@@ -76,27 +90,86 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
                     "Unknown assignment mode: " + mode
             );
         }
+
     }
 
 
     @Override
     public LeaveRequest approveLeaveRequest(Long requestId) {
+        // 1) Load the request
         LeaveRequest req = leaveRequestRepository.findById(requestId)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "No such leave request"));
-        // authorization check omitted…
+
+        // 2) (Optional) Authorization check here…
+
+        // 3) Update status
         req.setStatus(LeaveStatus.ACCEPTED);
-        return leaveRequestRepository.save(req);
+        LeaveRequest saved = leaveRequestRepository.save(req);
+
+        // 4) Send in-app notification to the TA
+        TA ta = saved.getTa();
+        String title = "Leave Request Approved";
+        String body  = String.format(
+                "Your leave request (ID %d) from %s to %s has been approved.",
+                saved.getId(),
+                saved.getStartDate(),
+                saved.getEndDate()
+        );
+        notificationService.notifyUser(
+                ta.getId(),
+                ta.getEmail(),
+                title,
+                body
+        );
+
+        return saved;
     }
 
     @Override
     public LeaveRequest rejectLeaveRequest(Long requestId) {
+        // 1) Load the request
         LeaveRequest req = leaveRequestRepository.findById(requestId)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "No such leave request"
                 ));
+
+        // 2) Update status
         req.setStatus(LeaveStatus.REJECTED);
-        return leaveRequestRepository.save(req);
+        LeaveRequest saved = leaveRequestRepository.save(req);
+
+        // 3) Send in-app notification to the TA
+        TA ta = saved.getTa();
+        String notifTitle = "Leave Request Rejected";
+        String notifBody  = String.format(
+                "Your leave request (ID %d) from %s to %s has been rejected.",
+                saved.getId(),
+                saved.getStartDate(),
+                saved.getEndDate()
+        );
+        notificationService.notifyUser(
+                ta.getId(),
+                ta.getEmail(),
+                notifTitle,
+                notifBody
+        );
+
+        // 4) Send email warning about rejection
+        SimpleMailMessage mail = new SimpleMailMessage();
+        mail.setTo(ta.getEmail());
+        mail.setSubject("Your Leave Request Was Rejected");
+        mail.setText(
+                "Hello " + ta.getFirstName() + ",\n\n" +
+                        "We’re sorry to inform you that your leave request (ID " + saved.getId() +
+                        ") covering " + saved.getStartDate() + " to " + saved.getEndDate() +
+                        " has been rejected.\n\n" +
+                        "Please contact your faculty member if you have any questions.\n\n" +
+                        "Best regards,\n" +
+                        "The Administration Team"
+        );
+        mailSender.send(mail);
+
+        return saved;
     }
 
     @Override
@@ -186,16 +259,59 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
                     .data(file.getBytes())
                     .build();
 
-            return dutyLogRepository.save(dutyLog);
+            // save before notifications
+            dutyLog = dutyLogRepository.save(dutyLog);
 
-        } catch (IOException e) {
-            log.error("Failed to store PDF in DutyLog for facultyId={} taId={}", facultyId, taId, e);
+            // 5) In-app notification
+            String notificationTitle = "Duty Assigned";
+            String notificationBody = String.format(
+                    "You’ve been assigned a %s duty starting at %s for %d minutes.",
+                    taskType, startTime, duration
+            );
+            notificationService.notifyUser(
+                    ta.getId(),
+                    ta.getEmail(),
+                    notificationTitle,
+                    notificationBody
+            );
+
+            // 6) Email with attachment
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setTo(ta.getEmail());
+            helper.setSubject("New Duty Assigned: " + taskType);
+            helper.setText(
+                    "Hello " + ta.getFirstName() + ",\n\n" +
+                            "A new duty has been assigned to you:\n" +
+                            "- Duty Type: " + taskType + "\n" +
+                            "- Start Time: " + startTime + "\n" +
+                            "- Duration: " + duration + " minutes\n" +
+                            "- Workload: " + workload + "\n\n" +
+                            "Attached is the PDF with more details.\n\n" +
+                            "Best regards,\n" +
+                            faculty.getFirstName(),
+                    false
+            );
+
+            helper.addAttachment(
+                    file.getOriginalFilename(),
+                    new ByteArrayResource(file.getBytes()),
+                    file.getContentType()
+            );
+
+            mailSender.send(message);
+            return dutyLog;
+
+        } catch (IOException | MessagingException e) {
+            log.error("Error storing PDF or sending email for facultyId={} taId={}", facultyId, taId, e);
             throw new ResponseStatusException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Failed to store PDF in duty log",
+                    "Failed to store PDF in duty log or send notification",
                     e
             );
         }
+
     }
 
     @Override
@@ -322,7 +438,42 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
                     .filter(pa -> pa.getClassroom().getId().equals(room.getId()))
                     .count();
 
+            System.out.println(alreadyAssigned);
+            System.out.println(needed);
+
             if (alreadyAssigned < needed) {
+
+                SimpleMailMessage msg = new SimpleMailMessage();
+                msg.setTo(ta.getEmail());
+                msg.setSubject("You’ve Been Assigned as an Exam Proctor");
+
+                StringBuilder body = new StringBuilder();
+                body.append("Hello ").append(ta.getFirstName() + " " + ta.getLastName() ).append(",\n\n")
+                        .append("You have been assigned as a proctor for the following exam:\n\n")
+                        .append("  • Course: ").append(exam.getExamName()).append("\n")
+                        .append("  • Date & Time: ").append(exam.getDateTime()).append("\n")
+                        .append("  • Duration: ").append(exam.getDuration()).append(" hrs\n")
+                        .append("  • Classroom: ").append(room.getBuilding()).append(" ")
+                        .append(room.getRoomNumber()).append("\n\n")
+                        .append("Please arrive 10 minutes early and check in at the exam office.\n\n")
+                        .append("Thanks,\n")
+                        .append("TA Management System");
+
+                msg.setText(body.toString());
+                mailSender.send(msg);
+
+
+                notificationService.notifyUser(
+                        ta.getId(),
+                        ta.getEmail(),
+                        "Proctor Assigned",
+                        "You’ve been assigned to proctor the exam on "
+                                + exam.getDateTime()
+                                + " in room "
+                                + room.getBuilding() + " "
+                                + room.getRoomNumber()
+                );
+
                 return paService.create(
                         ProctorAssignment.builder()
                                 .assignedTA(ta)
@@ -396,8 +547,41 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
                         .status(ProctorStatus.ASSIGNED)
                         .build()));
                 toAssign--;
+
+
+                SimpleMailMessage msg = new SimpleMailMessage();
+                msg.setTo(ta.getEmail());
+                msg.setSubject("You’ve Been Assigned as an Exam Proctor");
+
+                StringBuilder body = new StringBuilder();
+                body.append("Hello ").append(ta.getFirstName() + " " + ta.getLastName() ).append(",\n\n")
+                        .append("You have been assigned as a proctor for the following exam:\n\n")
+                        .append("  • Course: ").append(exam.getExamName()).append("\n")
+                        .append("  • Date & Time: ").append(exam.getDateTime()).append("\n")
+                        .append("  • Duration: ").append(exam.getDuration()).append(" hrs\n")
+                        .append("  • Classroom: ").append(room.getBuilding()).append(" ")
+                        .append(room.getRoomNumber()).append("\n\n")
+                        .append("Please arrive 10 minutes early and check in at the exam office.\n\n")
+                        .append("Thanks,\n")
+                        .append("TA Management System");
+
+                msg.setText(body.toString());
+                mailSender.send(msg);
+
+                notificationService.notifyUser(
+                        ta.getId(),
+                        ta.getEmail(),
+                        "Proctor Assigned",
+                        "You’ve been assigned to proctor the exam on "
+                                + exam.getDateTime()
+                                + " in room "
+                                + room.getBuilding() + " "
+                                + room.getRoomNumber()
+                );
             }
         }
+
+
 
         return result;
     }
@@ -455,6 +639,37 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
             taService.update(ta.getId(), ta);  // assume TAService has an update method
         }
 
+
+        // 7) Send in-app notification to the TA
+        String title = (status == DutyStatus.APPROVED)
+                ? "Duty Approved"
+                : "Duty Rejected";
+        String body = (status == DutyStatus.APPROVED)
+                ? String.format("Your duty (ID %d) has been approved.", dutyLogId)
+                : String.format("Your duty (ID %d) has been rejected. Please review and resubmit.", dutyLogId);
+
+        notificationService.notifyUser(
+                ta.getId(),
+                ta.getEmail(),
+                title,
+                body
+        );
+
+        // 8) If rejected, also send an email warning
+        if (status == DutyStatus.REJECTED) {
+            SimpleMailMessage mail = new SimpleMailMessage();
+            mail.setTo(ta.getEmail());
+            mail.setSubject("Duty Submission Rejected");
+            mail.setText(
+                    "Hello " + ta.getFirstName() + ",\n\n" +
+                            "Your submission for duty ID " + dutyLogId + " has been rejected by "
+                            + faculty.getFirstName() + ".\n" +
+                            "Please check the system for feedback and resubmit at your earliest convenience.\n\n" +
+                            "Best regards,\n" +
+                            faculty.getFirstName()
+            );
+            mailSender.send(mail);
+        }
         return updatedLog;
     }
 
