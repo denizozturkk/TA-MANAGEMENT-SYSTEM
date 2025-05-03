@@ -18,4 +18,8 @@ public class DutyLogDto {
     private Long taId;
     private Long facultyId;
     private Set<Long> classroomIds; // Only IDs are enough for serialization
+
+    private Long offeringId;
+
+    private String reason;
 }

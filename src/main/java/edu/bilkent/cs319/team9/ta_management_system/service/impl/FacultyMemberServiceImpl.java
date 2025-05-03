@@ -108,6 +108,7 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
     @Override
     public DutyLog uploadDutyLog(Long facultyId,
                                  Long taId,
+                                 Offering offering,
                                  MultipartFile file,
                                  DutyType taskType,
                                  Long workload,
@@ -131,7 +132,27 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
             );
         }
 
-        // 3) Validate file
+
+        // 3) Department check
+        if (!Objects.equals(faculty.getDepartment(), ta.getDepartment())) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    String.format("TA %d is not in the same department as FacultyMember %d", taId, facultyId)
+            );
+        }
+
+        // 4) Busy-hour conflict check
+        LocalDateTime endTime = startTime.plusMinutes(duration);
+        boolean hasConflict = busyHourService.findByTaId(taId).stream()
+                .anyMatch(bh -> bh.overlaps(startTime, endTime));
+        if (hasConflict) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    String.format("TA %d has a scheduling conflict during %s – %s", taId, startTime, endTime)
+            );
+        }
+
+        // 5) Validate file
         if (file.isEmpty()) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
@@ -146,10 +167,11 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
         }
 
         try {
-            // 4) Build and save the DutyLog
+            // 6) Build and save the DutyLog
             DutyLog dutyLog = DutyLog.builder()
                     .faculty(faculty)
                     .ta(ta)
+                    .offering(offering)
                     .dateTime(LocalDateTime.now())
                     .taskType(taskType)
                     .workload(workload)
@@ -157,6 +179,7 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
                     .duration(duration)
                     .status(status)
                     .classrooms(classrooms)
+
                     // — PDF fields —
                     .fileName(file.getOriginalFilename())
                     .contentType(file.getContentType())
@@ -178,6 +201,7 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
     @Override
     public DutyLog uploadDutyLogAutomatic(
             Long facultyId,
+            Offering offering,
             MultipartFile file,
             DutyType taskType,
             Long workload,
@@ -195,21 +219,47 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
         // 2) determine exam window (to avoid conflicts)
         LocalDateTime endTime = startTime.plusMinutes(duration);
 
-        // 3) pick the first available TA in the same department with lowest workload
-        TA assigned = taService.findAll().stream()
-                // only same department
+        // 3) pick the first available TA in the same department with the lowest workload
+        List<TA> candidates = taService.findAll().stream()
                 .filter(ta -> faculty.getDepartment().equals(ta.getDepartment()))
-                // no busy-hour overlap
+                .filter(ta -> ta.getOfferings().contains(offering))
                 .filter(ta -> busyHourService.findByTaId(ta.getId()).stream()
-                        .noneMatch(bh -> bh.overlaps(startTime, endTime))).min(Comparator.comparing(TA::getTotalWorkload))
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST,
-                        "No available TA found for automatic assignment"
-                ));
-        
+                        .noneMatch(bh -> bh.overlaps(startTime, endTime)))
+                .toList();
+
+        if (candidates.isEmpty()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "No available TA found for automatic assignment"
+            );
+        }
+
+        // 2) find minimum workload
+        Float minWorkload = candidates.stream()
+                .map(TA::getTotalWorkload)
+                .min(Float::compareTo)
+                .orElse(0f);
+
+        // 3) select all with that workload
+        List<TA> leastLoaded = candidates.stream()
+                .filter(ta -> Objects.equals(ta.getTotalWorkload(), minWorkload))
+                .toList();
+
+        // 4) within those, exclude any with adjacent‐day busy hours
+        List<TA> preferred = leastLoaded.stream()
+                .filter(ta -> !hasAdjacentBusyHourConflict(ta, startTime, endTime))
+                .toList();
+
+        // final pick
+        TA assigned = !preferred.isEmpty()
+                ? preferred.get(0)
+                : leastLoaded.get(0);
+
+        // 5) delegate to the existing uploadDutyLog
         return uploadDutyLog(
                 facultyId,
                 assigned.getId(),
+                offering,
                 file,
                 taskType,
                 workload,
@@ -241,6 +291,14 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
             throw new ResponseStatusException(
                     HttpStatus.NOT_FOUND,
                     "No such TA found with id " + taId
+            );
+        }
+
+        // Department check
+        if (!exam.getDepartment().equals(ta.getDepartment())) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    String.format("TA %d is not in department %s", taId, exam.getDepartment())
             );
         }
 
@@ -318,8 +376,14 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
                     .filter(ta -> !chosenTAIds.contains(ta.getId()))
                     .filter(ta -> busyHourService.findByTaId(ta.getId()).stream()
                             .noneMatch(bh -> bh.overlaps(start, end)))
-                    .sorted(Comparator.comparing(TA::getTotalWorkload))
+                    .sorted(Comparator
+                            .comparing(TA::getTotalWorkload)
+                            .thenComparing(ta ->
+                                    hasAdjacentBusyHourConflict(ta, start, end)
+                            )
+                    )
                     .toList();
+
 
             Iterator<TA> itr = inDept.iterator();
             while (toAssign > 0 && itr.hasNext()) {
@@ -343,7 +407,8 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
     public DutyLog reviewDutyLog(Long facultyId,
                                  Long taId,
                                  Long dutyLogId,
-                                 DutyStatus status) {
+                                 DutyStatus status,
+                                 String reason) {
         // 1) Verify faculty exists
         FacultyMember faculty = facultyMemberRepository.findById(facultyId)
                 .orElseThrow(() -> new ResponseStatusException(
@@ -379,6 +444,7 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
         }
         // 5) Update status
         dutyLog.setStatus(status);
+        dutyLog.setReason(reason);
         DutyLog updatedLog = dutyLogRepository.save(dutyLog);
 
         // 6) If approved, bump the TA’s workload
@@ -392,6 +458,21 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
         return updatedLog;
     }
 
+
+    private boolean hasAdjacentBusyHourConflict(TA ta,
+                                                LocalDateTime start,
+                                                LocalDateTime end) {
+        LocalDateTime prevStart = start.minusDays(1);
+        LocalDateTime prevEnd   = end.minusDays(1);
+        LocalDateTime nextStart = start.plusDays(1);
+        LocalDateTime nextEnd   = end.plusDays(1);
+
+        return busyHourService.findByTaId(ta.getId()).stream()
+                .anyMatch(bh ->
+                        bh.overlaps(prevStart, prevEnd) ||
+                                bh.overlaps(nextStart, nextEnd)
+                );
+    }
 }
 
 

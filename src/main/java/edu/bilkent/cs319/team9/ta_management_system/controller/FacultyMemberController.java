@@ -6,6 +6,7 @@ import edu.bilkent.cs319.team9.ta_management_system.dto.DutyLogDto;
 import edu.bilkent.cs319.team9.ta_management_system.mapper.EntityMapperService;
 import edu.bilkent.cs319.team9.ta_management_system.model.*;
 import edu.bilkent.cs319.team9.ta_management_system.repository.ClassroomRepository;
+import edu.bilkent.cs319.team9.ta_management_system.repository.OfferingRepository;
 import edu.bilkent.cs319.team9.ta_management_system.service.ClassroomDistributionService;
 import edu.bilkent.cs319.team9.ta_management_system.service.FacultyMemberService;
 import edu.bilkent.cs319.team9.ta_management_system.service.PdfGeneratorService;
@@ -17,6 +18,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -31,6 +33,7 @@ public class FacultyMemberController {
     private final ClassroomRepository classroomRepository;
     private final ClassroomDistributionService distributionService;
     private final PdfGeneratorService pdfGeneratorService;
+    private final OfferingRepository offeringRepository;
 
     /**
      * Create a new FacultyMember
@@ -124,32 +127,25 @@ public class FacultyMemberController {
             @RequestParam("file") MultipartFile file,
             @RequestParam("taskType") DutyType taskType,
             @RequestParam("workload") Long workload,
+            @RequestParam("offeringId") Long offeringId,
             @RequestParam("startTime")
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startTime,
             @RequestParam("duration") Long duration,
             @RequestParam("status") DutyStatus status,
             @RequestParam("classroomIds") List<Long> classroomIds
     ) {
-        // fetch classrooms
         Set<Classroom> classrooms = new HashSet<>( classroomRepository.findAllById(classroomIds) );
+        Offering offering = offeringRepository.findById(offeringId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Offering not found with id " + offeringId
+                ));
 
-        // call service
         DutyLog created = facultyMemberService.uploadDutyLog(
-                facultyId,
-                taId,
-                file,
-                taskType,
-                workload,
-                startTime,
-                duration,
-                status,
-                classrooms
+                facultyId, taId, offering, file, taskType,
+                workload, startTime, duration, status, classrooms
         );
-        DutyLogDto dto = mapper.toDto(created);
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(dto);
-    }
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(mapper.toDto(created));    }
 
     @PostMapping("/{facultyId}/duty-logs/automatic")
     public ResponseEntity<DutyLogDto> uploadDutyLogAutomatic(
@@ -157,6 +153,7 @@ public class FacultyMemberController {
             @RequestParam("file") MultipartFile file,
             @RequestParam("taskType") DutyType taskType,
             @RequestParam("workload") Long workload,
+            @RequestParam("offeringId") Long offeringId,
             @RequestParam("startTime")
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startTime,
             @RequestParam("duration") Long duration,
@@ -164,20 +161,17 @@ public class FacultyMemberController {
             @RequestParam("classroomIds") List<Long> classroomIds
     ) {
         Set<Classroom> classrooms = new HashSet<>( classroomRepository.findAllById(classroomIds) );
+        Offering offering = offeringRepository.findById(offeringId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Offering not found with id " + offeringId
+                ));
+
         DutyLog created = facultyMemberService.uploadDutyLogAutomatic(
-                facultyId,
-                file,
-                taskType,
-                workload,
-                startTime,
-                duration,
-                status,
-                classrooms
+                facultyId, offering, file, taskType,
+                workload, startTime, duration, status, classrooms
         );
-        DutyLogDto dto = mapper.toDto(created);
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(dto);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(mapper.toDto(created));
     }
 
     @PostMapping("/{facultyId}/tas/{taId}/duty-logs/{dutyLogId}/review")
@@ -185,8 +179,9 @@ public class FacultyMemberController {
             @PathVariable Long facultyId,
             @PathVariable Long taId,
             @PathVariable Long dutyLogId,
-            @RequestParam DutyStatus status) {
-        DutyLog updated = facultyMemberService.reviewDutyLog(facultyId, taId, dutyLogId, status);
+            @RequestParam DutyStatus status,
+            @RequestParam(required = false) String reason ) {
+        DutyLog updated = facultyMemberService.reviewDutyLog(facultyId, taId, dutyLogId, status, reason);
         DutyLogDto dto = mapper.toDto(updated);
         return ResponseEntity.ok(dto);
     }

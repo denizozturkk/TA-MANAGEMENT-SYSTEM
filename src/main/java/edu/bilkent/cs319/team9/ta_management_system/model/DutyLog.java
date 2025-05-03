@@ -56,4 +56,12 @@ public class DutyLog {
             nullable       = false
     )
     private byte[] data;
+
+
+    @Column(name = "reason", length = 500)
+    private String reason;
+
+    @ManyToOne
+    @JoinColumn(name = "offering_id", nullable = false)
+    private Offering offering;
 }
