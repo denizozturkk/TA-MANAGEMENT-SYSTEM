@@ -1,40 +1,55 @@
 package edu.bilkent.cs319.team9.ta_management_system.controller;
 
+import edu.bilkent.cs319.team9.ta_management_system.dto.OfferingDto;
 import edu.bilkent.cs319.team9.ta_management_system.model.Offering;
 import edu.bilkent.cs319.team9.ta_management_system.service.OfferingService;
+import edu.bilkent.cs319.team9.ta_management_system.mapper.EntityMapperService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/offerings")
 public class OfferingController {
+
     private final OfferingService offeringService;
-    public OfferingController(OfferingService os) {
-        this.offeringService = os;
+    private final EntityMapperService mapper;
+
+    public OfferingController(OfferingService offeringService, EntityMapperService mapper) {
+        this.offeringService = offeringService;
+        this.mapper = mapper;
     }
 
     @PostMapping
-    public ResponseEntity<Offering> create(@RequestBody Offering o) {
-        return new ResponseEntity<>(offeringService.create(o), HttpStatus.CREATED);
+    public ResponseEntity<OfferingDto> create(@RequestBody OfferingDto dto) {
+        Offering entity = mapper.toEntity(dto);
+        Offering saved = offeringService.create(entity);
+        return new ResponseEntity<>(mapper.toDto(saved), HttpStatus.CREATED);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Offering> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(offeringService.findById(id));
+    public ResponseEntity<OfferingDto> getById(@PathVariable Long id) {
+        Offering offering = offeringService.findById(id);
+        return ResponseEntity.ok(mapper.toDto(offering));
     }
 
     @GetMapping
-    public ResponseEntity<List<Offering>> getAll() {
-        return ResponseEntity.ok(offeringService.findAll());
+    public ResponseEntity<List<OfferingDto>> getAll() {
+        List<OfferingDto> dtos = offeringService.findAll()
+                .stream()
+                .map(mapper::toDto)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(dtos);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Offering> update(@PathVariable Long id,
-                                           @RequestBody Offering o) {
-        return ResponseEntity.ok(offeringService.update(id, o));
+    public ResponseEntity<OfferingDto> update(@PathVariable Long id, @RequestBody OfferingDto dto) {
+        Offering entity = mapper.toEntity(dto);
+        Offering updated = offeringService.update(id, entity);
+        return ResponseEntity.ok(mapper.toDto(updated));
     }
 
     @DeleteMapping("/{id}")

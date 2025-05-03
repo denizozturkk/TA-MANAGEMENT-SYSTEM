@@ -7,6 +7,7 @@ import edu.bilkent.cs319.team9.ta_management_system.mapper.EntityMapperService;
 import edu.bilkent.cs319.team9.ta_management_system.model.*;
 import edu.bilkent.cs319.team9.ta_management_system.repository.ClassroomRepository;
 import edu.bilkent.cs319.team9.ta_management_system.repository.OfferingRepository;
+import edu.bilkent.cs319.team9.ta_management_system.repository.ExamRepository;
 import edu.bilkent.cs319.team9.ta_management_system.service.ClassroomDistributionService;
 import edu.bilkent.cs319.team9.ta_management_system.service.FacultyMemberService;
 import edu.bilkent.cs319.team9.ta_management_system.service.PdfGeneratorService;
@@ -34,6 +35,7 @@ public class FacultyMemberController {
     private final ClassroomDistributionService distributionService;
     private final PdfGeneratorService pdfGeneratorService;
     private final OfferingRepository offeringRepository;
+    private final ExamRepository examRepository;
 
     /**
      * Create a new FacultyMember
@@ -195,16 +197,33 @@ public class FacultyMemberController {
             @PathVariable Long examId,
             @RequestParam(defaultValue = "false") boolean random
     ) {
-        ClassroomDistributionDto dto = distributionService.distribute(examId, random);
-        try {
-            byte[] pdf = pdfGeneratorService.generateDistributionPdf(dto);
-            return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION,
-                            "attachment; filename=distribution_exam_" + examId + ".pdf")
-                    .body(pdf);
-        } catch (DocumentException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
+        // 1) Load the Exam (with its Offering→Course, ExamRooms→Classroom, Offering→Students)
+        Exam exam = examRepository.findById(examId)
+                .orElseThrow(() -> new NoSuchElementException("Exam not found: " + examId));
 
+        // 2) Extract these for the filename
+        String courseCode = exam.getOffering().getCourse().getCourseCode();
+        String examName   = exam.getExamName();
+
+        // 3) Compute the distribution DTO
+        ClassroomDistributionDto dto = distributionService.distribute(examId, random);
+
+        // 4) Generate the PDF bytes
+        byte[] pdf;
+        try {
+            // if random==false then we want alphabetical ordering, so pass !random
+            pdf = pdfGeneratorService.generateDistributionPdf(exam, dto, !random);
+        } catch (DocumentException e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .build();
+        }
+
+        // 5) Return the file, naming it like "CS101_Midterm1.pdf"
+        String filename = courseCode + "_" + examName + ".pdf";
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf);
+    }
 }

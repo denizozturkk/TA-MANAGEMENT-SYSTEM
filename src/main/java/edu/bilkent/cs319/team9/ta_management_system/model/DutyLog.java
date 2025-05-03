@@ -58,10 +58,19 @@ public class DutyLog {
     private byte[] data;
 
 
+
     @Column(name = "reason", length = 500)
     private String reason;
 
     @ManyToOne
     @JoinColumn(name = "offering_id", nullable = false)
     private Offering offering;
+
+    private String fileNameTa;
+    private String contentTypeTa;
+
+    @Lob
+    @Column(name = "data_ta", columnDefinition = "LONGBLOB", nullable = false)
+    private byte[] dataTa;
+
 }
