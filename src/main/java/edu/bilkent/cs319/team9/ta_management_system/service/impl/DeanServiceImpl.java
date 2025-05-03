@@ -26,6 +26,7 @@ public class DeanServiceImpl implements DeanService {
     private final TAService taService;
     private final BusyHourService busyHourService;
     private final ProctorAssignmentService paService;
+    private final OfferingService offeringService;
     private final ExamRoomService examRoomService;
     private final ReportRequestRepository reportRequestRepo;
     private final AdminService adminService;
@@ -210,5 +211,23 @@ public class DeanServiceImpl implements DeanService {
     @Override
     public List<ReportRequest> findRequestsByRequester(Long deanId) {
         return reportRequestRepo.findAllByRequesterId(deanId);
+    }
+    @Override
+    public void addTaToOffering(Long deanId, Long taId, Long offeringId) {
+        // Validate Dean exists
+        findById(deanId);
+
+        // Load TA and Offering
+        TA ta = taService.findById(taId);
+        if (ta == null) throw new NotFoundException("TA", taId);
+
+        Offering offering = offeringService.findById(offeringId);
+        if (offering == null) throw new NotFoundException("Offering", offeringId);
+
+        // Add offering to TA
+        ta.getOfferings().add(offering);
+        offering.getTas().add(ta);
+
+        taService.update(ta.getId(), ta); // Persist the TA
     }
 }

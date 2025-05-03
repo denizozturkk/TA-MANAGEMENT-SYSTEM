@@ -109,44 +109,63 @@ public class EntityMapperService {
         return modelMapper.map(dto, Dean.class);
     }
 
-    public ExamDto toDto(Exam exam) {
-        if ( exam == null ) return null;
-        ExamDto dto = new ExamDto();
-        dto.setId            ( exam.getId() );
-        dto.setExamName      ( exam.getExamName() );
-        dto.setDepartment    ( exam.getDepartment() );
-        dto.setDateTime      ( exam.getDateTime() );
-        dto.setDuration      ( exam.getDuration() );
-        dto.setExamType      ( exam.getExamType() );
-        dto.setNumProctors   ( exam.getNumProctors() );
-        dto.setOfferingId    ( exam.getOffering()      != null ? exam.getOffering().getId() : null );
-        dto.setFacultyId     ( exam.getFaculty()       != null ? exam.getFaculty().getId()  : null );
+    public ExamDto toDto(Exam e) {
+        ExamDto dto = modelMapper.map(e, ExamDto.class);
+        dto.setOfferingId(e.getOffering() != null ? e.getOffering().getId() : null);
+        dto.setFacultyId(e.getFaculty() != null ? e.getFaculty().getId() : null);
+
+        if (e.getExamRooms() != null) {
+            List<ExamRoomDto> examRoomDtos = e.getExamRooms().stream().map(er -> {
+                ExamRoomDto rdto = new ExamRoomDto();
+                rdto.setClassroomId(er.getClassroom().getId());
+                rdto.setNumProctors(er.getNumProctors());
+                return rdto;
+            }).toList();
+            dto.setExamRooms(examRoomDtos);
+        }
+
+
         return dto;
     }
 
     public Exam toEntity(ExamDto dto) {
-        if ( dto == null ) return null;
-        Exam exam = Exam.builder()
-                .id           ( dto.getId() )
-                .examName     ( dto.getExamName() )
-                .department   ( dto.getDepartment() )
-                .dateTime     ( dto.getDateTime() )
-                .duration     ( dto.getDuration() )
-                .examType     ( dto.getExamType() )
-                .numProctors  ( dto.getNumProctors() )
-                .build();
-        // you'll need to load these from their services/repositories
+
+        Exam e = modelMapper.map(dto, Exam.class);
+
         if (dto.getOfferingId() != null) {
             Offering off = new Offering();
             off.setId(dto.getOfferingId());
             exam.setOffering(off);
         }
+
         if (dto.getFacultyId() != null) {
             FacultyMember fm = new FacultyMember();
             fm.setId(dto.getFacultyId());
             exam.setFaculty(fm);
         }
-        return exam;
+
+
+        if (dto.getExamRooms() != null) {
+            Set<ExamRoom> examRooms = dto.getExamRooms().stream().map(rdto -> {
+                ExamRoom er = new ExamRoom();
+                Classroom classroom = new Classroom(); classroom.setId(rdto.getClassroomId());
+                er.setClassroom(classroom);
+                er.setNumProctors(rdto.getNumProctors());
+
+                ExamRoomId id = new ExamRoomId(); // key is composed of exam + classroom
+                id.setClassroomId(rdto.getClassroomId());
+                er.setId(id);
+
+                er.setExam(e); // back-reference
+                return er;
+            }).collect(Collectors.toSet());
+
+            // Update embedded IDs now that `e` has an ID
+            e.setExamRooms(examRooms);
+            examRooms.forEach(er -> er.getId().setExamId(e.getId()));
+        }
+
+        return e;
     }
 
     public ClassroomDto toDto(Classroom c) {
@@ -258,5 +277,83 @@ public class EntityMapperService {
         );
         return dto;
     }
+
+    public OfferingDto toDto(Offering offering) {
+        OfferingDto dto = new OfferingDto();
+        dto.setId(offering.getId());
+        dto.setSection(offering.getSection());
+        dto.setSemester(offering.getSemester());
+        dto.setYear(offering.getYear());
+
+        dto.setInstructorId(offering.getInstructor() != null ? offering.getInstructor().getId() : null);
+        dto.setCourseId(offering.getCourse() != null ? offering.getCourse().getId() : null);
+        dto.setSemesterDataId(offering.getSemesterData() != null ? offering.getSemesterData().getId() : null);
+
+        dto.setTaIds(offering.getTas() != null ?
+                offering.getTas().stream().map(TA::getId).collect(Collectors.toSet()) : null);
+
+        dto.setStudentIds(offering.getStudents() != null ?
+                offering.getStudents().stream().map(Student::getId).collect(Collectors.toSet()) : null);
+
+        dto.setExamIds(offering.getExams() != null ?
+                offering.getExams().stream().map(Exam::getId).collect(Collectors.toSet()) : null);
+        return dto;
+    }
+
+    public Offering toEntity(OfferingDto dto) {
+        Offering offering = new Offering();
+        offering.setId(dto.getId());
+        offering.setSection(dto.getSection());
+        offering.setSemester(dto.getSemester());
+        offering.setYear(dto.getYear());
+
+        if (dto.getInstructorId() != null) {
+            FacultyMember instructor = new FacultyMember();
+            instructor.setId(dto.getInstructorId());
+            offering.setInstructor(instructor);
+        }
+
+        if (dto.getCourseId() != null) {
+            Course course = new Course();
+            course.setId(dto.getCourseId());
+            offering.setCourse(course);
+        }
+
+        if (dto.getSemesterDataId() != null) {
+            SemesterData sd = new SemesterData();
+            sd.setId(dto.getSemesterDataId());
+            offering.setSemesterData(sd);
+        }
+
+        if (dto.getTaIds() != null) {
+            Set<TA> tas = dto.getTaIds().stream().map(id -> {
+                TA ta = new TA();
+                ta.setId(id);
+                return ta;
+            }).collect(Collectors.toSet());
+            offering.setTas(tas);
+        }
+
+        if (dto.getStudentIds() != null) {
+            Set<Student> students = dto.getStudentIds().stream().map(id -> {
+                Student student = new Student();
+                student.setId(id);
+                return student;
+            }).collect(Collectors.toSet());
+            offering.setStudents(students);
+        }
+
+        if (dto.getExamIds() != null) {
+            Set<Exam> exams = dto.getExamIds().stream().map(id -> {
+                Exam exam = new Exam();
+                exam.setId(id);
+                return exam;
+            }).collect(Collectors.toSet());
+            offering.setExams(exams);
+        }
+
+        return offering;
+    }
+
 
 }

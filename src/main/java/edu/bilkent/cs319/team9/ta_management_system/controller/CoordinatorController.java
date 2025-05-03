@@ -69,4 +69,15 @@ public class CoordinatorController {
         coordinatorService.replaceProctorAssignmentTa(coordId, paId, newTaId);
         return ResponseEntity.ok().build();
     }
+
+    @PutMapping("/{coordId}/proctor-assignments/swap")
+    public ResponseEntity<Void> swapProctorAssignments(
+            @PathVariable Long coordId,
+            @RequestParam Long paId1,
+            @RequestParam Long paId2) {
+
+        coordinatorService.swapProctorAssignments(coordId, paId1, paId2);
+        return ResponseEntity.ok().build();
+    }
+
 }

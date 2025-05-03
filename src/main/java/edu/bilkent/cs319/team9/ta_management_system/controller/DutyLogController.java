@@ -10,7 +10,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -61,7 +63,8 @@ public class DutyLogController {
     @PostMapping("/{id}/submit")
     public ResponseEntity<DutyLogDto> submit(
             @PathVariable Long id,
-            @RequestParam("taId") Long taId) {
+            @RequestParam("taId") Long taId,
+            @RequestParam(value = "file", required = false) MultipartFile file) {
 
         DutyLog dl = dutyLogService.findById(id);
         if (dl == null) {
@@ -69,6 +72,17 @@ public class DutyLogController {
         }
         if (dl.getTa() == null || !dl.getTa().getId().equals(taId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        // Save TA-submitted file (separately from faculty file)
+        if (file != null && !file.isEmpty()) {
+            try {
+                dl.setFileNameTa(file.getOriginalFilename());
+                dl.setContentTypeTa(file.getContentType());
+                dl.setDataTa(file.getBytes());
+            } catch (IOException e) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            }
         }
 
         dl.setStatus(DutyStatus.SUBMITTED);

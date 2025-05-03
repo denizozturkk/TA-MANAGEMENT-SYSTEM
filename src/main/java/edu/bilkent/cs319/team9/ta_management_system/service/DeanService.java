@@ -19,4 +19,5 @@ public interface DeanService {
      * First uses same‐department TAs, then cross‐dept fallback.
      */
     List<ProctorAssignment> assignProctors(Long deanId, Long examId);
+    void addTaToOffering(Long deanId, Long taId, Long offeringId);
 }
