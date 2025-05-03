@@ -145,13 +145,13 @@ public class EntityMapperService {
         if (dto.getOfferingId() != null) {
             Offering off = new Offering();
             off.setId(dto.getOfferingId());
-            exam.setOffering(off);
+            e.setOffering(off);
         }
 
         if (dto.getFacultyId() != null) {
             FacultyMember fm = new FacultyMember();
             fm.setId(dto.getFacultyId());
-            exam.setFaculty(fm);
+            e.setFaculty(fm);
         }
 
 
