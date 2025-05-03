@@ -25,6 +25,7 @@ public interface FacultyMemberService {
     List<LeaveRequest> listLeaveRequests(Long facultyId);
     DutyLog uploadDutyLog(Long facultyId,
                                  Long taId,
+                                 Offering offering,
                                  MultipartFile file,
                                  DutyType taskType,
                                  Long workload,
@@ -35,6 +36,7 @@ public interface FacultyMemberService {
 
     DutyLog uploadDutyLogAutomatic(
             Long facultyId,
+            Offering offering,
             MultipartFile file,
             DutyType taskType,
             Long workload,
@@ -44,6 +46,6 @@ public interface FacultyMemberService {
             Set<Classroom> classrooms
     );
 
-    DutyLog reviewDutyLog(Long facultyId, Long taId, Long dutyLogId, DutyStatus status);
+    DutyLog reviewDutyLog(Long facultyId, Long taId, Long dutyLogId, DutyStatus status, String reason);
 
 }

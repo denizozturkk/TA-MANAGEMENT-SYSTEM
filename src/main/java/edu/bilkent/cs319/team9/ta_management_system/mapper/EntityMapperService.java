@@ -73,6 +73,16 @@ public class EntityMapperService {
             d.setClassrooms(classrooms);
         }
 
+        if (dto.getOfferingId() != null) {
+            Offering off = new Offering();
+            off.setId(dto.getOfferingId());
+             d.setOffering(off);
+        }
+
+        if (dto.getReason() != null) {
+            d.setReason(dto.getReason());
+        }
+
         return d;
     }
 
@@ -266,6 +276,7 @@ public class EntityMapperService {
         dto.setStartTime(dl.getStartTime());
         dto.setDateTime(dl.getDateTime());
         dto.setStatus(dl.getStatus());
+        dto.setReason(dl.getReason());
         // Relationships → just IDs
         dto.setTaId(dl.getTa().getId());
         dto.setFacultyId(dl.getFaculty().getId());
@@ -275,6 +286,11 @@ public class EntityMapperService {
                         .map(Classroom::getId)
                         .collect(Collectors.toSet())
         );
+
+        dto.setOfferingId(dl.getOffering() != null
+            ? dl.getOffering().getId()
+                : null
+                );
         return dto;
     }
 
