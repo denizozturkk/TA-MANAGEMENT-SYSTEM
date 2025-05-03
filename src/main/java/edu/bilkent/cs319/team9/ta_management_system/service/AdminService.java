@@ -27,4 +27,6 @@ public interface AdminService {
     // --- system management ---
     void updateApplication();   // e.g. pull new release, run migrations, etc.
     void authorizeActor(AuthorizeActorRequestDto dto);
+
+    List<Admin> findAllAdmins();
 }
