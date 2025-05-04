@@ -1,111 +1,186 @@
-import React from "react";
-import avatar from "../User/avatar3.jpg"; // <- avatar3.jpg yolu
+import React, { useState } from "react";
+import { NavLink, Outlet } from "react-router-dom";
 
-const EmployeeHeader = () => {
+const TA = () => {
+  const [open, setOpen] = useState({
+    workload: false,
+    leave: false,
+    swap: false,
+  });
+
+  const toggle = (key) =>
+    setOpen((o) => ({ ...o, [key]: !o[key] }));
+
+  const linkClass = ({ isActive }) =>
+    isActive
+      ? "text-white fw-bold d-inline-block"
+      : "text-light d-inline-block";
+
   return (
-    <div className="header">
-      <nav className="navbar py-4">
-        <div className="container-xxl">
-          {/* Sağ taraftaki ikonlar */}
-          <div className="h-right d-flex align-items-center order-1">
+    <div className="container-xxl">
+      <div className="row">
+        {/* Sidebar */}
+        <div className="col-lg-3">
+          <div
+            className="sidebar px-4 py-4 py-md-5 me-0 d-flex flex-column"
+            style={{ backgroundColor: "purple", minHeight: "100vh" }}
+          >
+            {/* Brand */}
+            <a
+              href="/ta"
+              className="mb-4 brand-icon text-white d-flex align-items-center"
+            >
+              <svg
+                width="35"
+                height="35"
+                fill="currentColor"
+                className="me-2"
+                viewBox="0 0 16 16"
+              >
+                {/* …SVG paths… */}
+              </svg>
+              <span className="h5 mb-0">My-Task TA</span>
+            </a>
 
-            {/* Bildirimler */}
-            <div className="dropdown notifications">
-              <a className="nav-link dropdown-toggle pulse" href="#" data-bs-toggle="dropdown">
-                <i className="icofont-alarm fs-5"></i>
-                <span className="pulse-ring"></span>
-              </a>
-              <div className="dropdown-menu dropdown-menu-sm-end p-0 m-0 shadow border-0">
-                <div className="card border-0 w380">
-                  <div className="card-header p-3">
-                    <h5 className="mb-0 d-flex justify-content-between">
-                      <span>Notifications</span>
-                      <span className="badge text-white">11</span>
-                    </h5>
-                  </div>
-                  <div className="card-body">
-                    <ul className="list-unstyled mb-0">
-                      <li className="py-2 mb-1 border-bottom">
-                        <a href="/viewnotification" className="d-flex">
-                          <img className="avatar rounded-circle" src={avatar} alt="User Avatar" />
-                          <div className="flex-fill ms-2">
-                            <p className="d-flex justify-content-between mb-0">
-                              <span className="fw-bold">Anıl Yeşil</span>
-                              <small>New Notification</small>
-                            </p>
-                            <span>You've been assigned a task</span>
-                          </div>
-                        </a>
-                      </li>
-                    </ul>
-                  </div>
-                  <a className="card-footer text-center" href="/viewnotification">View all notifications</a>
+            <ul className="menu-list flex-grow-1">
+              {/* ─────────── Workload ─────────── */}
+              <li className="mb-3">
+                <div className="d-flex justify-content-between align-items-center">
+                  <NavLink to="/ta/workload/view" className={linkClass}>
+                    <i className="icofont-hour-glass fs-5 me-2"></i>
+                    Workload
+                  </NavLink>
+                  <button
+                    type="button"
+                    className="btn btn-link text-light p-0"
+                    onClick={() => toggle("workload")}
+                  >
+                    <i
+                      className={`icofont-rounded-${
+                        open.workload ? "up" : "down"
+                      }`}
+                    ></i>
+                  </button>
                 </div>
-              </div>
-            </div>
+                {open.workload && (
+                  <ul className="ps-3 mt-2">
+                    <li className="mb-1">
+                      <NavLink to="/ta/workload/view" className={linkClass}>
+                        View Workload
+                      </NavLink>
+                    </li>
+                    <li>
+                      <NavLink to="/ta/workload/report" className={linkClass}>
+                        Report Workload
+                      </NavLink>
+                    </li>
+                  </ul>
+                )}
+              </li>
 
-            {/* Kullanıcı Menüsü */}
-            <div className="dropdown user-profile d-flex align-items-center ms-3">
-              <div className="u-info me-2 text-end">
-                <p className="mb-0">
-                  <span className="fw-bold">Anıl Yeşil</span>
-                </p>
-                <small>TA Profile</small>
-              </div>
-              <a className="nav-link dropdown-toggle p-0" href="#" data-bs-toggle="dropdown">
-                <img className="avatar lg rounded-circle img-thumbnail" src={avatar} alt="profile" />
-              </a>
-              <div className="dropdown-menu dropdown-menu-end shadow border-0 p-0">
-                <div className="card w280 border-0">
-                  <div className="card-body pb-0">
-                    <div className="d-flex py-1">
-                      <img className="avatar rounded-circle" src={avatar} alt="profile" />
-                      <div className="ms-3">
-                        <p className="mb-0 fw-bold">Anıl Yeşil</p>
-                        <small>anil.yesil@bilkent.edu.tr</small>
-                      </div>
-                    </div>
-                    <hr className="dropdown-divider border-dark" />
-                  </div>
-                  <div className="list-group m-2">
-                    <a href="/viewprofile" className="list-group-item list-group-item-action border-0">
-                      <i className="icofont-user me-2"></i> View Profile
-                    </a>
-                    <a href="/changepassword" className="list-group-item list-group-item-action border-0">
-                      <i className="icofont-lock me-2"></i> Change Password
-                    </a>
-                    <a href="/changecontactinformation" className="list-group-item list-group-item-action border-0">
-                      <i className="icofont-address-book me-2"></i> Update Contact Info
-                    </a>
-                    <a href="/logout" className="list-group-item list-group-item-action border-0">
-                      <i className="icofont-logout me-2"></i> Sign Out
-                    </a>
-                  </div>
+              {/* ─────────── Leave ─────────── */}
+              <li className="mb-3">
+                <div className="d-flex justify-content-between align-items-center">
+                  <NavLink to="/ta/leave" className={linkClass}>
+                    <i className="icofont-leave fs-5 me-2"></i>
+                    Leave
+                  </NavLink>
+                  <button
+                    type="button"
+                    className="btn btn-link text-light p-0"
+                    onClick={() => toggle("leave")}
+                  >
+                    <i
+                      className={`icofont-rounded-${
+                        open.leave ? "up" : "down"
+                      }`}
+                    ></i>
+                  </button>
                 </div>
-              </div>
-            </div>
+                {open.leave && (
+                  <ul className="ps-3 mt-2">
+                    <li className="mb-1">
+                      <NavLink to="/ta/leave" className={linkClass}>
+                        Submit Leave
+                      </NavLink>
+                    </li>
+                    <li>
+                      <NavLink to="/ta/leave" className={linkClass}>
+                        View Leave Requests
+                      </NavLink>
+                    </li>
+                  </ul>
+                )}
+              </li>
 
-            {/* Ayar simgesi */}
-            <div className="ms-3">
-              <a href="#offcanvas_setting" data-bs-toggle="offcanvas" aria-expanded="false">
-                <i className="icofont-gear fs-5 text-white"></i>
-              </a>
-            </div>
+              {/* ─────────── Swap ─────────── */}
+              <li className="mb-3">
+                <div className="d-flex justify-content-between align-items-center">
+                  <NavLink to="/ta/swap" className={linkClass}>
+                    <i className="icofont-exchange fs-5 me-2"></i>
+                    Swap
+                  </NavLink>
+                  <button
+                    type="button"
+                    className="btn btn-link text-light p-0"
+                    onClick={() => toggle("swap")}
+                  >
+                    <i
+                      className={`icofont-rounded-${
+                        open.swap ? "up" : "down"
+                      }`}
+                    ></i>
+                  </button>
+                </div>
+                {open.swap && (
+                  <ul className="ps-3 mt-2">
+                    <li className="mb-1">
+                      <NavLink to="/ta/swap" className={linkClass}>
+                        Submit Swap
+                      </NavLink>
+                    </li>
+                    <li>
+                      <NavLink to="/ta/swap" className={linkClass}>
+                        View Swap Requests
+                      </NavLink>
+                    </li>
+                  </ul>
+                )}
+              </li>
+
+              {/* ─────────── Past Tasks ─────────── */}
+              <li className="mb-3">
+                <NavLink to="/ta/past-tasks" className={linkClass}>
+                  <i className="icofont-history fs-5 me-2"></i>
+                  Past Tasks
+                </NavLink>
+              </li>
+
+              {/* ─────────── Calendar ─────────── */}
+              <li className="mb-3">
+                <NavLink to="/ta/calendar" className={linkClass}>
+                  <i className="icofont-calendar fs-5 me-2"></i>
+                  Calendar
+                </NavLink>
+              </li>
+            </ul>
+
+            <button
+              type="button"
+              className="btn btn-link sidebar-mini-btn text-light mt-auto"
+            >
+              <i className="icofont-bubble-right"></i>
+            </button>
           </div>
-
-          {/* Arama çubuğu */}
-          <div className="order-0 col-lg-4 col-md-4 col-sm-12 col-12 mb-3 mb-md-0">
-            
-          </div>
-
-          {/* Menü Toggler */}
-          <button className="navbar-toggler p-0 border-0 menu-toggle order-3" type="button" data-bs-toggle="collapse" data-bs-target="#mainHeader">
-            <span className="fa fa-bars"></span>
-          </button>
         </div>
-      </nav>
+
+        {/* Main content */}
+        <div className="col-lg-9">
+          <Outlet />
+        </div>
+      </div>
     </div>
   );
 };
 
-export default EmployeeHeader;
+export default TA;
