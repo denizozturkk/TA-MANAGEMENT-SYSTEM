@@ -41,7 +41,7 @@ import AssignAssignment from "./people/FacultyMember/AssignAssignment.jsx";
 import DutyExtensionRequest from "./people/FacultyMember/ReviewDutyExtension.jsx";
 
 // TA
-import TA from "./people/Ta/TA.jsx";
+// import TA from "./people/Ta/TA.jsx";
 import ViewWorkloadTA from "./people/Ta/ViewWorkload-TA.jsx";
 import ReportTotalWorkloadTA from "./people/Ta/ReportTotalWorkload-TA.jsx";
 import SubmitLeaveRequestTA from "./people/Ta/SubmitLeaveRequest-TA.jsx";
