@@ -41,24 +41,22 @@ import AssignAssignment from "./people/FacultyMember/AssignAssignment.jsx";
 import DutyExtensionRequest from "./people/FacultyMember/ReviewDutyExtension.jsx";
 
 // TA
-import TA from "./people/Ta/TA.jsx";
-import ViewWorkloadTA from "./people/Ta/ViewWorkload-TA.jsx";
-import ReportTotalWorkloadTA from "./people/Ta/ReportTotalWorkload-TA.jsx";
-import SubmitLeaveRequestTA from "./people/Ta/SubmitLeaveRequest-TA.jsx";
-import SubmitSwapTA from "./people/Ta/SubmitSwap-TA.jsx";
-import SwapProctorTA from "./people/Ta/SwapProctor-TA.jsx";
-import ViewPastTasksTA from "./people/Ta/ViewPastTasks-TA.jsx";
-import CalendarTA from "./people/Ta/Calendar-TA.jsx";
+import TA from "./people/TA/TA.jsx";
+import ViewWorkloadTA from "./people/TA/ViewWorkload-TA.jsx";
+import ReportTotalWorkloadTA from "./people/TA/ReportTotalWorkload-TA.jsx";
+import SubmitLeaveRequestTA from "./people/TA/SubmitLeaveRequest-TA.jsx";
+import SubmitSwapTA from "./people/TA/SubmitSwap-TA.jsx";
+import SwapProctorTA from "./people/TA/SwapProctor-TA.jsx";
+import ViewPastTasksTA from "./people/TA/ViewPastTasks-TA.jsx";
+import CalendarTA from "./people/TA/Calendar-TA.jsx";
 
 // Dean
-import Dean from "./people/Dean/Dean.jsx";
 import ManageCourseDataDean from "./people/Dean/ManageCourseData-Dean.jsx";
 import ExamSchedulingDean from "./people/Dean/ExamScheduling-Dean.jsx";
 import AssignProctoringDean from "./people/Dean/AssignProctoring-Dean.jsx";
 import MakeReportDean from "./people/Dean/MakeReport-Dean.jsx";
 
 // Admin
-import Admin from "./people/Admin/Admin.jsx";
 import AuthActorsAdmin from "./people/Admin/AuthActors-Admin.jsx";
 import ReviewReportRequestsAdmin from "./people/Admin/ReviewReportRequests-Admin.jsx";
 import MakeReportsAdmin from "./people/Admin/MakeReports-Admin.jsx";
