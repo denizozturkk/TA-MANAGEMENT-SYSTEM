@@ -1,9 +1,8 @@
 package edu.bilkent.cs319.team9.ta_management_system.service.impl;
 
 import edu.bilkent.cs319.team9.ta_management_system.exception.BadRequestException;
-import edu.bilkent.cs319.team9.ta_management_system.model.Role;
-import edu.bilkent.cs319.team9.ta_management_system.model.TA;
-import edu.bilkent.cs319.team9.ta_management_system.repository.TARepository;
+import edu.bilkent.cs319.team9.ta_management_system.model.*;
+import edu.bilkent.cs319.team9.ta_management_system.repository.*;
 import edu.bilkent.cs319.team9.ta_management_system.service.ExcelImportService;
 import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.Row;
@@ -30,6 +29,30 @@ public class ExcelImportServiceImpl implements ExcelImportService {
 
     @Autowired
     private TARepository taRepository;
+    @Autowired private StudentRepository studentRepository;
+    @Autowired private FacultyMemberRepository facultyRepository;
+    @Autowired private OfferingRepository offeringRepository;
+    @Autowired private CourseRepository courseRepository;
+    @Autowired private SemesterDataRepository semesterDataRepository;
+
+
+
+    private void validateFile(MultipartFile file) {
+        if (file.isEmpty()) throw new BadRequestException("No file uploaded");
+        long MAX = 5 * 1024 * 1024;
+        if (file.getSize() > MAX) throw new BadRequestException("File too large");
+        String name = file.getOriginalFilename();
+        String ext = name == null ? "" :
+                name.contains(".") ? name.substring(name.lastIndexOf('.')+1).toLowerCase() : "";
+        if (!ALLOWED_EXT.contains(ext)) throw new BadRequestException("Only .xls/.xlsx allowed");
+    }
+
+    private Workbook openWorkbook(MultipartFile file) throws IOException {
+        return WorkbookFactory.create(file.getInputStream());
+    }
+
+
+
 
     @Override
     @Transactional
@@ -106,4 +129,115 @@ public class ExcelImportServiceImpl implements ExcelImportService {
             }
         }
     }
+
+
+
+
+    @Override
+    public void importStudentSheet(MultipartFile file) throws IOException {
+        validateFile(file);
+        DataFormatter fmt = new DataFormatter();
+        try (Workbook wb = openWorkbook(file)) {
+            Sheet sheet = wb.getSheetAt(0);
+            boolean header = true;
+            for (Row row : sheet) {
+                if (header) { header = false; continue; }
+                String idText = fmt.formatCellValue(row.getCell(0)).trim();
+                Student s = idText.isEmpty()
+                        ? new Student()
+                        : studentRepository.findById(Long.parseLong(idText)).orElse(new Student());
+
+                s.setStudentID(fmt.formatCellValue(row.getCell(1)));
+                s.setFirstName(fmt.formatCellValue(row.getCell(2)));
+                s.setLastName(fmt.formatCellValue(row.getCell(3)));
+                studentRepository.save(s);
+            }
+        }
+    }
+
+    @Override
+    public void importFacultySheet(MultipartFile file) throws IOException {
+        validateFile(file);
+        DataFormatter fmt = new DataFormatter();
+        try (Workbook wb = openWorkbook(file)) {
+            Sheet sheet = wb.getSheetAt(0);
+            boolean header = true;
+            for (Row row : sheet) {
+                if (header) { header = false; continue; }
+                String idText = fmt.formatCellValue(row.getCell(0)).trim();
+                FacultyMember f = idText.isEmpty()
+                        ? new FacultyMember()
+                        : facultyRepository.findById(Long.parseLong(idText)).orElse(new FacultyMember());
+
+                f.setFirstName(fmt.formatCellValue(row.getCell(1)));
+                f.setLastName(fmt.formatCellValue(row.getCell(2)));
+                f.setEmail(fmt.formatCellValue(row.getCell(3)));
+                // … any other fields …
+                facultyRepository.save(f);
+            }
+        }
+    }
+
+    @Override
+    public void importOfferingSheet(MultipartFile file) throws IOException {
+        validateFile(file);
+        DataFormatter fmt = new DataFormatter();
+        try (Workbook wb = openWorkbook(file)) {
+            Sheet sheet = wb.getSheetAt(0);
+            boolean header = true;
+            for (Row row : sheet) {
+                if (header) { header = false; continue; }
+                String idText = fmt.formatCellValue(row.getCell(0)).trim();
+                Offering o = idText.isEmpty()
+                        ? Offering.builder().build()
+                        : offeringRepository.findById(Long.parseLong(idText))
+                        .orElse(Offering.builder().build());
+
+                o.setSection(fmt.formatCellValue(row.getCell(1)));
+                o.setSemester(fmt.formatCellValue(row.getCell(2)));
+                o.setYear(Integer.valueOf(fmt.formatCellValue(row.getCell(3))));
+
+                // instructor by ID in column 4
+                Long instrId = Long.parseLong(fmt.formatCellValue(row.getCell(4)));
+                facultyRepository.findById(instrId).ifPresent(o::setInstructor);
+
+                // course by ID in column 5
+                Long courseId = Long.parseLong(fmt.formatCellValue(row.getCell(5)));
+                courseRepository.findById(courseId).ifPresent(o::setCourse);
+
+                // semesterData by ID in column 6
+                Long semDataId = Long.parseLong(fmt.formatCellValue(row.getCell(6)));
+                semesterDataRepository.findById(semDataId).ifPresent(o::setSemesterData);
+
+                offeringRepository.save(o);
+            }
+        }
+    }
+
+    @Override
+    public void importEnrollmentSheet(MultipartFile file) throws IOException {
+        validateFile(file);
+        DataFormatter fmt = new DataFormatter();
+        try (Workbook wb = openWorkbook(file)) {
+            Sheet sheet = wb.getSheetAt(0);
+            boolean header = true;
+            for (Row row : sheet) {
+                if (header) { header = false; continue; }
+                Long offeringId = Long.parseLong(fmt.formatCellValue(row.getCell(0)));
+                Long studentId  = Long.parseLong(fmt.formatCellValue(row.getCell(1)));
+                Offering o = offeringRepository.findById(offeringId)
+                        .orElseThrow(() -> new BadRequestException("Offering not found: " + offeringId));
+                Student s = studentRepository.findById(studentId)
+                        .orElseThrow(() -> new BadRequestException("Student not found: " + studentId));
+                // make sure both sides of the many-to-many are updated
+                o.getStudents().add(s);
+                s.getOfferings().add(o);
+                // save at least one side
+                offeringRepository.save(o);
+            }
+        }
+    }
+
+
+
 }

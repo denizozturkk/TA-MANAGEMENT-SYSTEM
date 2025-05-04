@@ -7,5 +7,9 @@ import java.io.IOException;
 import java.util.List;
 
 public interface ExcelImportService {
-    public void importTaSheet(MultipartFile file) throws IOException;
+    void importTaSheet(MultipartFile file) throws IOException;
+    void importStudentSheet(MultipartFile file) throws IOException;
+    void importFacultySheet(MultipartFile file) throws IOException;
+    void importOfferingSheet(MultipartFile file) throws IOException;
+    void importEnrollmentSheet(MultipartFile file) throws IOException;
 }

@@ -19,4 +19,28 @@ public class ExcelImportController {
         excelImportService.importTaSheet(file);
         return ResponseEntity.ok().build();
     }
+
+    @PostMapping("/students")
+    public ResponseEntity<Void> importStudents(@RequestParam("file") MultipartFile file) throws IOException {
+        excelImportService.importStudentSheet(file);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/faculty")
+    public ResponseEntity<Void> importFaculty(@RequestParam("file") MultipartFile file) throws IOException {
+        excelImportService.importFacultySheet(file);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/offerings")
+    public ResponseEntity<Void> importOfferings(@RequestParam("file") MultipartFile file) throws IOException {
+        excelImportService.importOfferingSheet(file);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/enrollments")
+    public ResponseEntity<Void> importEnrollments(@RequestParam("file") MultipartFile file) throws IOException {
+        excelImportService.importEnrollmentSheet(file);
+        return ResponseEntity.ok().build();
+    }
 }
