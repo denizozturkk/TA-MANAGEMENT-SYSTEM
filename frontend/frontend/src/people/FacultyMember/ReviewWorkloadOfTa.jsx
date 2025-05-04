@@ -1,5 +1,5 @@
 import React from "react";
-import InstructorLayout from "./InstructorLayout";
+import FacultyMemberLayout from "./FacultyMemberLayout";
 
 const workloadData = [
   {
@@ -53,7 +53,7 @@ const ReviewWorkload = () => {
   return (
     <div className="d-flex">
       <div style={{ width: "300px" }}>
-        <InstructorLayout />
+        <FacultyMemberLayout />
       </div>
 
       <div className="container-xxl py-4 flex-grow-1">

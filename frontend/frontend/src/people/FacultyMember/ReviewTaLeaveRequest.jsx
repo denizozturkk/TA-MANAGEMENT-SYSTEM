@@ -170,15 +170,7 @@ const LeaveRequest = () => {
               </div>
               <div className="modal-body">
                 <p>Are you sure you want to reject this leave?</p>
-                <div className="mb-3">
-                  <label htmlFor="rejectionReason" className="form-label">Please provide a reason:</label>
-                  <textarea
-                    className="form-control"
-                    id="rejectionReason"
-                    rows="3"
-                    placeholder="e.g. Overlapping leave, insufficient reason, etc."
-                  ></textarea>
-                </div>
+                
               </div>
               <div className="modal-footer">
                 <button className="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>

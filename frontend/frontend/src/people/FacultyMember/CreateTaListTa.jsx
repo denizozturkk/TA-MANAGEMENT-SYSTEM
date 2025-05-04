@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import InstructorLayout from "./InstructorLayout";
+import FacultyMemberLayout from "../FacultyMember/FacultyMemberLayout";
 
 const allCoursesByFaculty = {
   "Computer Engineering": ["CS102", "CS315", "CS224"],
@@ -79,7 +79,7 @@ const TAList = () => {
   return (
     <div className="d-flex">
       <div style={{ width: "300px" }}>
-        <InstructorLayout />
+        <FacultyMemberLayout />
       </div>
 
       <div className="container py-5 flex-grow-1">

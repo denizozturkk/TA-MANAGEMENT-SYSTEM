@@ -134,6 +134,9 @@ const SignInPage = () => {
       else if (role === "ROLE_TA")     target = "/ta";
       else if (role === "ROLE_COORDINATOR") target = "/manageexamclassroom"; 
       else if (role === "ROLE_FACULTY_MEMBER") target = "/classroomlist";
+      else if (role === "ROLE_ADMIN") target = "/authorize-actors";
+      else if (role === "ROLE_DEAN") target = "/make-report";
+      else if (role === "ROLE_DEPARMENT_STAFF") target = "/tutorgraderformview";
 
       console.log(`🚀 Redirecting to ${target}`);
       navigate(target, { replace: true });

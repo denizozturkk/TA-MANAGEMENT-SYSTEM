@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import InstructorLayout from "./InstructorLayout";
+import FacultyMemberLayout from "../FacultyMember/FacultyMemberLayout";
 
 const AssignDutyPage = () => {
   const [tas, setTAs] = useState([]);
@@ -81,7 +81,7 @@ const AssignDutyPage = () => {
   return (
     <div className="d-flex">
       <div style={{ width: "300px" }}>
-        <InstructorLayout />
+        <FacultyMemberLayout />
       </div>
       <div className="container py-4 flex-grow-1">
         <div className="d-flex justify-content-between align-items-center mb-4">

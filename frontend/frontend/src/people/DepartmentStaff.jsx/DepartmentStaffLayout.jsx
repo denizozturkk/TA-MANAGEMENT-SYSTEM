@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 
-const Sidebar = () => {
+const SidebarDepartmentStaff = () => {
   return (
     <div className="sidebar px-4 py-4 py-md-5 me-0" style={{ backgroundColor: 'purple' }}>
       <div className="d-flex flex-column h-100">
@@ -17,30 +17,24 @@ const Sidebar = () => {
         </Link>
 
         <ul className="menu-list flex-grow-1 mt-3">
+
+          {/* Department Staff Menu */}
           <li className="collapsed">
-            <a className="m-link" data-bs-toggle="collapse" data-bs-target="#facultyMenu" href="#">
-              <i className="icofont-user-male"></i>
-              <span>Faculty Panel</span>
+            <a className="m-link" data-bs-toggle="collapse" data-bs-target="#departmentMenu" href="#">
+              <i className="icofont-ui-file"></i>
+              <span>Department Panel</span>
               <span className="arrow icofont-dotted-down ms-auto text-end fs-5"></span>
             </a>
-            <ul className="sub-menu collapse" id="facultyMenu">
-              <li><Link className="ms-link" to="/generateclassroomlist"><span>Generate Classroom List</span></Link></li>
-              <li><Link className="ms-link" to="/printstudentdistribution"><span>Print Student Distribution</span></Link></li>
-              <li><Link className="ms-link" to="/leaverequest"><span>Review TA Leave Request</span></Link></li>
-              <li><Link className="ms-link" to="/selectassignmenttype"><span>Select Assignment Type</span></Link></li>
-              <li><Link className="ms-link" to="/excelupload"><span>Upload Semester Excel</span></Link></li>
-              <li><Link className="ms-link" to="/dutyextension"><span>Review Duty Extension</span></Link></li>
-              <li><Link className="ms-link" to="/reviewworkload"><span>Review TA Workload</span></Link></li>
-              <li><Link className="ms-link" to="/defineexam"><span>Define Exam</span></Link></li>
-              <li><Link className="ms-link" to="/talist"><span>Create TA List</span></Link></li>
-              <li><Link className="ms-link" to="/assignassignment"><span>Assign Assignment</span></Link></li>
+            <ul className="sub-menu collapse" id="departmentMenu">
+              <li><Link className="ms-link" to="/tutorgraderformview"><span>View Applications</span></Link></li>
             </ul>
           </li>
 
+          {/* Profile Links */}
           <li className="collapsed">
             <a className="m-link" data-bs-toggle="collapse" data-bs-target="#profileMenu" href="#">
               <i className="icofont-user-alt-2"></i>
-              <span>My Profile</span>
+              <span>Profile</span>
               <span className="arrow icofont-dotted-down ms-auto text-end fs-5"></span>
             </a>
             <ul className="sub-menu collapse" id="profileMenu">
@@ -50,6 +44,7 @@ const Sidebar = () => {
               <li><Link className="ms-link" to="/viewprofile"><span>View Profile</span></Link></li>
             </ul>
           </li>
+
         </ul>
 
         <button type="button" className="btn btn-link sidebar-mini-btn text-light">
@@ -60,4 +55,4 @@ const Sidebar = () => {
   );
 };
 
-export default Sidebar;
+export default SidebarDepartmentStaff;

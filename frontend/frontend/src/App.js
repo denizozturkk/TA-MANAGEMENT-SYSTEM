@@ -34,21 +34,21 @@ import ExcelUpload from "./people/FacultyMember/UploadSemesterExcelData.jsx";
 import GenerateClassroomList from "./people/FacultyMember/GenerateClassromList.jsx";
 import PrintStudentDistribution from "./people/FacultyMember/PrintStudentDistribution.jsx";
 import SelectAssignmentType from "./people/FacultyMember/SelectAssignmentType.jsx";
-import ReviewWorkload from "./people/Instructor/ReviewWorkloadOfTa.jsx";
-import DefineExam from "./people/Instructor/DefinesExam.jsx";
-import TAList from "./people/Instructor/CreateTaListTa.jsx";
-import AssignAssignment from "./people/Instructor/AssignAssignment.jsx";
+import ReviewWorkload from "./people/FacultyMember/ReviewWorkloadOfTa.jsx";
+import DefineExam from "./people/FacultyMember/DefinesExam.jsx";
+import TAList from "./people/FacultyMember/CreateTaListTa.jsx";
+import AssignAssignment from "./people/FacultyMember/AssignAssignment.jsx";
 import DutyExtensionRequest from "./people/FacultyMember/ReviewDutyExtension.jsx";
 
 // TA
-import TA from "./people/TA/TA.jsx";
-import ViewWorkloadTA from "./people/TA/ViewWorkload-TA.jsx";
-import ReportTotalWorkloadTA from "./people/TA/ReportTotalWorkload-TA.jsx";
-import SubmitLeaveRequestTA from "./people/TA/SubmitLeaveRequest-TA.jsx";
-import SubmitSwapTA from "./people/TA/SubmitSwap-TA.jsx";
-import SwapProctorTA from "./people/TA/SwapProctor-TA.jsx";
-import ViewPastTasksTA from "./people/TA/ViewPastTasks-TA.jsx";
-import CalendarTA from "./people/TA/Calendar-TA.jsx";
+import TA from "./people/Ta/TA.jsx";
+import ViewWorkloadTA from "./people/Ta/ViewWorkload-TA.jsx";
+import ReportTotalWorkloadTA from "./people/Ta/ReportTotalWorkload-TA.jsx";
+import SubmitLeaveRequestTA from "./people/Ta/SubmitLeaveRequest-TA.jsx";
+import SubmitSwapTA from "./people/Ta/SubmitSwap-TA.jsx";
+import SwapProctorTA from "./people/Ta/SwapProctor-TA.jsx";
+import ViewPastTasksTA from "./people/Ta/ViewPastTasks-TA.jsx";
+import CalendarTA from "./people/Ta/Calendar-TA.jsx";
 
 // Dean
 import Dean from "./people/Dean/Dean.jsx";
@@ -85,6 +85,10 @@ function App() {
         <Route path="/viewratings" element={<ViewRatings />} />
         <Route path="/tutorgraderform" element={<TutorGraderForm />} />
         <Route path="/tutorgraderformview" element={<TutorGraderFormView />} />
+      </Route>
+
+      <Route element={<ProtectedRoute allowedRoles={["ROLE_DEPARMENT_STAFF"]} />}>  
+      <Route path="/tutorgraderformview" element={<TutorGraderFormView />} />
       </Route>
 
       {/* Coordinator */}
