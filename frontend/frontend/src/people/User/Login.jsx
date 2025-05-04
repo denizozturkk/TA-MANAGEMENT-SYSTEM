@@ -130,8 +130,8 @@ const SignInPage = () => {
 
       // decide where to go
       let target = "/";
-      if (role === "ROLE_ADMIN")       target = "/admin";
-      else if (role === "ROLE_TA")     target = "/ta";
+      if (role === "ROLE_ADMIN")       target = "/make-reports";
+      else if (role === "ROLE_TA")     target = "/leave";
       else if (role === "ROLE_COORDINATOR") target = "/manageexamclassroom"; 
       else if (role === "ROLE_FACULTY_MEMBER") target = "/classroomlist";
       else if (role === "ROLE_ADMIN") target = "/authorize-actors";

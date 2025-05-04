@@ -141,8 +141,6 @@ function App() {
           <Route path="pending-reports" element={<PendingReportsAdmin />} />
       </Route>
 
-      {/* Fallback */}
-      <Route path="*" element={<Navigate to="/hh" replace />} />
     </Routes>
   );
 }
