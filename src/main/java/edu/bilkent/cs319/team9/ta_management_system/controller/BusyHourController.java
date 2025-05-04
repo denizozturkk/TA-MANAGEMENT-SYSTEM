@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -63,5 +64,16 @@ public class BusyHourController {
         busyHour.setTa(existing.getTa());  // preserve original TA
         busyHour.setId(id);
         return ResponseEntity.ok(busyHourService.update(id, busyHour));
+    }
+    @GetMapping("/check-availability")
+    public ResponseEntity<Boolean> checkAvailability(
+            @PathVariable Long taId,
+            @RequestParam String start,  // ISO date-time string
+            @RequestParam String end
+    ) {
+        LocalDateTime startTime = LocalDateTime.parse(start);
+        LocalDateTime endTime = LocalDateTime.parse(end);
+        boolean available = busyHourService.isTAAvailable(taId, startTime, endTime);
+        return ResponseEntity.ok(available);
     }
 }

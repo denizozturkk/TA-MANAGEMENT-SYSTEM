@@ -2,6 +2,7 @@ package edu.bilkent.cs319.team9.ta_management_system.service;
 
 import edu.bilkent.cs319.team9.ta_management_system.model.BusyHour;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface BusyHourService {
@@ -10,4 +11,6 @@ public interface BusyHourService {
     BusyHour findById(Long id);
     BusyHour update(Long id, BusyHour busyHour);
     void delete(Long id);
+    boolean isTAAvailable(Long taId, LocalDateTime start, LocalDateTime end);
+
 }

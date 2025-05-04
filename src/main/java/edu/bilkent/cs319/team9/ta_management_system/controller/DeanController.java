@@ -7,6 +7,7 @@ import edu.bilkent.cs319.team9.ta_management_system.model.*;
 import edu.bilkent.cs319.team9.ta_management_system.service.DeanService;
 import edu.bilkent.cs319.team9.ta_management_system.service.ExamRoomService;
 import edu.bilkent.cs319.team9.ta_management_system.service.ExamService;
+import edu.bilkent.cs319.team9.ta_management_system.service.ProctorAssignmentService;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,17 +23,21 @@ public class DeanController {
     private final ExamService examService;
     private final ExamRoomService examRoomService;
     private final EntityMapperService mapper;
+    private final ProctorAssignmentService proctorAssignmentService;
+
 
     public DeanController(
             DeanService deanService,
             ExamService examService,
             ExamRoomService examRoomService,
-            EntityMapperService mapper
+            EntityMapperService mapper,
+            ProctorAssignmentService proctorAssignmentService
     ) {
         this.deanService = deanService;
         this.examService = examService;
         this.examRoomService = examRoomService;
         this.mapper = mapper;
+        this.proctorAssignmentService = proctorAssignmentService;
     }
 
     @PostMapping
@@ -80,12 +85,20 @@ public class DeanController {
             @RequestParam Long examId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime newDateTime
     ) {
-        deanService.findById(deanId); // check dean exists
+        deanService.findById(deanId); // Ensure dean exists
+
         Exam exam = examService.findById(examId);
+
+        // Delete all existing proctor assignments for this exam
+        proctorAssignmentService.deleteAllByExamId(examId);
+
+        // Update the exam time
         exam.setDateTime(newDateTime);
         examService.update(exam.getId(), exam);
+
         return ResponseEntity.ok().build();
     }
+
 
     @PutMapping("/{deanId}/update-proctor-count")
     public ResponseEntity<Void> updateProctorCount(

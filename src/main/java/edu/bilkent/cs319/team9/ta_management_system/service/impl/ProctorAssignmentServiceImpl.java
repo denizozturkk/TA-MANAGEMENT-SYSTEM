@@ -45,4 +45,10 @@ public class ProctorAssignmentServiceImpl implements ProctorAssignmentService {
     public void delete(Long id) {
         repo.deleteById(id);
     }
+
+    @Override
+    public void deleteAllByExamId(Long examId) {
+        repo.deleteAllByExam_Id(examId);
+    }
+
 }

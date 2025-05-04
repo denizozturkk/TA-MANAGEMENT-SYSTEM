@@ -26,4 +26,6 @@ public interface ProctorAssignmentRepository extends JpaRepository<ProctorAssign
     );
 
     List<ProctorAssignment> findByExam_DateTimeBetween(LocalDateTime from, LocalDateTime to);
+    void deleteAllByExam_Id(Long examId);
+
 }
