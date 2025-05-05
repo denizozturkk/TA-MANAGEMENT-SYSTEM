@@ -1,5 +1,64 @@
+// src/people/User/ViewNotificationPage.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+
+// Layout imports (dosya adlarına göre)
+import FacultyMemberLayout from "../FacultyMember/FacultyMemberLayout.jsx";
+import CoordinatorLayout from "../Coordinator/CoordinatorLayout.jsx";
+import TALayout from "../Ta/Layout-TA.jsx";
+import DeanLayout from "../Dean/Layout-Dean.jsx";
+import AdminLayout from "../Admin/Layout-Admin.jsx";
+
+// Basit JWT parser
+function parseJwt(token) {
+  try {
+    return JSON.parse(window.atob(token.split(".")[1]));
+  } catch {
+    return {};
+  }
+}
+
+// RoleBasedLayout bileşeni
+const RoleBasedLayout = ({ children }) => {
+  const token = localStorage.getItem("authToken");
+  const payload = token ? parseJwt(token) : {};
+  const userRole =
+    (payload.authorities && payload.authorities[0]) ||
+    localStorage.getItem("userRole") ||
+    "";
+
+  let Sidebar = null;
+  switch (userRole) {
+    case "ROLE_FACULTY_MEMBER":
+      Sidebar = FacultyMemberLayout;
+      break;
+    case "ROLE_COORDINATOR":
+      Sidebar = CoordinatorLayout;
+      break;
+    case "ROLE_TA":
+      Sidebar = TALayout;
+      break;
+    case "ROLE_DEAN":
+      Sidebar = DeanLayout;
+      break;
+    case "ROLE_ADMIN":
+      Sidebar = AdminLayout;
+      break;
+    default:
+      Sidebar = null;
+  }
+
+  return (
+    <div className="d-flex">
+      {Sidebar && (
+        <div style={{ width: "300px" }}>
+          <Sidebar />
+        </div>
+      )}
+      <div className="flex-grow-1">{children}</div>
+    </div>
+  );
+};
 
 const notifications = [
   { id: 1, name: "John Doe", message: "sent you a task update", time: "5 minutes ago", img: "https://i.pravatar.cc/150?img=16" },
@@ -25,9 +84,7 @@ const ViewNotificationPage = () => {
   };
 
   return (
-    <>
-      
-
+    <RoleBasedLayout>
       <div className="container-xxl py-4">
         <div className="card border-0 shadow-sm">
           <div className="card-header">
@@ -39,7 +96,7 @@ const ViewNotificationPage = () => {
                 <li key={notif.id} className="d-flex align-items-start mb-3 border-bottom pb-3">
                   <img
                     src={notif.img}
-                    alt="User"
+                    alt={notif.name}
                     className="avatar rounded-circle me-3"
                     width="50"
                   />
@@ -49,7 +106,10 @@ const ViewNotificationPage = () => {
                     </p>
                     <small className="text-muted">{notif.time}</small>
                     <br />
-                    <button style={{color: "black"}} className="btn btn-sm btn-dark mt-2" onClick={() => goToDetail(notif.id)}>
+                    <button
+                      className="btn btn-sm btn-dark mt-2"
+                      onClick={() => goToDetail(notif.id)}
+                    >
                       Detaylara Bak
                     </button>
                   </div>
@@ -78,7 +138,7 @@ const ViewNotificationPage = () => {
           </div>
         </div>
       </div>
-    </>
+    </RoleBasedLayout>
   );
 };
 

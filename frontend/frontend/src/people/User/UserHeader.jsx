@@ -1,111 +1,148 @@
-import React from "react";
-import avatar from "../User/avatar3.jpg"; // <- avatar3.jpg yolu
+// src/people/User/UserHeader.jsx
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import avatarPlaceholder from "../User/avatar3.jpg";
 
-const EmployeeHeader = () => {
+// Basit JWT parser
+function parseJwt(token) {
+  try {
+    return JSON.parse(window.atob(token.split(".")[1]));
+  } catch {
+    return {};
+  }
+}
+
+const UserHeader = () => {
+  const navigate = useNavigate();
+  const token = localStorage.getItem("authToken");
+  const payload = token ? parseJwt(token) : {};
+  const fullName = payload.fullName || payload.username || payload.sub || "User";
+  const rawRole =
+    (payload.authorities && payload.authorities[0]) || localStorage.getItem("userRole") || "";
+  const displayRole = rawRole.replace(/^ROLE_/, "").replace(/_/g, " ");
+
+  const [notifications, setNotifications] = useState([]);
+
+  useEffect(() => {
+    if (!token) return;
+    fetch("http://localhost:8080/api/notifications", {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data) => setNotifications(Array.isArray(data) ? data : []))
+      .catch(() => setNotifications([]));
+  }, [token]);
+
+  const handleLogout = () => {
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("userRole");
+    navigate("/login", { replace: true });
+  };
+
   return (
-    <div className="header">
-      <nav className="navbar py-4">
-        <div className="container-xxl">
-          {/* Sağ taraftaki ikonlar */}
-          <div className="h-right d-flex align-items-center order-1">
+    <div className="header bg-dark text-white">
+      <nav className="navbar py-3">
+        <div className="container-xxl d-flex justify-content-between align-items-center">
 
-            {/* Bildirimler */}
-            <div className="dropdown notifications">
-              <a className="nav-link dropdown-toggle pulse" href="#" data-bs-toggle="dropdown">
+          {/* Solda logo/ana sayfa */}
+          <Link to="/" className="navbar-brand text-white">
+            My-Task System
+          </Link>
+
+          {/* Sağ: bildirim + kullanıcı */}
+          <div className="d-flex align-items-center">
+
+            {/* Bildirim ikonu */}
+            <div className="me-3 position-relative">
+              <Link to="/notification" className="text-white">
                 <i className="icofont-alarm fs-5"></i>
-                <span className="pulse-ring"></span>
-              </a>
-              <div className="dropdown-menu dropdown-menu-sm-end p-0 m-0 shadow border-0">
-                <div className="card border-0 w380">
-                  <div className="card-header p-3">
-                    <h5 className="mb-0 d-flex justify-content-between">
-                      <span>Notifications</span>
-                      <span className="badge text-white">11</span>
-                    </h5>
-                  </div>
-                  <div className="card-body">
-                    <ul className="list-unstyled mb-0">
-                      <li className="py-2 mb-1 border-bottom">
-                        <a href="/viewnotification" className="d-flex">
-                          <img className="avatar rounded-circle" src={avatar} alt="User Avatar" />
-                          <div className="flex-fill ms-2">
-                            <p className="d-flex justify-content-between mb-0">
-                              <span className="fw-bold">Anıl Yeşil</span>
-                              <small>New Notification</small>
-                            </p>
-                            <span>You've been assigned a task</span>
-                          </div>
-                        </a>
-                      </li>
-                    </ul>
-                  </div>
-                  <a className="card-footer text-center" href="/viewnotification">View all notifications</a>
+              </Link>
+              {notifications.length > 0 && (
+                <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                  {notifications.length}
+                </span>
+              )}
+            </div>
+
+            {/* Kullanıcı menüsü */}
+            <div className="dropdown">
+              <a
+                className="d-flex align-items-center text-white text-decoration-none dropdown-toggle"
+                href="#!"
+                id="userMenu"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
+                <img
+                  src={payload.avatarUrl || avatarPlaceholder}
+                  alt="avatar"
+                  width="32"
+                  height="32"
+                  className="rounded-circle me-2"
+                />
+                <div className="text-end">
+                  <div className="fw-bold">{fullName}</div>
+                  <small className="text-muted">{displayRole}</small>
                 </div>
-              </div>
-            </div>
-
-            {/* Kullanıcı Menüsü */}
-            <div className="dropdown user-profile d-flex align-items-center ms-3">
-              <div className="u-info me-2 text-end">
-                <p className="mb-0">
-                  <span className="fw-bold">Anıl Yeşil</span>
-                </p>
-                <small>TA Profile</small>
-              </div>
-              <a className="nav-link dropdown-toggle p-0" href="#" data-bs-toggle="dropdown">
-                <img className="avatar lg rounded-circle img-thumbnail" src={avatar} alt="profile" />
               </a>
-              <div className="dropdown-menu dropdown-menu-end shadow border-0 p-0">
-                <div className="card w280 border-0">
-                  <div className="card-body pb-0">
-                    <div className="d-flex py-1">
-                      <img className="avatar rounded-circle" src={avatar} alt="profile" />
-                      <div className="ms-3">
-                        <p className="mb-0 fw-bold">Anıl Yeşil</p>
-                        <small>anil.yesil@bilkent.edu.tr</small>
-                      </div>
-                    </div>
-                    <hr className="dropdown-divider border-dark" />
-                  </div>
-                  <div className="list-group m-2">
-                    <a href="/viewprofile" className="list-group-item list-group-item-action border-0">
-                      <i className="icofont-user me-2"></i> View Profile
-                    </a>
-                    <a href="/changepassword" className="list-group-item list-group-item-action border-0">
-                      <i className="icofont-lock me-2"></i> Change Password
-                    </a>
-                    <a href="/changecontactinformation" className="list-group-item list-group-item-action border-0">
-                      <i className="icofont-address-book me-2"></i> Update Contact Info
-                    </a>
-                    <a href="/logout" className="list-group-item list-group-item-action border-0">
-                      <i className="icofont-logout me-2"></i> Sign Out
-                    </a>
-                  </div>
-                </div>
-              </div>
+              <ul
+                className="dropdown-menu dropdown-menu-end text-small shadow"
+                aria-labelledby="userMenu"
+              >
+                <li>
+                  <Link className="dropdown-item" to="/viewprofile">
+                    <i className="icofont-user me-2"></i>View Profile
+                  </Link>
+                </li>
+                <li>
+                  <Link className="dropdown-item" to="/changepassword">
+                    <i className="icofont-lock me-2"></i>Change Password
+                  </Link>
+                </li>
+                <li>
+                  <Link className="dropdown-item" to="/changecontactinformation">
+                    <i className="icofont-address-book me-2"></i>Update Contact
+                  </Link>
+                </li>
+                <li>
+                  <Link className="dropdown-item" to="/notification">
+                    <i className="icofont-alarm me-2"></i>Notifications
+                  </Link>
+                </li>
+                <li>
+                  <Link className="dropdown-item" to="/givefeedback">
+                    <i className="icofont-comment me-2"></i>Give Feedback
+                  </Link>
+                </li>
+                <li>
+                  <Link className="dropdown-item" to="/viewratings">
+                    <i className="icofont-star me-2"></i>View Ratings
+                  </Link>
+                </li>
+                <li>
+                  <Link className="dropdown-item" to="/tutorgraderform">
+                    <i className="icofont-file-document me-2"></i>Submit Tutor/Grader Form
+                  </Link>
+                </li>
+                <li>
+                  <Link className="dropdown-item" to="/tutorgraderformview">
+                    <i className="icofont-eye me-2"></i>View Tutor/Grader Form
+                  </Link>
+                </li>
+                <li><hr className="dropdown-divider"/></li>
+                <li>
+                  <button className="dropdown-item" onClick={handleLogout}>
+                    <i className="icofont-logout me-2"></i>Sign Out
+                  </button>
+                </li>
+              </ul>
             </div>
 
-            {/* Ayar simgesi */}
-            <div className="ms-3">
-              <a href="#offcanvas_setting" data-bs-toggle="offcanvas" aria-expanded="false">
-                <i className="icofont-gear fs-5 text-white"></i>
-              </a>
-            </div>
           </div>
-
-          {/* Arama çubuğu */}
-          <div className="order-0 col-lg-4 col-md-4 col-sm-12 col-12 mb-3 mb-md-0">
-            
-          </div>
-
-          {/* Menü Toggler */}
-          <button className="navbar-toggler p-0 border-0 menu-toggle order-3" type="button" data-bs-toggle="collapse" data-bs-target="#mainHeader">
-            <span className="fa fa-bars"></span>
-          </button>
         </div>
       </nav>
     </div>
   );
 };
 
-export default EmployeeHeader;
+export default UserHeader;
