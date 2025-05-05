@@ -29,4 +29,7 @@ public interface AdminService {
     void authorizeActor(AuthorizeActorRequestDto dto);
 
     List<Admin> findAllAdmins();
+
+
+    void deleteUserById(Long userId);
 }

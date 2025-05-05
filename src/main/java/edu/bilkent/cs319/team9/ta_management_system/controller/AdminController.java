@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -92,4 +93,16 @@ public class AdminController {
         adminService.authorizeActor(dto);
         return ResponseEntity.ok().build();
     }
+
+
+    // DELETE USER
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @DeleteMapping("/users/{userId}")
+    public ResponseEntity<String> deleteUser(@PathVariable Long userId) {
+        adminService.deleteUserById(userId);
+        return ResponseEntity.ok("User with ID " + userId + " has been deleted.");
+    }
+
+
+
 }

@@ -159,4 +159,15 @@ public class AdminServiceImpl implements AdminService {
     public List<Admin> findAllAdmins() {
         return repo.findAll();
     }
+
+
+
+    @Override
+    @Transactional
+    public void deleteUserById(Long userId) {
+        var user = userRepo.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
+        userRepo.delete(user);
+    }
+
 }
