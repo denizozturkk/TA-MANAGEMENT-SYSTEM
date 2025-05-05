@@ -1,8 +1,8 @@
 // src/people/User/ViewNotificationPage.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-// Layout imports (dosya adlarına göre)
+// Layout imports
 import FacultyMemberLayout from "../FacultyMember/FacultyMemberLayout.jsx";
 import CoordinatorLayout from "../Coordinator/CoordinatorLayout.jsx";
 import TALayout from "../Ta/Layout-TA.jsx";
@@ -18,7 +18,7 @@ function parseJwt(token) {
   }
 }
 
-// RoleBasedLayout bileşeni
+// Role-based sidebar wrapper
 const RoleBasedLayout = ({ children }) => {
   const token = localStorage.getItem("authToken");
   const payload = token ? parseJwt(token) : {};
@@ -30,58 +30,61 @@ const RoleBasedLayout = ({ children }) => {
   let Sidebar = null;
   switch (userRole) {
     case "ROLE_FACULTY_MEMBER":
-      Sidebar = FacultyMemberLayout;
-      break;
+      Sidebar = FacultyMemberLayout; break;
     case "ROLE_COORDINATOR":
-      Sidebar = CoordinatorLayout;
-      break;
+      Sidebar = CoordinatorLayout; break;
     case "ROLE_TA":
-      Sidebar = TALayout;
-      break;
+      Sidebar = TALayout; break;
     case "ROLE_DEAN":
-      Sidebar = DeanLayout;
-      break;
+      Sidebar = DeanLayout; break;
     case "ROLE_ADMIN":
-      Sidebar = AdminLayout;
-      break;
+      Sidebar = AdminLayout; break;
     default:
       Sidebar = null;
   }
 
   return (
     <div className="d-flex">
-      {Sidebar && (
-        <div style={{ width: "300px" }}>
-          <Sidebar />
-        </div>
-      )}
+      {Sidebar && <div style={{ width: "300px" }}><Sidebar /></div>}
       <div className="flex-grow-1">{children}</div>
     </div>
   );
 };
 
-const notifications = [
-  { id: 1, name: "John Doe", message: "sent you a task update", time: "5 minutes ago", img: "https://i.pravatar.cc/150?img=16" },
-  { id: 2, name: "Lucas Baker", message: "commented on your project", time: "1 hour ago", img: "https://i.pravatar.cc/150?img=17" },
-  { id: 3, name: "Una Coleman", message: "shared a document", time: "2 hours ago", img: "https://i.pravatar.cc/150?img=18" },
-  { id: 4, name: "Rachel Carr", message: "approved your request", time: "3 hours ago", img: "https://i.pravatar.cc/150?img=19" },
-  { id: 5, name: "Emre Uçar", message: "updated profile information", time: "Today", img: "https://i.pravatar.cc/150?img=20" },
-  { id: 6, name: "Barkın Baydar", message: "replied to your comment", time: "Yesterday", img: "https://i.pravatar.cc/150?img=21" },
-  { id: 7, name: "Deniz Öztürk", message: "added you to a group", time: "2 days ago", img: "https://i.pravatar.cc/150?img=22" },
-  { id: 8, name: "Cankutay Dündar", message: "removed a task", time: "Last week", img: "https://i.pravatar.cc/150?img=23" }
-];
-
 const ViewNotificationPage = () => {
   const navigate = useNavigate();
+  const [notifications, setNotifications] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 5;
 
-  const totalPages = Math.ceil(notifications.length / pageSize);
-  const currentNotifications = notifications.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  useEffect(() => {
+    const token = localStorage.getItem("authToken");
+    if (!token) return;
 
-  const goToDetail = (id) => {
-    navigate(`/notification/${id}`);
-  };
+    fetch("http://localhost:8080/api/notifications/myBox", {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then(res => {
+        if (!res.ok) throw new Error("Failed to load notifications");
+        return res.json();
+      })
+      .then(data => setNotifications(Array.isArray(data) ? data : []))
+      .catch(err => {
+        console.error(err);
+        setNotifications([]);
+      });
+  }, []);
+
+  const totalPages = Math.ceil(notifications.length / pageSize);
+  const currentNotifications = notifications.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
+
+  const goToDetail = id => navigate(`/notification/${id}`);
 
   return (
     <RoleBasedLayout>
@@ -91,50 +94,48 @@ const ViewNotificationPage = () => {
             <h5 className="mb-0">Notifications</h5>
           </div>
           <div className="card-body">
-            <ul className="list-unstyled mb-0">
-              {currentNotifications.map((notif) => (
-                <li key={notif.id} className="d-flex align-items-start mb-3 border-bottom pb-3">
-                  <img
-                    src={notif.img}
-                    alt={notif.name}
-                    className="avatar rounded-circle me-3"
-                    width="50"
-                  />
-                  <div className="w-100">
-                    <p className="mb-1">
-                      <strong>{notif.name}</strong> {notif.message}
-                    </p>
-                    <small className="text-muted">{notif.time}</small>
-                    <br />
-                    <button
-                      className="btn btn-sm btn-dark mt-2"
-                      onClick={() => goToDetail(notif.id)}
-                    >
-                      Detaylara Bak
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
+            {currentNotifications.length === 0 ? (
+              <p className="text-center text-muted">No notifications to show.</p>
+            ) : (
+              <ul className="list-unstyled mb-0">
+                {currentNotifications.map(notif => (
+                  <li
+                    key={notif.id}
+                    onClick={() => goToDetail(notif.id)}
+                    style={{ cursor: "pointer" }}
+                    className="d-flex align-items-start mb-3 border-bottom pb-3"
+                  >
+                    <i className="icofont-bell me-3 fs-3 text-primary"></i>
+                    <div className="w-100">
+                      <p className="mb-1">{notif.message}</p>
+                      <small className="text-muted">
+                        {new Date(notif.timestamp).toLocaleString()}
+                      </small>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
 
-            {/* Pagination */}
-            <div className="d-flex justify-content-between align-items-center mt-4">
-              <button
-                className="btn btn-outline-primary"
-                onClick={() => setCurrentPage(currentPage - 1)}
-                disabled={currentPage === 1}
-              >
-                Önceki
-              </button>
-              <span>Sayfa {currentPage} / {totalPages}</span>
-              <button
-                className="btn btn-outline-primary"
-                onClick={() => setCurrentPage(currentPage + 1)}
-                disabled={currentPage === totalPages}
-              >
-                Sonraki
-              </button>
-            </div>
+            {totalPages > 1 && (
+              <div className="d-flex justify-content-between align-items-center mt-4">
+                <button
+                  className="btn btn-outline-primary"
+                  onClick={() => setCurrentPage(p => p - 1)}
+                  disabled={currentPage === 1}
+                >
+                  Previous
+                </button>
+                <span>Page {currentPage} / {totalPages}</span>
+                <button
+                  className="btn btn-outline-primary"
+                  onClick={() => setCurrentPage(p => p + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

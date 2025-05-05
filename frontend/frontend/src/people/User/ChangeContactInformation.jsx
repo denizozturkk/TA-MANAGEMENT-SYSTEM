@@ -1,7 +1,7 @@
 // src/people/User/ChangeContactInfoPage.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import verifyImg from '../User/forgot-password.svg'; // or another appropriate image
+import verifyImg from '../User/forgot-password.svg';
 
 import FacultyMemberLayout from '../FacultyMember/FacultyMemberLayout.jsx';
 import CoordinatorLayout from '../Coordinator/CoordinatorLayout.jsx';
@@ -9,7 +9,7 @@ import TALayout from '../Ta/Layout-TA.jsx';
 import DeanLayout from '../Dean/Layout-Dean.jsx';
 import AdminLayout from '../Admin/Layout-Admin.jsx';
 
-// Simple JWT parser to extract role
+// Simple JWT parser
 function parseJwt(token) {
   try {
     return JSON.parse(window.atob(token.split('.')[1]));
@@ -18,7 +18,7 @@ function parseJwt(token) {
   }
 }
 
-// Wraps children in the role-specific sidebar layout
+// Wraps content in the correct sidebar based on role
 const RoleBasedLayout = ({ children }) => {
   const token = localStorage.getItem('authToken');
   const payload = token ? parseJwt(token) : {};
@@ -29,23 +29,12 @@ const RoleBasedLayout = ({ children }) => {
 
   let Sidebar = null;
   switch (userRole) {
-    case 'ROLE_FACULTY_MEMBER':
-      Sidebar = FacultyMemberLayout;
-      break;
-    case 'ROLE_COORDINATOR':
-      Sidebar = CoordinatorLayout;
-      break;
-    case 'ROLE_TA':
-      Sidebar = TALayout;
-      break;
-    case 'ROLE_DEAN':
-      Sidebar = DeanLayout;
-      break;
-    case 'ROLE_ADMIN':
-      Sidebar = AdminLayout;
-      break;
-    default:
-      Sidebar = null;
+    case 'ROLE_FACULTY_MEMBER': Sidebar = FacultyMemberLayout; break;
+    case 'ROLE_COORDINATOR':    Sidebar = CoordinatorLayout;   break;
+    case 'ROLE_TA':             Sidebar = TALayout;             break;
+    case 'ROLE_DEAN':           Sidebar = DeanLayout;           break;
+    case 'ROLE_ADMIN':          Sidebar = AdminLayout;          break;
+    default:                    Sidebar = null;
   }
 
   return (
@@ -57,16 +46,61 @@ const RoleBasedLayout = ({ children }) => {
 };
 
 const ChangeContactInfoPage = () => {
-  const [code, setCode] = useState('');
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName]   = useState('');
+  const [phoneNumber, setPhone]   = useState('');
+  const [email, setEmail]         = useState('');
+  const [errorMsg, setErrorMsg]   = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = localStorage.getItem('authToken');
+    if (!token) return;
+    fetch('http://localhost:8080/api/users/me', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(res => {
+        if (!res.ok) throw new Error('Cannot fetch profile');
+        return res.json();
+      })
+      .then(data => {
+        setFirstName(data.firstName || '');
+        setLastName(data.lastName || '');
+        setPhone(data.phoneNumber || '');
+        setEmail(data.email || '');
+      })
+      .catch(err => {
+        console.error(err);
+      });
+  }, []);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log({ code, name, phone, email });
-    // TODO: validate code and submit updated info
+    setErrorMsg('');
+    setSuccessMsg('');
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      setErrorMsg('Not authenticated');
+      return;
+    }
+
+    fetch('http://localhost:8080/api/users/me/contact', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ firstName, lastName, phoneNumber, email }),
+    })
+      .then(res => {
+        if (!res.ok) throw new Error('Update failed');
+        setSuccessMsg('Contact information updated successfully.');
+      })
+      .catch(err => {
+        console.error(err);
+        setErrorMsg(err.message);
+      });
   };
 
   return (
@@ -76,42 +110,58 @@ const ChangeContactInfoPage = () => {
           <div className="col-lg-6">
             <div className="card border-0 shadow-sm">
               <div className="card-body p-4 text-center">
-                <img src={verifyImg} alt="Verify Code" className="mb-4" style={{ width: '100px' }} />
-                <h3 className="mb-2">Verify Your Email</h3>
+                <img
+                  src={verifyImg}
+                  alt="Verify Code"
+                  className="mb-4"
+                  style={{ width: '100px' }}
+                />
+                <h3 className="mb-2">Update Contact Information</h3>
                 <p className="text-muted mb-4">
-                  Enter the code sent to your email to update your contact information.
+                  Modify your name, phone number, or email below.
                 </p>
+
+                {errorMsg && (
+                  <div className="alert alert-danger">{errorMsg}</div>
+                )}
+                {successMsg && (
+                  <div className="alert alert-success">{successMsg}</div>
+                )}
+
                 <form onSubmit={handleSubmit} className="text-start">
                   <div className="mb-3">
-                    <label className="form-label">Verification Code</label>
+                    <label className="form-label">First Name</label>
                     <input
                       type="text"
                       className="form-control"
-                      value={code}
-                      onChange={e => setCode(e.target.value)}
+                      value={firstName}
+                      onChange={e => setFirstName(e.target.value)}
                       required
                     />
                   </div>
+
                   <div className="mb-3">
-                    <label className="form-label">Full Name</label>
+                    <label className="form-label">Last Name</label>
                     <input
                       type="text"
                       className="form-control"
-                      value={name}
-                      onChange={e => setName(e.target.value)}
+                      value={lastName}
+                      onChange={e => setLastName(e.target.value)}
                       required
                     />
                   </div>
+
                   <div className="mb-3">
                     <label className="form-label">Phone Number</label>
                     <input
                       type="tel"
                       className="form-control"
-                      value={phone}
+                      value={phoneNumber}
                       onChange={e => setPhone(e.target.value)}
                       required
                     />
                   </div>
+
                   <div className="mb-4">
                     <label className="form-label">Email Address</label>
                     <input
@@ -122,12 +172,14 @@ const ChangeContactInfoPage = () => {
                       required
                     />
                   </div>
+
                   <div className="d-grid">
-                    <button type="submit" className="btn btn-primary">
+                    <button type="submit" className="btn btn-success">
                       Update Contact Info
                     </button>
                   </div>
                 </form>
+
               </div>
             </div>
           </div>

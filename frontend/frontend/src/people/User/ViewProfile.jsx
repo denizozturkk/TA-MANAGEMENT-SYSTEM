@@ -1,12 +1,14 @@
-// src/people/User/ClientProfile.jsx
+// src/people/User/ViewProfile.jsx
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import FacultyMemberLayout from "../FacultyMember/FacultyMemberLayout.jsx";
 import CoordinatorLayout from "../Coordinator/CoordinatorLayout.jsx";
 import TALayout from "../Ta/Layout-TA.jsx";
 import DeanLayout from "../Dean/Layout-Dean.jsx";
 import AdminLayout from "../Admin/Layout-Admin.jsx";
+import avatarPlaceholder from "../User/avatar3.jpg"; // same as header
 
-// Simple JWT parser to extract role
+// Simple JWT parser
 function parseJwt(token) {
   try {
     return JSON.parse(window.atob(token.split(".")[1]));
@@ -15,35 +17,20 @@ function parseJwt(token) {
   }
 }
 
-// Wraps content in the correct sidebar based on user role
+// Pick the right sidebar
 const RoleBasedLayout = ({ children }) => {
   const token = localStorage.getItem("authToken");
   const payload = token ? parseJwt(token) : {};
-  const userRole =
+  const role =
     (payload.authorities && payload.authorities[0]) ||
-    localStorage.getItem("userRole") ||
-    "";
+    localStorage.getItem("userRole");
 
   let Sidebar = null;
-  switch (userRole) {
-    case "ROLE_FACULTY_MEMBER":
-      Sidebar = FacultyMemberLayout;
-      break;
-    case "ROLE_COORDINATOR":
-      Sidebar = CoordinatorLayout;
-      break;
-    case "ROLE_TA":
-      Sidebar = TALayout;
-      break;
-    case "ROLE_DEAN":
-      Sidebar = DeanLayout;
-      break;
-    case "ROLE_ADMIN":
-      Sidebar = AdminLayout;
-      break;
-    default:
-      Sidebar = null;
-  }
+  if (role === "ROLE_FACULTY_MEMBER") Sidebar = FacultyMemberLayout;
+  else if (role === "ROLE_COORDINATOR") Sidebar = CoordinatorLayout;
+  else if (role === "ROLE_TA") Sidebar = TALayout;
+  else if (role === "ROLE_DEAN") Sidebar = DeanLayout;
+  else if (role === "ROLE_ADMIN") Sidebar = AdminLayout;
 
   return (
     <div className="d-flex">
@@ -57,23 +44,33 @@ const RoleBasedLayout = ({ children }) => {
   );
 };
 
-const ClientProfile = () => {
+const ViewProfile = () => {
   const [user, setUser] = useState(null);
+  const [avatarUrl, setAvatarUrl] = useState(avatarPlaceholder);
 
   useEffect(() => {
     const token = localStorage.getItem("authToken");
     if (!token) return;
-    fetch("http://localhost:8080/api/auth/me", {
+
+    fetch("http://localhost:8080/api/users/me", {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => {
-        if (!res.ok) throw new Error("Failed to load profile");
+        if (!res.ok) throw new Error("Could not load profile");
         return res.json();
       })
-      .then((data) => setUser(data))
-      .catch((err) => {
-        console.error(err);
-      });
+      .then((data) => {
+        setUser(data);
+
+        // avatar logic: user.photoURL → random pravatar → placeholder
+        if (data.photoURL) {
+          setAvatarUrl(data.photoURL);
+        } else {
+          const rand = Math.floor(Math.random() * 70) + 1;
+          setAvatarUrl(`https://i.pravatar.cc/150?img=${rand}`);
+        }
+      })
+      .catch(console.error);
   }, []);
 
   if (!user) {
@@ -87,70 +84,38 @@ const ClientProfile = () => {
   }
 
   const fullName = `${user.firstName} ${user.lastName}`;
-  const roleDisplay = user.role.replace(/^ROLE_/, "").replace(/_/g, " ");
+  const displayRole = user.role.replace(/^ROLE_/, "").replace(/_/g, " ");
 
   return (
     <RoleBasedLayout>
       <div className="container py-4">
-        <div
-          className="card teacher-card mb-3 mx-auto shadow-sm"
-          style={{ maxWidth: "600px" }}
-        >
-          <div className="card-body teacher-fulldeatil">
-            {/* Avatar & Name */}
+        <h3 className="fw-bold mb-4">My Profile</h3>
+        <div className="card mx-auto" style={{ maxWidth: "600px" }}>
+          <div className="card-body">
             <div className="text-center mb-4">
               <img
-                src={user.photoURL || "/assets/images/lg/avatar3.jpg"}
-                alt={fullName}
-                className="avatar xl rounded-circle img-thumbnail shadow-sm"
-              />
-              <div className="mt-3">
-                <h5 className="fw-bold mb-0">{fullName}</h5>
-                <span className="text-muted small">{roleDisplay}</span>
-              </div>
+                                src={user.avatarUrl || avatarPlaceholder}
+                                alt="avatar"
+                                width="32"
+                                height="32"
+                                className="rounded-circle me-2"
+                              />
+              <h5 className="mt-3">{fullName}</h5>
+              <small className="text-muted">{displayRole}</small>
             </div>
-
-            {/* Info Section */}
-            <div className="teacher-info w-100 px-3">
-              <div className="mb-2">
-                <strong className="text-muted d-block">Phone</strong>
-                <span>{user.phoneNumber}</span>
-              </div>
-              <div className="mb-2">
-                <strong className="text-muted d-block">Email</strong>
-                <span>{user.email}</span>
-              </div>
-              {/* Optional fields if your API provides them */}
-              {user.birthDate && (
-                <div className="mb-2">
-                  <strong className="text-muted d-block">Birth Date</strong>
-                  <span>{user.birthDate}</span>
-                </div>
-              )}
-              {user.address && (
-                <div className="mb-2">
-                  <strong className="text-muted d-block">Address</strong>
-                  <span>{user.address}</span>
-                </div>
-              )}
-
-              {/* About */}
-              {user.about && (
-                <div className="mt-3">
-                  <strong className="text-muted d-block">About</strong>
-                  <p className="small mb-0">{user.about}</p>
-                </div>
-              )}
-
-              {/* Actions */}
-              <div className="mt-4 d-flex flex-column flex-md-row justify-content-center gap-2">
-                <button className="btn btn-outline-dark w-100 w-md-auto">
-                  Change Contact Information
-                </button>
-                <button className="btn btn-outline-dark w-100 w-md-auto">
-                  Change Password
-                </button>
-              </div>
+            <dl className="row">
+              <dt className="col-sm-4">Email</dt>
+              <dd className="col-sm-8">{user.email}</dd>
+              <dt className="col-sm-4">Phone</dt>
+              <dd className="col-sm-8">{user.phoneNumber}</dd>
+            </dl>
+            <div className="d-flex justify-content-center gap-2">
+              <Link to="/changecontactinformation" className="btn btn-outline-primary">
+                Edit Contact Info
+              </Link>
+              <Link to="/changepassword" className="btn btn-outline-primary">
+                Change Password
+              </Link>
             </div>
           </div>
         </div>
@@ -159,4 +124,4 @@ const ClientProfile = () => {
   );
 };
 
-export default ClientProfile;
+export default ViewProfile;
