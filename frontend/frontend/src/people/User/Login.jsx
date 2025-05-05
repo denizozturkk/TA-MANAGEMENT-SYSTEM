@@ -132,10 +132,10 @@ const SignInPage = () => {
       let target = "/";
       switch (role) {
         case "ROLE_ADMIN":
-          target = "/admin";
+          target = "/authorize-actors";
           break;
         case "ROLE_TA":
-          target = "/ta";
+          target = "/leave";
           break;
         case "ROLE_COORDINATOR":
           target = "/manageexamclassroom";
