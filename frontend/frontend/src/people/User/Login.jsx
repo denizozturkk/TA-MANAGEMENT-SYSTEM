@@ -121,21 +121,22 @@ const SignInPage = () => {
         throw new Error(errBody.message || "Login failed");
       }
 
-      const { token, role } = await res.json();
-      console.log("✅ Login succeeded", { token, role });
+      const { token, role, id } = await res.json();
+      console.log("✅ Login succeeded", { token, role, id });
 
-      // Save token and role to localStorage
+      // persist everything
       localStorage.setItem("authToken", token);
       localStorage.setItem("userRole", role);
+      localStorage.setItem("userId", id);              // ← store the dean’s ID
 
       // Redirect by role
       let target = "/";
       switch (role) {
         case "ROLE_ADMIN":
-          target = "/admin";
+          target = "/authorize-actors";
           break;
         case "ROLE_TA":
-          target = "/ta";
+          target = "/leave";
           break;
         case "ROLE_COORDINATOR":
           target = "/manageexamclassroom";
