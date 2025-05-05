@@ -10,6 +10,9 @@ const reportOptions = [
 ];
 
 const MakeReportDean = () => {
+
+  const deanId = localStorage.getItem("userId");
+
   const [dateRange,    setDateRange]    = useState({ startDate: "", endDate: "" });
   const [today,        setToday]        = useState("");
   const [requests,     setRequests]     = useState([]);
@@ -17,8 +20,10 @@ const MakeReportDean = () => {
   const [actionKey,    setActionKey]    = useState(null);
 
   useEffect(() => {
+
+    if (!deanId) return alert("No deanId found—please log in again.");
     setToday(new Date().toISOString().split("T")[0]);
-    fetch("/api/dean/report-requests")
+    fetch(`http://localhost:8080/api/dean/${deanId}/report-requests`)
       .then((res) => {
         if (!res.ok) throw new Error();
         return res.json();
@@ -29,7 +34,7 @@ const MakeReportDean = () => {
         alert("Error loading report requests");
       })
       .finally(() => setLoadingReqs(false));
-  }, []);
+  }, [deanId]);
 
   const handleDateChange = (e) => {
     const { name, value } = e.target;
@@ -43,7 +48,7 @@ const MakeReportDean = () => {
     }
     setActionKey(key);
     try {
-      const res = await fetch("/api/dean/report-requests", {
+      const res = await fetch("http://localhost:8080/api/dean/${deanId}/report-requests", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ type: key, from: startDate, to: endDate }),
