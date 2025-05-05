@@ -140,11 +140,7 @@ function App() {
           <Route path="make-reports" element={<MakeReportsAdmin />} />
           <Route path="pending-reports" element={<PendingReportsAdmin />} />
       </Route>
-<<<<<<< HEAD
 
-      {/* Fallback */}
-=======
->>>>>>> 38d6f2634d7167687e410740a113e21b54a6a1b1
     </Routes>
   );
 }
