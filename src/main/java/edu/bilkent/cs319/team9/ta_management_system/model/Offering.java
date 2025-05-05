@@ -25,7 +25,12 @@ public class Offering {
     @ManyToOne @JoinColumn(name = "course_id")
     private Course course;
 
-    @ManyToMany(mappedBy = "offerings")
+    @ManyToMany
+    @JoinTable(
+            name = "offering_ta",
+            joinColumns = @JoinColumn(name = "offering_id"),
+            inverseJoinColumns = @JoinColumn(name = "ta_id")
+    )
     private Set<TA> tas;
 
     @ManyToMany

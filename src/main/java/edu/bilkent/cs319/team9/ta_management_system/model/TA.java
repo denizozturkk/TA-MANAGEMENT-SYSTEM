@@ -19,11 +19,7 @@ public class TA extends User {
     @Enumerated(EnumType.STRING)
     private DegreeStatus msPhdStatus;
 
-    @ManyToMany
-    @JoinTable(
-            name = "offering_ta",
-            joinColumns = @JoinColumn(name = "ta_id"),
-            inverseJoinColumns = @JoinColumn(name = "offering_id"))
+    @ManyToMany(mappedBy = "tas")
     private Set<Offering> offerings;
 
     @OneToMany(mappedBy = "ta")
