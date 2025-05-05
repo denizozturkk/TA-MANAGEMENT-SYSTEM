@@ -10,7 +10,13 @@ const PendingReportsAdmin = () => {
   useEffect(() => {
     const loadPending = async () => {
       try {
-        const res = await fetch("/api/admin/report-requests");
+        const token = localStorage.getItem("token");
+        const res = await fetch("http://localhost:8080/api/admin/report-requests", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
         if (!res.ok) throw new Error("Failed to fetch pending");
         const data = await res.json();
         setPending(data);
@@ -25,8 +31,12 @@ const PendingReportsAdmin = () => {
   const acceptAndSend = async (report) => {
     setLoadingId(report.id);
     try {
-      await fetch(`/api/admin/report-requests/${report.id}/accept`, {
+      const token = localStorage.getItem("token");
+      await fetch(`http://localhost:8080/api/admin/report-requests/${report.id}/accept`, {
         method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
       setPending((prev) => prev.filter((r) => r.id !== report.id));
       alert(`✅ Report #${report.id} accepted.`);
@@ -42,9 +52,7 @@ const PendingReportsAdmin = () => {
     <LayoutAdmin>
       <div className="card shadow-sm border-0">
         <div className="card-body">
-          <h4 className="fw-bold mb-4 text-primary">
-            Pending Report Requests
-          </h4>
+          <h4 className="fw-bold mb-4 text-primary">Pending Report Requests</h4>
           <table className="table table-hover">
             <thead>
               <tr>
@@ -52,6 +60,7 @@ const PendingReportsAdmin = () => {
                 <th>Type</th>
                 <th>Requester</th>
                 <th>Requested On</th>
+                <th>Details</th>
                 <th></th>
               </tr>
             </thead>
@@ -59,9 +68,10 @@ const PendingReportsAdmin = () => {
               {pending.map((r) => (
                 <tr key={r.id}>
                   <td>{r.id}</td>
-                  <td className="text-capitalize">{r.type}</td>
-                  <td>{r.requester}</td>
-                  <td>{new Date(r.date).toLocaleDateString()}</td>
+                  <td className="text-capitalize">{r.reportType}</td>
+                  <td>{r.requesterId}</td>
+                  <td>{new Date(r.createdAt).toLocaleString()}</td>
+                  <td>{r.details}</td>
                   <td>
                     <button
                       className="btn btn-sm btn-success"
