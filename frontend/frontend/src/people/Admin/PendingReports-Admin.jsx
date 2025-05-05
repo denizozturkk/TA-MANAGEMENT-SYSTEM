@@ -11,7 +11,7 @@ const PendingReportsAdmin = () => {
     const loadPending = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch("/api/admin/report-requests", {
+        const res = await fetch("http://localhost:8080/api/admin/report-requests", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -32,7 +32,7 @@ const PendingReportsAdmin = () => {
     setLoadingId(report.id);
     try {
       const token = localStorage.getItem("token");
-      await fetch(`/api/admin/report-requests/${report.id}/accept`, {
+      await fetch(`http://localhost:8080/api/admin/report-requests/${report.id}/accept`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,

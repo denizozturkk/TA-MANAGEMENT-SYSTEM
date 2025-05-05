@@ -1,219 +1,89 @@
-// import React from 'react';
-// import Loginimg from "../User/login-img.svg"
-// const SignInPage = () => {
-//   return (
-//     <div id="mytask-layout">
-//       {/* main body area */}
-//       <div className="main p-2 py-3 p-xl-5" data-mytask="theme-indigo">
-//         <div className="body d-flex p-0 p-xl-5">
-//           <div className="container-xxl">
-//             <div className="row g-0">
-//               {/* Left Image Panel */}
-//               <div className="col-lg-6 d-none d-lg-flex justify-content-center align-items-center rounded-lg auth-h100">
-//                 <div style={{ maxWidth: '25rem' }}>
-//                   <div className="text-center mb-5">
-//                     <svg width="4rem" fill="currentColor" className="bi bi-clipboard-check" viewBox="0 0 16 16">
-//                       <path fillRule="evenodd" d="M10.854 7.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 9.793l2.646-2.647a.5.5 0 0 1 .708 0z" />
-//                       <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z" />
-//                       <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z" />
-//                     </svg>
-//                   </div>
-//                   <div className="mb-5">
-//                     <h2 className="color-900 text-center">My-Task Let&apos;s Management Better</h2>
-//                   </div>
-//                   <div>
-//                     <img src={Loginimg} alt="login-img" />
-//                   </div>
-//                 </div>
-//               </div>
-//               {/* Right Form Panel */}
-//               <div className="col-lg-6 d-flex justify-content-center align-items-center border-0 rounded-lg auth-h100">
-//                 <div className="w-100 p-3 p-md-5 card border-0 bg-dark text-light" style={{ maxWidth: '32rem' }}>
-//                   <form className="row g-1 p-3 p-md-4">
-//                     <div className="col-12 text-center mb-1 mb-lg-5">
-//                       <h1>Sign in</h1>
-//                     </div>
-//                     <div className="col-12 text-center mb-4">
-//                       <span className="dividers text-muted mt-4">OR</span>
-//                     </div>
-//                     <div className="col-12">
-//                       <div className="mb-2">
-//                         <label className="form-label">Email address</label>
-//                         <input
-//                           type="email"
-//                           className="form-control form-control-lg"
-//                           placeholder="name@example.com"
-//                         />
-//                       </div>
-//                     </div>
-//                     <div className="col-12">
-//                       <div className="mb-2">
-//                         <div className="form-label">
-//                           <span className="d-flex justify-content-between align-items-center">
-//                             Password
-//                             <a className="text-secondary" href="/auth-password-reset.html">
-//                               Forgot Password?
-//                             </a>
-//                           </span>
-//                         </div>
-//                         <input
-//                           type="password"
-//                           className="form-control form-control-lg"
-//                           placeholder="***************"
-//                         />
-//                       </div>
-//                     </div>
-//                     <div className="col-12">
-//                       <div className="form-check">
-//                         <input
-//                           className="form-check-input"
-//                           type="checkbox"
-//                           id="flexCheckDefault"
-//                         />
-//                         <label className="form-check-label" htmlFor="flexCheckDefault">
-//                           Remember me
-//                         </label>
-//                       </div>
-//                     </div>
-//                     <div className="col-12 text-center mt-4">
-//                       <a href="/index.html" className="btn btn-lg btn-block btn-light lift text-uppercase" alt="signin">
-//                         SIGN IN
-//                       </a>
-//                     </div>
-//                   </form>
-//                 </div>
-//               </div>
-//             </div>
-//           </div>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default SignInPage;
-
+// src/people/User/Login.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Loginimg from "../User/login-img.svg";
 
-const SignInPage = () => {
-  const [email, setEmail] = useState("");
+const Login = () => {
+  const [email,    setEmail   ] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState(null);
+  const [error,    setError   ] = useState(null);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
-  
+
     try {
       const res = await fetch("http://localhost:8080/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ email, password })
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ email, password }),
       });
-  
-      if (!res.ok) {
-        const errBody = await res.json().catch(() => ({}));
-        throw new Error(errBody.message || "Login failed");
-      }
-  
-      const { token, role } = await res.json();
-      console.log("✅ Login succeeded", { token, role });
-  
-      // ✅ Store token under 'token' key
-      localStorage.setItem("token", token);
-      localStorage.setItem("userRole", role);
-  
-      // ✅ Redirect by role
-      let target = "/";
-      if (role === "ROLE_ADMIN")       target = "/make-reports";
-      else if (role === "ROLE_TA")     target = "/leave";
-      else if (role === "ROLE_COORDINATOR") target = "/manageexamclassroom"; 
-      else if (role === "ROLE_FACULTY_MEMBER") target = "/classroomlist";
-      else if (role === "ROLE_DEAN") target = "/make-report";
-      else if (role === "ROLE_DEPARMENT_STAFF") target = "/tutorgraderformview";
 
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.message || "Login failed");
+      }
+
+      const { token, role } = await res.json();
+      // store them under these exact keys:
+      localStorage.setItem("authToken", token);
+      localStorage.setItem("userRole",  role);
+
+      // Redirect
+      let target = "/";
+      switch (role) {
+        case "ROLE_ADMIN":           target = "/make-reports";        break;
+        case "ROLE_TA":              target = "/leave";               break;
+        case "ROLE_COORDINATOR":     target = "/manageexamclassroom"; break;
+        case "ROLE_FACULTY_MEMBER":  target = "/classroomlist";       break;
+        case "ROLE_DEAN":            target = "/make-report";         break;
+        case "ROLE_DEPARTMENT_STAFF":target = "/tutorgraderformview";break;
+      }
       navigate(target, { replace: true });
     } catch (err) {
-      console.error("❌ Login error:", err);
+      console.error("Login error", err);
       setError(err.message);
     }
   };
-  
 
   return (
-    <div id="mytask-layout">
-      <div className="main p-2 py-3 p-xl-5" data-mytask="theme-indigo">
-        <div className="body d-flex p-0 p-xl-5">
-          <div className="container-xxl">
-            <div className="row g-0">
-              <div className="col-lg-6 d-none d-lg-flex justify-content-center align-items-center rounded-lg auth-h100">
-                <div style={{ maxWidth: "25rem" }}>
-                  <div className="text-center mb-5">
-                    <svg width="4rem" fill="currentColor" className="bi bi-clipboard-check" viewBox="0 0 16 16">
-                      <path d="M10.854 7.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 0 1 .708-.708L7.5 9.793l2.646-2.647a.5.5 0 0 1 .708 0z"/>
-                      <path d="M4 1.5a.5.5 0 0 0-.5.5v.5h-1A1.5 1.5 0 0 0 1 4v9.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5V4a1.5 1.5 0 0 0-1.5-1.5h-1V2a.5.5 0 0 0-.5-.5h-2a.5.5 0 0 0-.5.5V3H6V2a.5.5 0 0 0-.5-.5h-2zM2 4h1v.5a.5.5 0 0 0 .5.5h9a.5.5 0 0 0 .5-.5V4h1v9.5a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5V4z"/>
-                    </svg>
-                  </div>
-                  <div className="mb-5">
-                    <h2 className="color-900 text-center">My-Task Let's Management Better</h2>
-                  </div>
-                  <img src={Loginimg} alt="login-img" className="img-fluid" />
-                </div>
-              </div>
-
-              <div className="col-lg-6 d-flex justify-content-center align-items-center border-0 rounded-lg auth-h100">
-                <div className="w-100 p-3 p-md-5 card border-0 bg-dark text-light" style={{ maxWidth: "32rem" }}>
-                  <form className="row g-1 p-3 p-md-4" onSubmit={handleSubmit}>
-                    {error && (
-                      <div className="col-12">
-                        <p className="text-center text-danger">{error}</p>
-                      </div>
-                    )}
-                    <div className="col-12 text-center mb-4">
-                      <h1>Sign in</h1>
-                    </div>
-                    <div className="col-12">
-                      <label className="form-label">Email address</label>
-                      <input
-                        type="email"
-                        className="form-control form-control-lg"
-                        placeholder="name@example.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div className="col-12">
-                      <label className="form-label">Password</label>
-                      <input
-                        type="password"
-                        className="form-control form-control-lg"
-                        placeholder="***************"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div className="col-12 text-center mt-4">
-                      <button type="submit" className="btn btn-lg btn-block btn-light lift text-uppercase">
-                        SIGN IN
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              </div>
-
-            </div>
+    <div className="row">
+      <div className="col-md-6">
+        {/* … your left‐side graphic … */}
+        <img src={Loginimg} className="img-fluid" alt="login graphic"/>
+      </div>
+      <div className="col-md-6">
+        <form onSubmit={handleSubmit}>
+          <h1>Sign In</h1>
+          {error && <div className="alert alert-danger">{error}</div>}
+          <div className="mb-3">
+            <label>Email</label>
+            <input
+              type="email"
+              className="form-control"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              required
+            />
           </div>
-        </div>
+          <div className="mb-3">
+            <label>Password</label>
+            <input
+              type="password"
+              className="form-control"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              required
+            />
+          </div>
+          <button className="btn btn-primary w-100" type="submit">
+            Sign In
+          </button>
+        </form>
       </div>
     </div>
   );
 };
 
-export default SignInPage;
+export default Login;
