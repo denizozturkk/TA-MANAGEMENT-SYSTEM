@@ -1,16 +1,16 @@
-// src/people/TA/Layout-TA.jsx
+// src/people/Admin/Layout-Admin.jsx
 import React, { useState } from "react";
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 
-const LayoutTA = () => {
+const LayoutAdmin = ({ children }) => {
   const [open, setOpen] = useState({
-    workload: false,
-    leave:    false,
-    swap:     false,
+    actors:   false,
+    requests: false,
+    reports:  false,
+    pending:  false,
   });
-
   const toggle = (key) =>
-    setOpen((o) => ({ ...o, [key]: !o[key] }));
+    setOpen((prev) => ({ ...prev, [key]: !prev[key] }));
 
   const linkClass = ({ isActive }) =>
     isActive
@@ -23,131 +23,83 @@ const LayoutTA = () => {
         {/* Sidebar */}
         <div className="col-lg-3">
           <div
-            className="sidebar px-4 py-4 py-md-5 me-0 d-flex flex-column"
+            className="sidebar px-4 py-4 py-md-5 d-flex flex-column"
             style={{ backgroundColor: "purple", minHeight: "100vh" }}
           >
             {/* Brand */}
             <NavLink
-              to="/workload/view"
+              to="/authorize-actors"
               className="mb-4 brand-icon text-white d-flex align-items-center"
             >
-              <svg
-                width="35"
-                height="35"
-                fill="currentColor"
-                className="me-2"
-                viewBox="0 0 16 16"
-              >
-                {/* …SVG here… */}
+              <svg width="35" height="35" fill="currentColor" className="me-2">
+                {/* … your SVG paths … */}
               </svg>
-              <span className="h5 mb-0">My-Task TA</span>
+              <span className="h5 mb-0">My-Task Admin</span>
             </NavLink>
 
             <ul className="menu-list flex-grow-1">
-              {/* Workload */}
+              {/* Authorize Actors */}
               <li className="mb-3">
                 <div className="d-flex justify-content-between align-items-center">
-                  <NavLink to="/workload/view" className={linkClass}>
+                  <NavLink to="/authorize-actors" className={linkClass}>
+                    <i className="icofont-ui-user fs-5 me-2" />
+                    Authorize Actors
+                  </NavLink>
+                  <button
+                    className="btn btn-link text-light p-0"
+                    onClick={() => toggle("actors")}
+                  >
+                    <i className={`icofont-rounded-${open.actors ? "up" : "down"}`} />
+                  </button>
+                </div>
+              </li>
+
+              {/* Review Requests */}
+              <li className="mb-3">
+                <div className="d-flex justify-content-between align-items-center">
+                  <NavLink to="/review-requests" className={linkClass}>
+                    <i className="icofont-file-text fs-5 me-2" />
+                    Review Requests
+                  </NavLink>
+                  <button
+                    className="btn btn-link text-light p-0"
+                    onClick={() => toggle("requests")}
+                  >
+                    <i className={`icofont-rounded-${open.requests ? "up" : "down"}`} />
+                  </button>
+                </div>
+              </li>
+
+              {/* Generate Reports */}
+              <li className="mb-3">
+                <div className="d-flex justify-content-between align-items-center">
+                  <NavLink to="/make-reports" className={linkClass}>
+                    <i className="icofont-chart-histogram fs-5 me-2" />
+                    Generate Reports
+                  </NavLink>
+                  <button
+                    className="btn btn-link text-light p-0"
+                    onClick={() => toggle("reports")}
+                  >
+                    <i className={`icofont-rounded-${open.reports ? "up" : "down"}`} />
+                  </button>
+                </div>
+              </li>
+
+              {/* Pending Reports */}
+              <li className="mb-3">
+                <div className="d-flex justify-content-between align-items-center">
+                  <NavLink to="/pending-reports" className={linkClass}>
                     <i className="icofont-hour-glass fs-5 me-2" />
-                    Workload
+                    Pending Reports
                   </NavLink>
                   <button
                     className="btn btn-link text-light p-0"
-                    onClick={() => toggle("workload")}
+                    onClick={() => toggle("pending")}
                   >
-                    <i className={`icofont-rounded-${open.workload ? "up" : "down"}`} />
+                    <i className={`icofont-rounded-${open.pending ? "up" : "down"}`} />
                   </button>
                 </div>
-                {open.workload && (
-                  <ul className="ps-3 mt-2">
-                    <li className="mb-1">
-                      <NavLink to="/workload/view" className={linkClass}>
-                        View Workload
-                      </NavLink>
-                    </li>
-                    <li>
-                      <NavLink to="/workload/report" className={linkClass}>
-                        Report Workload
-                      </NavLink>
-                    </li>
-                  </ul>
-                )}
-              </li>
-
-              {/* Leave */}
-              <li className="mb-3">
-                <div className="d-flex justify-content-between align-items-center">
-                  <NavLink to="/leave" className={linkClass}>
-                    <i className="icofont-leave fs-5 me-2" />
-                    Leave
-                  </NavLink>
-                  <button
-                    className="btn btn-link text-light p-0"
-                    onClick={() => toggle("leave")}
-                  >
-                    <i className={`icofont-rounded-${open.leave ? "up" : "down"}`} />
-                  </button>
-                </div>
-                {open.leave && (
-                  <ul className="ps-3 mt-2">
-                    <li className="mb-1">
-                      <NavLink to="/leave" className={linkClass}>
-                        Submit Leave
-                      </NavLink>
-                    </li>
-                    <li>
-                      <NavLink to="/swap-proctor" className={linkClass}>
-                        View Leave Requests
-                      </NavLink>
-                    </li>
-                  </ul>
-                )}
-              </li>
-
-              {/* Swap */}
-              <li className="mb-3">
-                <div className="d-flex justify-content-between align-items-center">
-                  <NavLink to="/swap" className={linkClass}>
-                    <i className="icofont-exchange fs-5 me-2" />
-                    Swap
-                  </NavLink>
-                  <button
-                    className="btn btn-link text-light p-0"
-                    onClick={() => toggle("swap")}
-                  >
-                    <i className={`icofont-rounded-${open.swap ? "up" : "down"}`} />
-                  </button>
-                </div>
-                {open.swap && (
-                  <ul className="ps-3 mt-2">
-                    <li className="mb-1">
-                      <NavLink to="/swap" className={linkClass}>
-                        Submit Swap
-                      </NavLink>
-                    </li>
-                    <li>
-                      <NavLink to="/swap-proctor" className={linkClass}>
-                        View Swap Requests
-                      </NavLink>
-                    </li>
-                  </ul>
-                )}
-              </li>
-
-              {/* Past Tasks */}
-              <li className="mb-3">
-                <NavLink to="/past-tasks" className={linkClass}>
-                  <i className="icofont-history fs-5 me-2" />
-                  Past Tasks
-                </NavLink>
-              </li>
-
-              {/* Calendar */}
-              <li className="mb-3">
-                <NavLink to="/calendar" className={linkClass}>
-                  <i className="icofont-calendar fs-5 me-2" />
-                  Calendar
-                </NavLink>
               </li>
             </ul>
 
@@ -157,10 +109,10 @@ const LayoutTA = () => {
           </div>
         </div>
 
-        {/* Main content */}
+        {/* Main content area */}
         <div className="col-lg-9">
           <div className="container-xxl py-5">
-            <Outlet />
+            {children}
           </div>
         </div>
       </div>
@@ -168,4 +120,4 @@ const LayoutTA = () => {
   );
 };
 
-export default LayoutTA;
+export default LayoutAdmin;
