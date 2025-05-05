@@ -142,7 +142,6 @@ function App() {
       </Route>
 
       {/* Fallback */}
-      <Route path="*" element={<Navigate to="/hh" replace />} />
     </Routes>
   );
 }

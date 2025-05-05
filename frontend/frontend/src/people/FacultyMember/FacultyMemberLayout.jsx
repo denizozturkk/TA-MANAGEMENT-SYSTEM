@@ -27,12 +27,12 @@ const Sidebar = () => {
               <li><Link className="ms-link" to="/generateclassroomlist"><span>Generate Classroom List</span></Link></li>
               <li><Link className="ms-link" to="/printstudentdistribution"><span>Print Student Distribution</span></Link></li>
               <li><Link className="ms-link" to="/leaverequest"><span>Review TA Leave Request</span></Link></li>
-              <li><Link className="ms-link" to="/selectassignmenttype"><span>Select Assignment Type</span></Link></li>
+              {/*<li><Link className="ms-link" to="/selectassignmenttype"><span>Select Assignment Type</span></Link></li>*/}
               <li><Link className="ms-link" to="/excelupload"><span>Upload Semester Excel</span></Link></li>
               <li><Link className="ms-link" to="/dutyextension"><span>Review Duty Extension</span></Link></li>
               <li><Link className="ms-link" to="/reviewworkload"><span>Review TA Workload</span></Link></li>
               <li><Link className="ms-link" to="/defineexam"><span>Define Exam</span></Link></li>
-              <li><Link className="ms-link" to="/talist"><span>Create TA List</span></Link></li>
+              {/*<li><Link className="ms-link" to="/talist"><span>Create TA List</span></Link></li>*/}
               <li><Link className="ms-link" to="/assignassignment"><span>Assign Assignment</span></Link></li>
             </ul>
           </li>
