@@ -34,6 +34,8 @@ public class AdminController {
     public List<ReportRequestDto> pendingRequests() {
         return adminService.getPendingReportRequests();
     }
+
+
     @PostMapping("/report-requests/{id}/accept")
     public ResponseEntity<Void> accept(@PathVariable Long id) {
         adminService.acceptReportRequest(id);

@@ -9,9 +9,11 @@ import edu.bilkent.cs319.team9.ta_management_system.repository.ClassroomReposito
 import edu.bilkent.cs319.team9.ta_management_system.repository.OfferingRepository;
 import edu.bilkent.cs319.team9.ta_management_system.repository.ExamRepository;
 import edu.bilkent.cs319.team9.ta_management_system.service.ClassroomDistributionService;
+import edu.bilkent.cs319.team9.ta_management_system.service.ExcelImportService;
 import edu.bilkent.cs319.team9.ta_management_system.service.FacultyMemberService;
 import edu.bilkent.cs319.team9.ta_management_system.service.PdfGeneratorService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -21,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -225,5 +228,38 @@ public class FacultyMemberController {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(pdf);
+    }
+
+    @Autowired
+    private ExcelImportService excelImportService;
+
+    @PostMapping("/imp-ta")
+    public ResponseEntity<Void> importTas(@RequestParam("file") MultipartFile file) throws IOException {
+        excelImportService.importTaSheet(file);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/imp-students")
+    public ResponseEntity<Void> importStudents(@RequestParam("file") MultipartFile file) throws IOException {
+        excelImportService.importStudentSheet(file);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/imp-faculty")
+    public ResponseEntity<Void> importFaculty(@RequestParam("file") MultipartFile file) throws IOException {
+        excelImportService.importFacultySheet(file);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/imp-offerings")
+    public ResponseEntity<Void> importOfferings(@RequestParam("file") MultipartFile file) throws IOException {
+        excelImportService.importOfferingSheet(file);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/imp-enrollments")
+    public ResponseEntity<Void> importEnrollments(@RequestParam("file") MultipartFile file) throws IOException {
+        excelImportService.importEnrollmentSheet(file);
+        return ResponseEntity.ok().build();
     }
 }

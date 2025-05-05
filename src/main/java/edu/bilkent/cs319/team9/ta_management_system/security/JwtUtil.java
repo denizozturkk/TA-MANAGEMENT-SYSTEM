@@ -16,8 +16,14 @@ public class JwtUtil {
     @Value("${app.jwt.secret}")
     private String secretKey;
 
-    @Value("${app.jwt.expirationMs}")
+    @Value("${app.jwt.expirationMs:86400000}")
     private long expirationMs;
+
+    @PostConstruct
+    public void init() {
+        System.out.println("🔐 JWT secretKey = " + secretKey);
+        System.out.println("⏱  JWT expirationMs = " + expirationMs + "ms");
+    }
 
     // 1) Generate a token for a given username
     public String generateToken(String username) {

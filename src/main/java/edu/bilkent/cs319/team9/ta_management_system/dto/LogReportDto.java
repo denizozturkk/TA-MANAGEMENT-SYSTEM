@@ -21,6 +21,7 @@ public class LogReportDto {
     private String actorMail;
     private LocalDateTime timestamp;
     private String details;
+    private LogEventType eventType;
 
     public static LogReportDto fromEntity(LogEntry e) {
         return LogReportDto.builder()
@@ -28,6 +29,7 @@ public class LogReportDto {
                 .actorMail(e.getEmail())
                 .timestamp(e.getTimestamp())
                 .details(e.getDetails())
+                .eventType(e.getEventType())
                 .build();
     }
 }
