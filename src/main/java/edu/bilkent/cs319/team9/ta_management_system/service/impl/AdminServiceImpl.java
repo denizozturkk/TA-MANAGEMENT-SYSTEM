@@ -7,6 +7,7 @@ import edu.bilkent.cs319.team9.ta_management_system.model.*;
 import edu.bilkent.cs319.team9.ta_management_system.repository.*;
 import edu.bilkent.cs319.team9.ta_management_system.service.AdminService;
 import edu.bilkent.cs319.team9.ta_management_system.service.NotificationService;
+import edu.bilkent.cs319.team9.ta_management_system.service.PdfGeneratorService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -28,6 +29,7 @@ public class AdminServiceImpl implements AdminService {
     private final UserRepository           userRepo;
     private final DeanRepository deanRepository;
     private final NotificationService notificationService;
+    private final PdfGeneratorService pdfGeneratorService;
 
 
     private final AdminRepository repo;
@@ -160,8 +162,6 @@ public class AdminServiceImpl implements AdminService {
         return repo.findAll();
     }
 
-
-
     @Override
     @Transactional
     public void deleteUserById(Long userId) {
@@ -170,4 +170,20 @@ public class AdminServiceImpl implements AdminService {
         userRepo.delete(user);
     }
 
+    @Override public byte[] logReportPdf(LocalDateTime from, LocalDateTime to)
+            throws com.itextpdf.text.DocumentException {
+        return pdfGeneratorService.generateLogReportPdf(generateLogReports(from, to));
+    }
+    @Override public byte[] swapReportPdf(LocalDateTime from, LocalDateTime to)
+            throws com.itextpdf.text.DocumentException {
+        return pdfGeneratorService.generateSwapReportPdf(generateSwapReports(from, to));
+    }
+    @Override public byte[] dutyReportPdf(LocalDateTime from, LocalDateTime to)
+            throws com.itextpdf.text.DocumentException {
+        return pdfGeneratorService.generateDutyReportPdf(generateDutyReports(from, to));
+    }
+    @Override public byte[] proctorReportPdf(LocalDateTime from, LocalDateTime to)
+            throws com.itextpdf.text.DocumentException {
+        return pdfGeneratorService.generateProctorReportPdf(generateProctorReports(from, to));
+    }
 }

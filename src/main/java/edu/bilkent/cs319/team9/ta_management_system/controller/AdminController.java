@@ -81,6 +81,51 @@ public class AdminController {
         return adminService.generateProctorReports(from, to);
     }
 
+
+    @GetMapping(value = "/reports/log/pdf", produces = "application/pdf")
+    public ResponseEntity<byte[]> logReportPdf(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to
+    ) throws com.itextpdf.text.DocumentException {
+        byte[] pdf = adminService.logReportPdf(from, to);
+        return ResponseEntity.ok()
+                .header("Content-Disposition", "attachment; filename=log-report.pdf")
+                .body(pdf);
+    }
+
+    @GetMapping(value = "/reports/swap/pdf", produces = "application/pdf")
+    public ResponseEntity<byte[]> swapReportPdf(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to
+    ) throws com.itextpdf.text.DocumentException {
+        byte[] pdf = adminService.swapReportPdf(from, to);
+        return ResponseEntity.ok()
+                .header("Content-Disposition", "attachment; filename=swap-report.pdf")
+                .body(pdf);
+    }
+
+    @GetMapping(value = "/reports/duty/pdf", produces = "application/pdf")
+    public ResponseEntity<byte[]> dutyReportPdf(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to
+    ) throws com.itextpdf.text.DocumentException {
+        byte[] pdf = adminService.dutyReportPdf(from, to);
+        return ResponseEntity.ok()
+                .header("Content-Disposition", "attachment; filename=duty-report.pdf")
+                .body(pdf);
+    }
+
+    @GetMapping(value = "/reports/proctor/pdf", produces = "application/pdf")
+    public ResponseEntity<byte[]> proctorReportPdf(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to
+    ) throws com.itextpdf.text.DocumentException {
+        byte[] pdf = adminService.proctorReportPdf(from, to);
+        return ResponseEntity.ok()
+                .header("Content-Disposition", "attachment; filename=proctor-report.pdf")
+                .body(pdf);
+    }
+
     // --- System Management ---
     @PostMapping("/system/update")
     public ResponseEntity<Void> updateApplication() {

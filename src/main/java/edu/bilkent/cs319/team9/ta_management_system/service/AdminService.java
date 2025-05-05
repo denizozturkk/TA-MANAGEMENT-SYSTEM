@@ -30,6 +30,17 @@ public interface AdminService {
 
     List<Admin> findAllAdmins();
 
-
     void deleteUserById(Long userId);
+
+    byte[] logReportPdf(LocalDateTime from, LocalDateTime to)
+            throws com.itextpdf.text.DocumentException;
+
+    byte[] swapReportPdf(LocalDateTime from, LocalDateTime to)
+            throws com.itextpdf.text.DocumentException;
+
+    byte[] dutyReportPdf(LocalDateTime from, LocalDateTime to)
+            throws com.itextpdf.text.DocumentException;
+
+    byte[] proctorReportPdf(LocalDateTime from, LocalDateTime to)
+            throws com.itextpdf.text.DocumentException;
 }
