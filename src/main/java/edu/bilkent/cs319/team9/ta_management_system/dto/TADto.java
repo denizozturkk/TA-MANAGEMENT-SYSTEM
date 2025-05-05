@@ -29,11 +29,5 @@ public class TADto {
     private Float totalWorkload;
     private String department;
     private DegreeStatus msPhdStatus;
-
-    private Set<Long> offerings;
-
     private String fullName;
-
-    private Set<Long> dutyLogIds;
-
 }

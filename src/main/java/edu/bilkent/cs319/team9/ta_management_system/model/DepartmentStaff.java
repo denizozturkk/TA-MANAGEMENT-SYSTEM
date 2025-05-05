@@ -11,8 +11,8 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @SuperBuilder
-@EqualsAndHashCode(callSuper = true)
-public class DepartmentStaff extends FacultyMember {
+@EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
+public class DepartmentStaff extends User {
     private String department;
 
     @OneToMany(mappedBy = "definedBy", cascade = CascadeType.ALL)

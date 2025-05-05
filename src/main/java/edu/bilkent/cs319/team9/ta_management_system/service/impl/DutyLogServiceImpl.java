@@ -45,4 +45,9 @@ public class DutyLogServiceImpl implements DutyLogService {
     public void delete(Long id) {
         repo.deleteById(id);
     }
+    @Override
+    @Transactional(readOnly = true)
+    public List<DutyLog> findByTaId(Long taId) {
+        return repo.findByTa_Id(taId);
+    }
 }

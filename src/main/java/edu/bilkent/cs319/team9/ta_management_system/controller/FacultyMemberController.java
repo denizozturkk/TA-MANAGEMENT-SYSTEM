@@ -3,6 +3,7 @@ package edu.bilkent.cs319.team9.ta_management_system.controller;
 import com.itextpdf.text.DocumentException;
 import edu.bilkent.cs319.team9.ta_management_system.dto.ClassroomDistributionDto;
 import edu.bilkent.cs319.team9.ta_management_system.dto.DutyLogDto;
+import edu.bilkent.cs319.team9.ta_management_system.dto.FacultyMemberDto;
 import edu.bilkent.cs319.team9.ta_management_system.mapper.EntityMapperService;
 import edu.bilkent.cs319.team9.ta_management_system.model.*;
 import edu.bilkent.cs319.team9.ta_management_system.repository.ClassroomRepository;
@@ -26,6 +27,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/faculty-members")
@@ -40,45 +42,35 @@ public class FacultyMemberController {
     private final OfferingRepository offeringRepository;
     private final ExamRepository examRepository;
 
-    /**
-     * Create a new FacultyMember
-     */
     @PostMapping
-    public ResponseEntity<FacultyMember> create(@RequestBody FacultyMember faculty) {
-        FacultyMember created = facultyMemberService.create(faculty);
-        return ResponseEntity.ok(created);
+    public ResponseEntity<FacultyMemberDto> create(@RequestBody FacultyMemberDto dto) {
+        FacultyMember fm = facultyMemberService.create(mapper.toEntity(dto));
+        return new ResponseEntity<>(mapper.toDto(fm), HttpStatus.CREATED);
     }
 
-    /**
-     * Get a FacultyMember by ID
-     */
     @GetMapping("/{id}")
-    public ResponseEntity<FacultyMember> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(facultyMemberService.findById(id));
+    public ResponseEntity<FacultyMemberDto> getById(@PathVariable Long id) {
+        FacultyMember fm = facultyMemberService.findById(id);
+        return ResponseEntity.ok(mapper.toDto(fm));
     }
 
-    /**
-     * List all FacultyMembers
-     */
     @GetMapping
-    public ResponseEntity<List<FacultyMember>> getAll() {
-        return ResponseEntity.ok(facultyMemberService.findAll());
+    public ResponseEntity<List<FacultyMemberDto>> getAll() {
+        List<FacultyMemberDto> list = facultyMemberService.findAll().stream()
+                .map(mapper::toDto)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(list);
     }
 
-    /**
-     * Update department of an existing FacultyMember
-     */
     @PutMapping("/{id}")
-    public ResponseEntity<FacultyMember> update(
+    public ResponseEntity<FacultyMemberDto> update(
             @PathVariable Long id,
-            @RequestBody FacultyMember faculty
+            @RequestBody FacultyMemberDto dto
     ) {
-        return ResponseEntity.ok(facultyMemberService.update(id, faculty));
+        FacultyMember fm = facultyMemberService.update(id, mapper.toEntity(dto));
+        return ResponseEntity.ok(mapper.toDto(fm));
     }
 
-    /**
-     * Delete a FacultyMember
-     */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         facultyMemberService.delete(id);

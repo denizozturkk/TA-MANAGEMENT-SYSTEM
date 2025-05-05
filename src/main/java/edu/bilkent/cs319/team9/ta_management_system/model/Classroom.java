@@ -11,9 +11,11 @@ import java.util.Set;
 @Data
 @NoArgsConstructor
 @SuperBuilder
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Classroom {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "classroom_id")
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
     private Long id;
 
     private String building;

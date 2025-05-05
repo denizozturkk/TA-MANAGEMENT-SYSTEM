@@ -50,5 +50,10 @@ public class ProctorAssignmentServiceImpl implements ProctorAssignmentService {
     public void deleteAllByExamId(Long examId) {
         repo.deleteAllByExam_Id(examId);
     }
+    @Override
+    @Transactional(readOnly = true)
+    public List<ProctorAssignment> findByTaId(Long taId) {
+        return repo.findByAssignedTA_Id(taId);
+    }
 
 }

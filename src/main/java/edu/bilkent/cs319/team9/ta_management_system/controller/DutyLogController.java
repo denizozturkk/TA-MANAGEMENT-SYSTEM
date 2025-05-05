@@ -14,6 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/duty-logs")
@@ -103,5 +104,12 @@ public class DutyLogController {
         notificationService.notifyUser(facultyId, facultyEmail, title, body);
 
         return ResponseEntity.ok(mapper.toDto(updated));
+    }
+    @GetMapping("/ta/{taId}")
+    public ResponseEntity<List<DutyLogDto>> getByTaId(@PathVariable Long taId) {
+        List<DutyLogDto> dtos = dutyLogService.findByTaId(taId).stream()
+                .map(mapper::toDto)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(dtos);
     }
 }

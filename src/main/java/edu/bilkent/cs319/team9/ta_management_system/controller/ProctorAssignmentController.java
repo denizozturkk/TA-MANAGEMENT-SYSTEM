@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/proctor-assignments")
@@ -49,5 +50,12 @@ public class ProctorAssignmentController {
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         paService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+    @GetMapping("/ta/{taId}")
+    public ResponseEntity<List<ProctorAssignmentDto>> getByTaId(@PathVariable Long taId) {
+        List<ProctorAssignmentDto> dtos = paService.findByTaId(taId).stream()
+                .map(mapper::toDto)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(dtos);
     }
 }
