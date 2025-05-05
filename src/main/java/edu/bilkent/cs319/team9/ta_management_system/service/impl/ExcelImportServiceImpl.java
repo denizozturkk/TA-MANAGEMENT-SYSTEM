@@ -147,9 +147,9 @@ public class ExcelImportServiceImpl implements ExcelImportService {
                         ? new Student()
                         : studentRepository.findById(Long.parseLong(idText)).orElse(new Student());
 
-                s.setStudentID(fmt.formatCellValue(row.getCell(1)));
-                s.setFirstName(fmt.formatCellValue(row.getCell(2)));
-                s.setLastName(fmt.formatCellValue(row.getCell(3)));
+                s.setStudentID(fmt.formatCellValue(row.getCell(0)));
+                s.setFirstName(fmt.formatCellValue(row.getCell(1)));
+                s.setLastName(fmt.formatCellValue(row.getCell(2)));
                 studentRepository.save(s);
             }
         }

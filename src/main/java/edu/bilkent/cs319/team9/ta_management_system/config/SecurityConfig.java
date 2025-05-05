@@ -61,32 +61,20 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                // no CSRF, stateless session
+                .cors(cors -> {})
                 .csrf(csrf -> csrf.disable())
-                .sessionManagement(sm -> sm
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-
-                // disable anonymous so every non-permitted path truly requires auth
+                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .anonymous(anon -> anon.disable())
-
-                // set up your URL rules
                 .authorizeHttpRequests(auth -> auth
-                        // allow your login & recover endpoints
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
-                        // everything else requires a valid JWT
                         .requestMatchers("/error").permitAll()
-
-                        // for the feedback system
                         .requestMatchers(HttpMethod.POST, "/api/feedback").hasAnyAuthority(
                                 "ROLE_TA","ROLE_FACULTY","ROLE_FACULTY_MEMBER",
                                 "ROLE_COORDINATOR","ROLE_DEAN","ROLE_DEPARTMENT_STAFF")
-                        .requestMatchers(HttpMethod.GET,  "/api/feedback").hasAuthority("ROLE_ADMIN")
-
-
+                        .requestMatchers(HttpMethod.GET, "/api/feedback").hasAuthority("ROLE_ADMIN")
                         .anyRequest().authenticated()
                 )
-
-                // add your JWT filter before Spring's UsernamePasswordAuthenticationFilter
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
