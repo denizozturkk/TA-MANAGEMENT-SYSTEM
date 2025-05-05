@@ -41,7 +41,7 @@ import AssignAssignment from "./people/FacultyMember/AssignAssignment.jsx";
 import DutyExtensionRequest from "./people/FacultyMember/ReviewDutyExtension.jsx";
 
 // TA
-import TA from "./people/Ta/TA.jsx";
+// import TA from "./people/Ta/TA.jsx";
 import ViewWorkloadTA from "./people/Ta/ViewWorkload-TA.jsx";
 import ReportTotalWorkloadTA from "./people/Ta/ReportTotalWorkload-TA.jsx";
 import SubmitLeaveRequestTA from "./people/Ta/SubmitLeaveRequest-TA.jsx";
@@ -141,7 +141,10 @@ function App() {
           <Route path="pending-reports" element={<PendingReportsAdmin />} />
       </Route>
 
+<<<<<<< HEAD
       {/* Fallback */}
+=======
+>>>>>>> e7947f26b099114f3570bb42052e5f818a423e03
     </Routes>
   );
 }

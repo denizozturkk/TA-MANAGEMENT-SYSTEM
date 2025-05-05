@@ -130,6 +130,7 @@ const SignInPage = () => {
 
       // Redirect by role
       let target = "/";
+<<<<<<< HEAD
       switch (role) {
         case "ROLE_ADMIN":
           target = "/admin";
@@ -152,6 +153,15 @@ const SignInPage = () => {
         default:
           target = "/";
       }
+=======
+      if (role === "ROLE_ADMIN")       target = "/make-reports";
+      else if (role === "ROLE_TA")     target = "/leave";
+      else if (role === "ROLE_COORDINATOR") target = "/manageexamclassroom"; 
+      else if (role === "ROLE_FACULTY_MEMBER") target = "/classroomlist";
+      else if (role === "ROLE_ADMIN") target = "/authorize-actors";
+      else if (role === "ROLE_DEAN") target = "/make-report";
+      else if (role === "ROLE_DEPARMENT_STAFF") target = "/tutorgraderformview";
+>>>>>>> e7947f26b099114f3570bb42052e5f818a423e03
 
       navigate(target, { replace: true });
     } catch (err) {
