@@ -18,7 +18,7 @@ public class DutyLog {
     private LocalDateTime dateTime;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "task_type", nullable = false, length = 20)
+    @Column(name = "task_type", nullable = true, length = 20)
     private DutyType taskType;
 
     private Long workload;
@@ -29,6 +29,8 @@ public class DutyLog {
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
     private DutyStatus status;
+
+
 
     @ManyToOne @JoinColumn(name = "ta_id")
     private TA ta;

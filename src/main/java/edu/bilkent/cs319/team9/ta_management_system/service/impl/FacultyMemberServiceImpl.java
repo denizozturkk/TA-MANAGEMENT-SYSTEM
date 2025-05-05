@@ -39,7 +39,7 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
     private final ProctorAssignmentService paService;
     private final ExamRoomService examRoomService;
     private final DutyLogRepository dutyLogRepository;
-
+    private final ProctorAssignmentRepository paRepo;
     private final JavaMailSender mailSender;
     private final NotificationService notificationService;
 
@@ -433,10 +433,12 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
             Classroom room = er.getClassroom();
             int needed     = er.getNumProctors();
 
-            long alreadyAssigned = paService.findAll().stream()
-                    .filter(pa -> pa.getExam().getId().equals(examId))
-                    .filter(pa -> pa.getClassroom().getId().equals(room.getId()))
-                    .count();
+            long alreadyAssigned =
+                    paRepo.countByExam_IdAndClassroom_IdAndStatus(
+                            examId,
+                            room.getId(),
+                            ProctorStatus.ASSIGNED);       // count only active slots
+
 
             System.out.println(alreadyAssigned);
             System.out.println(needed);
@@ -474,7 +476,7 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
                                 + room.getRoomNumber()
                 );
 
-                return paService.create(
+                ProctorAssignment pa = paService.create(
                         ProctorAssignment.builder()
                                 .assignedTA(ta)
                                 .exam(exam)
@@ -482,6 +484,8 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
                                 .status(ProctorStatus.ASSIGNED)
                                 .build()
                 );
+                busyHourService.create(busyHourService.makeBusyHour(ta, start, end));
+                return pa;
             }
         }
 
@@ -513,10 +517,11 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
             int needed = er.getNumProctors();
 
             // count already assigned for this room
-            long already = paService.findAll().stream()
-                    .filter(pa -> pa.getExam().getId().equals(examId))
-                    .filter(pa -> pa.getClassroom().getId().equals(room.getId()))
-                    .count();
+            long already =
+                    paRepo.countByExam_IdAndClassroom_IdAndStatus(
+                            examId,
+                            room.getId(),
+                            ProctorStatus.ASSIGNED);
 
             int toAssign = needed - (int)already;
             if (toAssign <= 0) continue;
@@ -540,14 +545,16 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
             while (toAssign > 0 && itr.hasNext()) {
                 TA ta = itr.next();
                 chosenTAIds.add(ta.getId());
-                result.add(paService.create(ProctorAssignment.builder()
+                ProctorAssignment pa = paService.create(ProctorAssignment.builder()
                         .assignedTA(ta)
                         .exam(exam)
                         .classroom(room)
                         .status(ProctorStatus.ASSIGNED)
-                        .build()));
+                        .build());
+                result.add(pa);
                 toAssign--;
 
+                busyHourService.create(busyHourService.makeBusyHour(ta, start, end));
 
                 SimpleMailMessage msg = new SimpleMailMessage();
                 msg.setTo(ta.getEmail());
@@ -580,9 +587,6 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
                 );
             }
         }
-
-
-
         return result;
     }
 
