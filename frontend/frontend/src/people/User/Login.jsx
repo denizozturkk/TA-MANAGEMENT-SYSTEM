@@ -106,7 +106,7 @@ const SignInPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
-
+  
     try {
       const res = await fetch("http://localhost:8080/api/auth/login", {
         method: "POST",
@@ -115,60 +115,35 @@ const SignInPage = () => {
         },
         body: JSON.stringify({ email, password })
       });
-
+  
       if (!res.ok) {
         const errBody = await res.json().catch(() => ({}));
         throw new Error(errBody.message || "Login failed");
       }
-
+  
       const { token, role } = await res.json();
       console.log("✅ Login succeeded", { token, role });
-
-      // Save token and role to localStorage
-      localStorage.setItem("authToken", token);
+  
+      // ✅ Store token under 'token' key
+      localStorage.setItem("token", token);
       localStorage.setItem("userRole", role);
-
-      // Redirect by role
+  
+      // ✅ Redirect by role
       let target = "/";
-<<<<<<< HEAD
-      switch (role) {
-        case "ROLE_ADMIN":
-          target = "/admin";
-          break;
-        case "ROLE_TA":
-          target = "/ta";
-          break;
-        case "ROLE_COORDINATOR":
-          target = "/manageexamclassroom";
-          break;
-        case "ROLE_FACULTY_MEMBER":
-          target = "/classroomlist";
-          break;
-        case "ROLE_DEAN":
-          target = "/make-report";
-          break;
-        case "ROLE_DEPARTMENT_STAFF":
-          target = "/tutorgraderformview";
-          break;
-        default:
-          target = "/";
-      }
-=======
-      if (role === "ROLE_ADMIN")       target = "/make-reports";
-      else if (role === "ROLE_TA")     target = "/leave";
+      if (role === "ROLE_ADMIN") target = "/make-reports";
+      else if (role === "ROLE_TA") target = "/leave";
       else if (role === "ROLE_COORDINATOR") target = "/manageexamclassroom"; 
       else if (role === "ROLE_FACULTY_MEMBER") target = "/classroomlist";
-      else if (role === "ROLE_ADMIN") target = "/authorize-actors";
       else if (role === "ROLE_DEAN") target = "/make-report";
       else if (role === "ROLE_DEPARMENT_STAFF") target = "/tutorgraderformview";
->>>>>>> e7947f26b099114f3570bb42052e5f818a423e03
-
+  
       navigate(target, { replace: true });
     } catch (err) {
       console.error("❌ Login error:", err);
       setError(err.message);
     }
   };
+  
 
   return (
     <div id="mytask-layout">
