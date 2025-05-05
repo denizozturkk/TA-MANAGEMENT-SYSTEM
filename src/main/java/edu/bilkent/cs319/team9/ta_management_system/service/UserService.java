@@ -14,4 +14,6 @@ public interface UserService {
     void recoverPassword(String email);
     void logout();
     User findById(Long id);
+    void updateUserInfo(Long userId, UpdateUserInfoRequestDto dto);
+
 }

@@ -59,5 +59,15 @@ public class UserController {
         userService.logout();
         return ResponseEntity.ok().build();
     }
+
+    @PutMapping("/{id}/update-info")
+    public ResponseEntity<Void> updateUserInfo(
+            @PathVariable Long id,
+            @RequestBody UpdateUserInfoRequestDto dto
+    ) {
+        userService.updateUserInfo(id, dto);
+        return ResponseEntity.ok().build();
+    }
+
 }
 

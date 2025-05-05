@@ -116,4 +116,18 @@ public class UserServiceImpl implements UserService {
         return userRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("No user with id " + id));
     }
+
+    @Override
+    @Transactional
+    public void updateUserInfo(Long userId, UpdateUserInfoRequestDto dto) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
+
+        user.setFirstName(dto.getFirstName());
+        user.setLastName(dto.getLastName());
+        user.setPhoneNumber(dto.getPhoneNumber());
+        user.setEmail(dto.getEmail());
+
+        userRepository.save(user);
+    }
 }
