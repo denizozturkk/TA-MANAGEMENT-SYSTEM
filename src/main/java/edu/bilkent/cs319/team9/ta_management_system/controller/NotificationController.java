@@ -25,17 +25,28 @@ public class NotificationController {
     }
 
     @PostMapping
-    public ResponseEntity<Notification> create(@RequestBody NotificationDto n) {
-
+    public ResponseEntity<NotificationDto> create(@RequestBody NotificationDto n) {
         User recipient = userService.findById(n.getRecipientId());
+
         Notification notif = Notification.builder()
                 .message(n.getMessage())
                 .recipient(recipient)
                 .read(n.isRead())
                 .build();
 
-        return new ResponseEntity<>(notificationService.create(notif), HttpStatus.CREATED);
+        Notification saved = notificationService.create(notif);
+
+        NotificationDto responseDto = NotificationDto.builder()
+                .id(saved.getId())
+                .message(saved.getMessage())
+                .recipientId(saved.getRecipient().getId())
+                .timestamp(saved.getCreatedAt())
+                .read(saved.isRead())
+                .build();
+
+        return new ResponseEntity<>(responseDto, HttpStatus.CREATED);
     }
+
 
     @GetMapping("/{id}")
     public ResponseEntity<Notification> getById(@PathVariable Long id) {
