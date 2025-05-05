@@ -1,62 +1,67 @@
 package edu.bilkent.cs319.team9.ta_management_system.controller;
 
+import edu.bilkent.cs319.team9.ta_management_system.dto.CoordinatorDto;
+import edu.bilkent.cs319.team9.ta_management_system.mapper.EntityMapperService;
 import edu.bilkent.cs319.team9.ta_management_system.model.Coordinator;
 import edu.bilkent.cs319.team9.ta_management_system.service.CoordinatorService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/coordinators")
+@RequiredArgsConstructor
 public class CoordinatorController {
-
-    private final CoordinatorService coordinatorService;
-
-    public CoordinatorController(CoordinatorService coordinatorService) {
-        this.coordinatorService = coordinatorService;
-    }
+    private final CoordinatorService service;
+    private final EntityMapperService mapper;
 
     @PostMapping
-    public ResponseEntity<Coordinator> create(@RequestBody Coordinator coord) {
-        return new ResponseEntity<>(coordinatorService.create(coord), HttpStatus.CREATED);
+    public ResponseEntity<CoordinatorDto> create(@RequestBody CoordinatorDto dto) {
+        Coordinator c = service.create(mapper.toEntity(dto));
+        return new ResponseEntity<>(mapper.toDto(c), HttpStatus.CREATED);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Coordinator> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(coordinatorService.findById(id));
+    public ResponseEntity<CoordinatorDto> getById(@PathVariable Long id) {
+        Coordinator c = service.findById(id);
+        return ResponseEntity.ok(mapper.toDto(c));
     }
 
     @GetMapping
-    public ResponseEntity<List<Coordinator>> getAll() {
-        return ResponseEntity.ok(coordinatorService.findAll());
+    public ResponseEntity<List<CoordinatorDto>> getAll() {
+        List<CoordinatorDto> list = service.findAll().stream()
+                .map(mapper::toDto)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(list);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Coordinator> update(@PathVariable Long id,
-                                              @RequestBody Coordinator coord) {
-        return ResponseEntity.ok(coordinatorService.update(id, coord));
+    public ResponseEntity<CoordinatorDto> update(
+            @PathVariable Long id,
+            @RequestBody CoordinatorDto dto
+    ) {
+        Coordinator c = service.update(id, mapper.toEntity(dto));
+        return ResponseEntity.ok(mapper.toDto(c));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
-        coordinatorService.delete(id);
+        service.delete(id);
         return ResponseEntity.noContent().build();
     }
 
-    /**
-     * Swap one TA for another in a specific offering.
-     * Example: PUT /api/coordinators/5/offerings/42/replace-ta?oldTaId=17&newTaId=23
-     */
     @PutMapping("/{coordId}/offerings/{offeringId}/replace-ta")
     public ResponseEntity<Void> replaceTa(
             @PathVariable Long coordId,
             @PathVariable Long offeringId,
             @RequestParam Long oldTaId,
-            @RequestParam Long newTaId) {
-
-        coordinatorService.replaceTa(coordId, offeringId, oldTaId, newTaId);
+            @RequestParam Long newTaId
+    ) {
+        service.replaceTa(coordId, offeringId, oldTaId, newTaId);
         return ResponseEntity.ok().build();
     }
 
@@ -64,9 +69,9 @@ public class CoordinatorController {
     public ResponseEntity<Void> replaceProctorTa(
             @PathVariable Long coordId,
             @PathVariable Long paId,
-            @RequestParam Long newTaId) {
-
-        coordinatorService.replaceProctorAssignmentTa(coordId, paId, newTaId);
+            @RequestParam Long newTaId
+    ) {
+        service.replaceProctorAssignmentTa(coordId, paId, newTaId);
         return ResponseEntity.ok().build();
     }
 
@@ -74,10 +79,9 @@ public class CoordinatorController {
     public ResponseEntity<Void> swapProctorAssignments(
             @PathVariable Long coordId,
             @RequestParam Long paId1,
-            @RequestParam Long paId2) {
-
-        coordinatorService.swapProctorAssignments(coordId, paId1, paId2);
+            @RequestParam Long paId2
+    ) {
+        service.swapProctorAssignments(coordId, paId1, paId2);
         return ResponseEntity.ok().build();
     }
-
 }

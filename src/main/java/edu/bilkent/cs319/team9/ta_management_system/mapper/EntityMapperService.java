@@ -371,5 +371,119 @@ public class EntityMapperService {
         return offering;
     }
 
+    public StudentDto toDto(Student s) {
+        return StudentDto.builder()
+                .id(s.getId())
+                .studentID(s.getStudentID())
+                .firstName(s.getFirstName())
+                .lastName(s.getLastName())
+                .offeringIds(
+                        s.getOfferings() == null
+                                ? null
+                                : s.getOfferings()
+                                .stream()
+                                .map(Offering::getId)
+                                .collect(Collectors.toSet())
+                )
+                .build();
+    }
 
+    // ---- toEntity ----
+    public Student toEntity(StudentDto dto) {
+        Student s = new Student();
+        s.setId(dto.getId());
+        s.setStudentID(dto.getStudentID());
+        s.setFirstName(dto.getFirstName());
+        s.setLastName(dto.getLastName());
+
+        if (dto.getOfferingIds() != null) {
+            Set<Offering> offers = dto.getOfferingIds().stream()
+                    .map(id -> {
+                        Offering o = new Offering();
+                        o.setId(id);
+                        return o;
+                    })
+                    .collect(Collectors.toSet());
+            s.setOfferings(offers);
+        }
+        return s;
+    }
+
+    // --- FacultyMember ---
+    public FacultyMemberDto toDto(FacultyMember fm) {
+        return FacultyMemberDto.builder()
+                .id(fm.getId())
+                .firstName(fm.getFirstName())
+                .lastName(fm.getLastName())
+                .email(fm.getEmail())
+                .phoneNumber(fm.getPhoneNumber())
+                .photoURL(fm.getPhotoURL())
+                // don't include password in toDto if you don't want to expose it
+                .role(fm.getRole())
+                .department(fm.getDepartment())
+                .offeringIds(fm.getOfferings() == null
+                        ? Set.of()
+                        : fm.getOfferings().stream().map(Offering::getId).collect(Collectors.toSet()))
+                .approvedDutyLogIds(fm.getApprovedDuties() == null
+                        ? Set.of()
+                        : fm.getApprovedDuties().stream().map(DutyLog::getId).collect(Collectors.toSet()))
+                .examIds(fm.getExams() == null
+                        ? Set.of()
+                        : fm.getExams().stream().map(Exam::getId).collect(Collectors.toSet()))
+                .build();
+    }
+
+    public FacultyMember toEntity(FacultyMemberDto dto) {
+        FacultyMember fm = new FacultyMember();
+        fm.setId(dto.getId());
+        fm.setFirstName(dto.getFirstName());
+        fm.setLastName(dto.getLastName());
+        fm.setEmail(dto.getEmail());
+        fm.setPhoneNumber(dto.getPhoneNumber());
+        fm.setPhotoURL(dto.getPhotoURL());
+        // password should be encoded in service layer
+        fm.setRole(dto.getRole());
+        fm.setDepartment(dto.getDepartment());
+
+        if (dto.getOfferingIds() != null) {
+            fm.setOfferings(dto.getOfferingIds().stream()
+                    .map(id -> {
+                        Offering o = new Offering();
+                        o.setId(id);
+                        return o;
+                    })
+                    .collect(Collectors.toSet()));
+        }
+        // approved duties / exams are usually set by service logic
+        return fm;
+    }
+
+    // --- Coordinator ---
+    public CoordinatorDto toDto(Coordinator c) {
+        return CoordinatorDto.builder()
+                .id(c.getId())
+                .firstName(c.getFirstName())
+                .lastName(c.getLastName())
+                .email(c.getEmail())
+                .phoneNumber(c.getPhoneNumber())
+                .photoURL(c.getPhotoURL())
+                // omit password here too if you don't want to send it back
+                .role(c.getRole())
+                .department(c.getDepartment())
+                .build();
+    }
+
+    public Coordinator toEntity(CoordinatorDto dto) {
+        Coordinator c = new Coordinator();
+        c.setId(dto.getId());
+        c.setFirstName(dto.getFirstName());
+        c.setLastName(dto.getLastName());
+        c.setEmail(dto.getEmail());
+        c.setPhoneNumber(dto.getPhoneNumber());
+        c.setPhotoURL(dto.getPhotoURL());
+        // password handling / encoding in service layer
+        c.setRole(dto.getRole());
+        c.setDepartment(dto.getDepartment());
+        return c;
+    }
 }

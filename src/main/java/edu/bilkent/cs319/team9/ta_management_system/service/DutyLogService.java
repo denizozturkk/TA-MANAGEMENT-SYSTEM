@@ -9,4 +9,5 @@ public interface DutyLogService {
     List<DutyLog> findAll();
     DutyLog update(Long id, DutyLog d);
     void delete(Long id);
+    List<DutyLog> findByTaId(Long taId);
 }

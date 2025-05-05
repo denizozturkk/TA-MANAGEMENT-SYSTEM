@@ -10,5 +10,5 @@ public interface ProctorAssignmentService {
     ProctorAssignment update(Long id, ProctorAssignment p);
     void delete(Long id);
     void deleteAllByExamId(Long examId);
-
+    List<ProctorAssignment> findByTaId(Long taId);
 }
