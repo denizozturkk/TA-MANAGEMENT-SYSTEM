@@ -58,7 +58,7 @@ public class AuthServiceImpl implements AuthService {
 
             // generate JWT + return role
             String token = jwtUtil.generateToken(details.getUsername());
-            return new LoginResponse(token, details.getRole());
+            return new LoginResponse(token, details.getRole(), details.getId());
 
         } catch (Exception ex) {
             // record a failure log

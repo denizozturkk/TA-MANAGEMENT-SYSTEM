@@ -3,12 +3,14 @@ package edu.bilkent.cs319.team9.ta_management_system.dto;
 import edu.bilkent.cs319.team9.ta_management_system.model.Role;
 
 public class LoginResponse {
-    public String token;
-    public Role role;
-    public LoginResponse(String token, Role role)
-    {
+    private String token;
+    private Role role;
+    private Long userId;
+
+    public LoginResponse(String token, Role role, Long userId) {
         this.token = token;
         this.role = role;
+        this.userId = userId;
     }
 
     public String getToken() {
@@ -25,5 +27,13 @@ public class LoginResponse {
 
     public void setRole(Role role) {
         this.role = role;
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
     }
 }
