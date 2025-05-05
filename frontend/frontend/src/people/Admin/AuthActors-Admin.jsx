@@ -10,7 +10,10 @@ const AuthActorsAdmin = () => {
   useEffect(() => {
     const loadActors = async () => {
       try {
-        const res = await fetch("/api/admin/actors");
+        const token = localStorage.getItem("token");
+        const res = await fetch("/api/admin/actors", {
+                  headers: { Authorization: `Bearer ${token}` }
+               });
         if (!res.ok) throw new Error("Failed to fetch actors");
         const data = await res.json();
         setActors(data);

@@ -130,13 +130,13 @@ const SignInPage = () => {
   
       // ✅ Redirect by role
       let target = "/";
-      if (role === "ROLE_ADMIN") target = "/make-reports";
-      else if (role === "ROLE_TA") target = "/leave";
+      if (role === "ROLE_ADMIN")       target = "/make-reports";
+      else if (role === "ROLE_TA")     target = "/leave";
       else if (role === "ROLE_COORDINATOR") target = "/manageexamclassroom"; 
       else if (role === "ROLE_FACULTY_MEMBER") target = "/classroomlist";
       else if (role === "ROLE_DEAN") target = "/make-report";
       else if (role === "ROLE_DEPARMENT_STAFF") target = "/tutorgraderformview";
-  
+
       navigate(target, { replace: true });
     } catch (err) {
       console.error("❌ Login error:", err);

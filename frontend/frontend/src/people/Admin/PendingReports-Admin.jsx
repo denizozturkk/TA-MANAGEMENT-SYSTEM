@@ -10,7 +10,7 @@ const PendingReportsAdmin = () => {
   useEffect(() => {
     const loadPending = async () => {
       try {
-        const token = localStorage.getItem("authToken");
+        const token = localStorage.getItem("token");
         const res = await fetch("/api/admin/report-requests", {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -31,7 +31,7 @@ const PendingReportsAdmin = () => {
   const acceptAndSend = async (report) => {
     setLoadingId(report.id);
     try {
-      const token = localStorage.getItem("authToken");
+      const token = localStorage.getItem("token");
       await fetch(`/api/admin/report-requests/${report.id}/accept`, {
         method: "POST",
         headers: {

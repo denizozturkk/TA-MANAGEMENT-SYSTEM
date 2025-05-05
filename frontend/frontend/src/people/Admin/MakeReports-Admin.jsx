@@ -38,29 +38,47 @@ const MakeReportsAdmin = () => {
     const from = `${dateRange.startDate}T00:00:00`;
     const to   = `${dateRange.endDate}T23:59:59`;
 
-    try {
-      const res = await fetch(
-        `/api/admin/reports/${key}?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`
-      );
-      if (!res.ok) throw new Error("Network error");
-      const data = await res.json();
-      setReports(data);
-      setToast({
-        show: true,
-        type: "success",
-        message: `${reportOptions.find(r => r.key===key).label} loaded.`,
-      });
-    } catch (err) {
-      console.error(err);
-      setToast({
-        show: true,
-        type: "danger",
-        message: `Failed to load ${key} reports.`,
-      });
-    } finally {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setToast({ show: true, type: "danger", message: "Not logged in." });
       setLoadingKey(null);
+      return;
     }
-  };
+
+    try {
+           const res = await fetch(
+             `/api/admin/reports/${key}?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+             {
+               headers: {
+                 Authorization: `Bearer ${token}`,
+               },
+             }
+           );
+      
+            if (!res.ok) {
+             if (res.status === 401) {
+               throw new Error("Session expired, please log in again.");
+             }
+              throw new Error("Network error");
+            }
+            const data = await res.json();
+            setReports(data);
+            setToast({
+              show: true,
+              type: "success",
+              message: `${reportOptions.find(r => r.key===key).label} loaded.`,
+            });
+          } catch (err) {
+            console.error(err);
+            setToast({
+              show: true,
+              type: "danger",
+               message: err.message || `Failed to load ${key} reports.`,
+            });
+          } finally {
+            setLoadingKey(null);
+          }
+        };
 
   const closeToast = () => setToast((t) => ({ ...t, show: false }));
 
