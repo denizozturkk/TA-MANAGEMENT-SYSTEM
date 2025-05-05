@@ -1,15 +1,16 @@
 // src/people/User/RecoverPasswordPage.jsx
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import forgotImg from '../User/forgot-password.svg';
 
 import FacultyMemberLayout from '../FacultyMember/FacultyMemberLayout.jsx';
-import CoordinatorLayout from '../Coordinator/CoordinatorLayout.jsx';
-import TALayout from '../Ta/Layout-TA.jsx';
-import DeanLayout from '../Dean/Layout-Dean.jsx';
-import AdminLayout from '../Admin/Layout-Admin.jsx';
+import CoordinatorLayout   from '../Coordinator/CoordinatorLayout.jsx';
+import TALayout            from '../Ta/Layout-TA.jsx';
+import DeanLayout          from '../Dean/Layout-Dean.jsx';
+import AdminLayout         from '../Admin/Layout-Admin.jsx';
 
-// Simple JWT parser to extract role
+// Basit JWT parse fonksiyonu
 function parseJwt(token) {
   try {
     return JSON.parse(window.atob(token.split('.')[1]));
@@ -18,9 +19,9 @@ function parseJwt(token) {
   }
 }
 
-// Role-based sidebar wrapper
+// Rol tabanlı sidebar sarmalayıcı
 const RoleBasedLayout = ({ children }) => {
-  const token = localStorage.getItem('authToken');
+  const token   = localStorage.getItem('authToken');
   const payload = token ? parseJwt(token) : {};
   const userRole =
     (payload.authorities && payload.authorities[0]) ||
@@ -29,23 +30,12 @@ const RoleBasedLayout = ({ children }) => {
 
   let Sidebar = null;
   switch (userRole) {
-    case 'ROLE_FACULTY_MEMBER':
-      Sidebar = FacultyMemberLayout;
-      break;
-    case 'ROLE_COORDINATOR':
-      Sidebar = CoordinatorLayout;
-      break;
-    case 'ROLE_TA':
-      Sidebar = TALayout;
-      break;
-    case 'ROLE_DEAN':
-      Sidebar = DeanLayout;
-      break;
-    case 'ROLE_ADMIN':
-      Sidebar = AdminLayout;
-      break;
-    default:
-      Sidebar = null;
+    case 'ROLE_FACULTY_MEMBER': Sidebar = FacultyMemberLayout; break;
+    case 'ROLE_COORDINATOR':    Sidebar = CoordinatorLayout;   break;
+    case 'ROLE_TA':             Sidebar = TALayout;             break;
+    case 'ROLE_DEAN':           Sidebar = DeanLayout;           break;
+    case 'ROLE_ADMIN':          Sidebar = AdminLayout;          break;
+    default:                    Sidebar = null;
   }
 
   return (
@@ -57,19 +47,57 @@ const RoleBasedLayout = ({ children }) => {
 };
 
 const RecoverPasswordPage = () => {
-  const [oldPassword, setOldPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword,     setNewPassword]     = useState('');
+  const [confirmPass,     setConfirmPass]     = useState('');
+  const [errorMsg,        setErrorMsg]        = useState('');
+  const [successMsg,      setSuccessMsg]      = useState('');
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (newPassword !== confirmPassword) {
-      alert('Passwords do not match');
+    setErrorMsg('');
+    setSuccessMsg('');
+
+    if (newPassword !== confirmPass) {
+      setErrorMsg('Yeni şifre ve onay uyuşmuyor.');
       return;
     }
-    console.log({ oldPassword, newPassword });
-    // TODO: call API to update password
+
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      setErrorMsg('Giriş yapmalısınız.');
+      return;
+    }
+
+    try {
+      const res = await fetch(
+        `http://localhost:8080/api/users/me/password`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            currentPassword: currentPassword,
+            newPassword: newPassword
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        throw new Error(errBody.message || 'Şifre güncelleme başarısız.');
+      }
+
+      setSuccessMsg('Şifre başarıyla güncellendi.');
+      // istersen yönlendirme:
+      // navigate('/viewprofile');
+    } catch (err) {
+      console.error(err);
+      setErrorMsg(err.message);
+    }
   };
 
   return (
@@ -86,45 +114,57 @@ const RecoverPasswordPage = () => {
                     alt="Change Password"
                   />
                   <h3>Change Password</h3>
-                  <p>Enter your current password and create a new one.</p>
+                  <p>Mevcut şifrenizi girin ve yeni şifre oluşturun.</p>
                 </div>
+
+                {errorMsg && (
+                  <div className="alert alert-danger">{errorMsg}</div>
+                )}
+                {successMsg && (
+                  <div className="alert alert-success">{successMsg}</div>
+                )}
+
                 <form onSubmit={handleSubmit}>
                   <div className="mb-3">
                     <label className="form-label">Current Password</label>
                     <input
                       type="password"
                       className="form-control"
-                      value={oldPassword}
-                      onChange={(e) => setOldPassword(e.target.value)}
+                      value={currentPassword}
+                      onChange={e => setCurrentPassword(e.target.value)}
                       required
                     />
                   </div>
+
                   <div className="mb-3">
                     <label className="form-label">New Password</label>
                     <input
                       type="password"
                       className="form-control"
                       value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
+                      onChange={e => setNewPassword(e.target.value)}
                       required
                     />
                   </div>
+
                   <div className="mb-4">
                     <label className="form-label">Confirm New Password</label>
                     <input
                       type="password"
                       className="form-control"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      value={confirmPass}
+                      onChange={e => setConfirmPass(e.target.value)}
                       required
                     />
                   </div>
+
                   <div className="d-grid">
                     <button type="submit" className="btn btn-primary">
                       Update Password
                     </button>
                   </div>
                 </form>
+
               </div>
             </div>
           </div>
