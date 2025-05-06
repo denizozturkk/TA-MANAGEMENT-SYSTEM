@@ -1,17 +1,35 @@
+// src/people/FacultyMember/GenerateClassroomList.jsx
 import React, { useState } from "react";
 import FacultymemberLayout from "./FacultyMemberLayout";
 
 const GenerateClassroomList = () => {
-  const [classroomName, setClassroomName] = useState("");
+  const [semester, setSemester] = useState("");
+  const [year, setYear] = useState("");
+  const [course, setCourse] = useState("");
   const [file, setFile] = useState(null);
 
+  const semesters = ["Spring", "Summer", "Fall", "Winter"];
+  const years = [2023, 2024, 2025, 2026];
+  const courses = [
+    "CS101 - Intro to Programming",
+    "CS102 - Data Structures",
+    "CS103 - Algorithms",
+    // …add your courses here…
+  ];
+
   const handleGenerate = () => {
-    if (!classroomName.trim() || !file) {
-      alert("Please provide a classroom name and select a file.");
+    if (!semester || !year || !course) {
+      alert("Please select semester, year and course.");
       return;
     }
-    alert(`Classroom "${classroomName}" generated with uploaded student list.`);
-    // File processing logic can be added here
+    if (!file) {
+      alert("Please select a student list file.");
+      return;
+    }
+    alert(
+      `Generating list for ${course} (${semester} ${year}).`
+    );
+    // TODO: send semester, year, course and file to your backend
   };
 
   return (
@@ -24,31 +42,80 @@ const GenerateClassroomList = () => {
           <div className="card-body">
             <h4 className="fw-bold mb-4 text-primary">Generate Classroom List</h4>
 
+            {/* Semester */}
             <div className="mb-3">
-              <label htmlFor="classroomName" className="form-label fw-semibold">Classroom Name</label>
-              <input
-                type="text"
-                id="classroomName"
-                className="form-control"
-                placeholder="e.g. CS101 - Section A"
-                value={classroomName}
-                onChange={(e) => setClassroomName(e.target.value)}
-              />
+              <label htmlFor="semester" className="form-label fw-semibold">
+                Semester
+              </label>
+              <select
+                id="semester"
+                className="form-select"
+                value={semester}
+                onChange={e => setSemester(e.target.value)}
+              >
+                <option value="">Select semester…</option>
+                {semesters.map(s => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
             </div>
 
+            {/* Year */}
             <div className="mb-3">
-              <label htmlFor="fileUpload" className="form-label fw-semibold">Upload Student List (Excel)</label>
+              <label htmlFor="year" className="form-label fw-semibold">
+                Year
+              </label>
+              <select
+                id="year"
+                className="form-select"
+                value={year}
+                onChange={e => setYear(e.target.value)}
+              >
+                <option value="">Select year…</option>
+                {years.map(y => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Course */}
+            <div className="mb-3">
+              <label htmlFor="course" className="form-label fw-semibold">
+                Course
+              </label>
+              <select
+                id="course"
+                className="form-select"
+                value={course}
+                onChange={e => setCourse(e.target.value)}
+              >
+                <option value="">Select course…</option>
+                {courses.map(c => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Student List Upload */}
+            <div className="mb-3">
+              <label htmlFor="fileUpload" className="form-label fw-semibold">
+                Upload Student List (Excel)
+              </label>
               <input
                 type="file"
                 id="fileUpload"
                 className="form-control"
                 accept=".xlsx,.xls"
-                onChange={(e) => setFile(e.target.files[0])}
+                onChange={e => setFile(e.target.files[0])}
               />
             </div>
 
+            {/* Generate Button */}
             <div className="d-flex justify-content-end">
-              <button className="btn btn-lg btn-block btn-light lift text-uppercase" onClick={handleGenerate}>
+              <button
+                className="btn btn-lg btn-block btn-light lift text-uppercase"
+                onClick={handleGenerate}
+              >
                 Generate Classroom
               </button>
             </div>
