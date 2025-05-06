@@ -11,58 +11,61 @@ const PrintStudentDistribution = () => {
     "Authorization": `Bearer ${token}`,
   };
 
-  // all exams for this faculty
-  const [exams,   setExams]   = useState([]);
-  const [examId,  setExamId]  = useState("");
+  // all exams
+  const [exams,  setExams]  = useState([]);
+  const [examId, setExamId] = useState("");
 
   // distribution params
   const [distributionType, setDistributionType] = useState("random");
-  // preview result
-  const [classA,  setClassA]  = useState([]);
-  const [classB,  setClassB]  = useState([]);
 
-  // load exams on mount
+  // preview lists
+  const [classA, setClassA] = useState([]);
+  const [classB, setClassB] = useState([]);
+
+  // fetch all exams on mount
   useEffect(() => {
     fetch(`${BASE}/faculty-members/${facultyId}/exams`, { headers: hdrs })
       .then(res => res.ok ? res.json() : Promise.reject(res.statusText))
       .then(data => setExams(data))
       .catch(err => {
-        console.error(err);
+        console.error("Could not load exams:", err);
         alert("Failed to load your exams");
       });
   }, [facultyId]);
 
   const handleGenerate = () => {
-    if (!examId) {
-      return alert("Please select an exam");
-    }
+    if (!examId) return alert("Please select an exam");
     fetch(
       `${BASE}/faculty-members/${facultyId}/exams/${examId}/distribution?random=${distributionType === "random"}`,
       { headers: hdrs }
     )
       .then(res => res.ok ? res.json() : Promise.reject(res.statusText))
       .then(dto => {
-        const rooms = Object.values(dto.classrooms || {});
-        let all = rooms.flat();
-        if (distributionType === "random") {
-          all = all.sort(() => Math.random() - 0.5);
+        console.log("distribution DTO:", dto);
+        // dto.distributions is array of { roomId, students: [ { firstName, lastName } ] }
+        const allNames = dto.distributions
+          .flatMap(d => d.students.map(s => `${s.firstName} ${s.lastName}`));
+
+        // sort if alphabetical, else randomize
+        if (distributionType === "alphabetical") {
+          allNames.sort((a,b) => a.localeCompare(b));
         } else {
-          all = all.sort((a, b) => a.localeCompare(b));
+          allNames.sort(() => Math.random() - 0.5);
         }
-        const half = Math.ceil(all.length / 2);
-        setClassA(all.slice(0, half));
-        setClassB(all.slice(half));
+
+        // split evenly
+        const half = Math.ceil(allNames.length / 2);
+        setClassA(allNames.slice(0, half));
+        setClassB(allNames.slice(half));
       })
       .catch(err => {
-        console.error(err);
+        console.error("Preview fetch failed:", err);
         alert("Failed to load distribution preview");
       });
   };
 
   const handleDownloadPdf = () => {
-    if (!examId) {
-      return alert("Select an exam first");
-    }
+    if (!examId) return alert("Select an exam first");
     const random = distributionType === "random";
     window.open(
       `${BASE}/faculty-members/${facultyId}/exams/${examId}/distribution/pdf?random=${random}`,
@@ -93,9 +96,9 @@ const PrintStudentDistribution = () => {
                 }}
               >
                 <option value="">-- Choose an Exam --</option>
-                {exams.map(exam => (
-                  <option key={exam.id} value={exam.id}>
-                    {exam.courseCode} – {exam.examName}
+                {exams.map(ex => (
+                  <option key={ex.id} value={ex.id}>
+                    {ex.courseCode} – {ex.examName}
                   </option>
                 ))}
               </select>
@@ -151,21 +154,21 @@ const PrintStudentDistribution = () => {
             </div>
 
             {/* Preview */}
-            {(classA.length || classB.length) > 0 && (
+            {(classA.length + classB.length) > 0 && (
               <div className="row">
                 <div className="col-md-6">
                   <h5>Class A</h5>
                   <ul className="list-group">
-                    {classA.map((stu, i) => (
-                      <li key={i} className="list-group-item">{stu}</li>
+                    {classA.map((name,i) => (
+                      <li key={i} className="list-group-item">{name}</li>
                     ))}
                   </ul>
                 </div>
                 <div className="col-md-6">
                   <h5>Class B</h5>
                   <ul className="list-group">
-                    {classB.map((stu, i) => (
-                      <li key={i} className="list-group-item">{stu}</li>
+                    {classB.map((name,i) => (
+                      <li key={i} className="list-group-item">{name}</li>
                     ))}
                   </ul>
                 </div>
