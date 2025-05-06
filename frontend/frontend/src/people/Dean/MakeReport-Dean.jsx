@@ -46,88 +46,105 @@ const MakeReportDean = () => {
     setDateRange((p) => ({ ...p, [name]: value }));
   };
 
-  const requestReport = async (key) => {
-    const { startDate, endDate } = dateRange;
-    if (!startDate || !endDate) {
-      return alert("Please select both start and end dates.");
-    }
-  
-    setActionKey(key);
-  
-    // build payload
-    const payload = {
-      reportType: key,
-      fromTime:   `${startDate}T00:00:00`,
-      toTime:     `${endDate}T23:59:59`,
-      details:    "",
-      status:     "PENDING",
-    };
-  
-    try {
-      const res = await fetch(
-        `http://localhost:8080/api/dean/${deanId}/report-requests`,
-        {
-          method:  "POST",
-          headers: {
-            "Content-Type":  "application/json",
-            "Authorization": `Bearer ${token}`,
-          },
-          body: JSON.stringify(payload),
-        }
-      );
-  
-      // read whole body first
-      const bodyText = await res.text();
-  
-      // log & bail on error
-      if (!res.ok) {
-        console.error("Server responded with:", res.status, bodyText);
-        throw new Error(`HTTP ${res.status}`);
-      }
-  
-      // parse and prepend new request
-      const newReq = JSON.parse(bodyText);
-      setRequests((prev) => [newReq, ...prev]);
-  
-    } catch (err) {
-      console.error(`Failed to request ${key}:`, err);
-      alert(`Failed to request ${reportOptions.find(r => r.key === key).label}`);
-    } finally {
-      setActionKey(null);
-    }
-  };
-  
+const requestReport = async (key) => {
+  const { startDate, endDate } = dateRange;
+  if (!startDate || !endDate) {
+    return alert("Please select both start and end dates.");
+  }
 
-  const downloadReport = async (key, from, to) => {
-    setActionKey(key);
-    try {
-      const res = await fetch(
-        `http://localhost:8080/api/dean/${deanId}/reports/${key}?from=${encodeURIComponent(from + "T00:00:00")}&to=${encodeURIComponent(to + "T23:59:59")}`,
-        {
-          method:  "GET",
-          headers: {
-            "Accept":        "application/pdf",
-            "Authorization": `Bearer ${token}`
-          }
-        }
-      );
-      if (!res.ok) throw new Error(`Status ${res.status}`);
-      const blob = await res.blob();
-      const url  = URL.createObjectURL(blob);
-      const a    = document.createElement("a");
-      a.href     = url;
-      a.download = `${key}-report-${from}-to-${to}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error("Failed to download report:", err);
-      alert("Failed to download report.");
-    } finally {
-      setActionKey(null);
-    }
+  setActionKey(key);
+
+  // build payload
+  const payload = {
+    reportType: key,
+    fromTime:   `${startDate}T00:00:00`,
+    toTime:     `${endDate}T23:59:59`,
+    details:    "",
+    status:     "PENDING",
   };
+
+  try {
+    const res = await fetch(
+      `http://localhost:8080/api/dean/${deanId}/report-requests`,
+      {
+        method:  "POST",
+        headers: {
+          "Content-Type":  "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    // read whole body first
+    const bodyText = await res.text();
+
+    // log & bail on error
+    if (!res.ok) {
+      console.error("Server responded with:", res.status, bodyText);
+      throw new Error(`HTTP ${res.status}`);
+    }
+
+    // parse and prepend new request
+    const newReq = JSON.parse(bodyText);
+    setRequests((prev) => [newReq, ...prev]);
+
+  } catch (err) {
+    console.error(`Failed to request ${key}:`, err);
+    alert(`Failed to request ${reportOptions.find(r => r.key === key).label}`);
+  } finally {
+    setActionKey(null);
+  }
+};
+
+// ─── Download a completed report with your existing API ───
+const downloadReport = async (reportType, fromDate, toDate) => {
+  setActionKey(reportType);
+
+  try {
+    // 1) Build the URL exactly as your server expects:
+    const url =
+      `http://localhost:8080/api/dean/${deanId}/reports/${reportType}` +
+      `?from=${encodeURIComponent(fromDate + "T00:00:00")}` +
+      `&to=${encodeURIComponent(toDate   + "T23:59:59")}`;
+
+    // 2) Fetch the PDF
+    const res = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Accept":        "application/pdf",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+
+    // 3) Surface any server‐side error
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`HTTP ${res.status}: ${errText}`);
+    }
+
+    // 4) Turn the response into a Blob and download it
+    const blob        = await res.blob();
+    const downloadUrl = URL.createObjectURL(blob);
+    const a           = document.createElement("a");
+
+    a.href     = downloadUrl;
+    a.download = `${reportType}-${fromDate}-to-${toDate}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    // 5) Clean up
+    URL.revokeObjectURL(downloadUrl);
+  }
+  catch (err) {
+    console.error("Download failed:", err);
+    alert("Failed to download report. See console for details.");
+  }
+  finally {
+    setActionKey(null);
+  }
+};
 
   return (
     <LayoutDean>
@@ -195,17 +212,17 @@ const MakeReportDean = () => {
                         <td>{r.from}</td>
                         <td>{r.to}</td>
                         <td className={
-                          r.status === "ACCEPTED" ? "text-success" :
+                          r.status === "APPROVED" ? "text-success" :
                           r.status === "REJECTED" ? "text-danger" : ""
                         }>{r.status}</td>
                         <td>
-                          {r.status === "ACCEPTED" && (
+                          {r.status === "APPROVED" && (
                             <button
                               className="btn btn-sm btn-primary"
                               disabled={actionKey === r.type}
                               onClick={() => downloadReport(r.type, r.from, r.to)}
                             >
-                              Download
+                              {actionKey === r.type ? "Downloading…" : "Download"}
                             </button>
                           )}
                         </td>
