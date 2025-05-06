@@ -17,7 +17,6 @@ public class Classroom {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "classroom_id")      // ← explicitly map the real column name
     @EqualsAndHashCode.Include
     private Long id;
 
