@@ -1,17 +1,16 @@
-// src/people/Dean/MakeReport-Dean.jsx
 import React, { useState, useEffect } from "react";
 import LayoutDean from "./Layout-Dean";
 
 const reportOptions = [
-  { key: "courses",     label: "Course Data Report"      },
-  { key: "scheduling",  label: "Exam Scheduling Report"   },
-  { key: "proctoring",  label: "Proctoring Duties Report" },
-  { key: "department",  label: "Department Pool Report"   },
+  { key: "LOG",     label: "Login Reports",   icon: "lock"         },
+  { key: "SWAP",    label: "Swap Reports",    icon: "exchange-alt" },
+  { key: "DUTY",    label: "Duty Reports",    icon: "check-alt"    },
+  { key: "PROCTOR", label: "Proctor Reports", icon: "user-safety"  },
 ];
 
 const MakeReportDean = () => {
-
   const deanId = localStorage.getItem("userId");
+  const token  = localStorage.getItem("authToken");
 
   const [dateRange,    setDateRange]    = useState({ startDate: "", endDate: "" });
   const [today,        setToday]        = useState("");
@@ -20,72 +19,132 @@ const MakeReportDean = () => {
   const [actionKey,    setActionKey]    = useState(null);
 
   useEffect(() => {
-
     if (!deanId) return alert("No deanId found—please log in again.");
     setToday(new Date().toISOString().split("T")[0]);
-    fetch(`http://localhost:8080/api/dean/${deanId}/report-requests`)
+
+    fetch(`http://localhost:8080/api/dean/${deanId}/report-requests`, {
+      method:  "GET",
+      headers: {
+        "Accept":        "application/json",
+        "Authorization": `Bearer ${token}`
+      }
+    })
       .then((res) => {
-        if (!res.ok) throw new Error();
+        if (!res.ok) throw new Error(`Status ${res.status}`);
         return res.json();
       })
       .then(setRequests)
       .catch((err) => {
-        console.error(err);
+        console.error("Error loading report requests:", err);
         alert("Error loading report requests");
       })
       .finally(() => setLoadingReqs(false));
-  }, [deanId]);
+  }, [deanId, token]);
 
   const handleDateChange = (e) => {
     const { name, value } = e.target;
     setDateRange((p) => ({ ...p, [name]: value }));
   };
 
-  const requestReport = async (key) => {
-    const { startDate, endDate } = dateRange;
-    if (!startDate || !endDate) {
-      return alert("Please select both start and end dates.");
-    }
-    setActionKey(key);
-    try {
-      const res = await fetch("http://localhost:8080/api/dean/${deanId}/report-requests", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: key, from: startDate, to: endDate }),
-      });
-      if (!res.ok) throw new Error();
-      const newReq = await res.json();
-      setRequests((prev) => [newReq, ...prev]);
-    } catch {
-      alert(`Failed to request ${reportOptions.find(r => r.key === key).label}`);
-    } finally {
-      setActionKey(null);
-    }
+const requestReport = async (key) => {
+  const { startDate, endDate } = dateRange;
+  if (!startDate || !endDate) {
+    return alert("Please select both start and end dates.");
+  }
+
+  setActionKey(key);
+
+  // build payload
+  const payload = {
+    reportType: key,
+    fromTime:   `${startDate}T00:00:00`,
+    toTime:     `${endDate}T23:59:59`,
+    details:    "",
+    status:     "PENDING",
   };
 
-  const downloadReport = async (key, from, to) => {
-    setActionKey(key);
-    try {
-      const res = await fetch(
-        `/api/dean/reports/${key}?from=${encodeURIComponent(from + "T00:00:00")}&to=${encodeURIComponent(to + "T23:59:59")}`,
-        { headers: { Accept: "application/pdf" } }
-      );
-      if (!res.ok) throw new Error();
-      const blob = await res.blob();
-      const url  = URL.createObjectURL(blob);
-      const a    = document.createElement("a");
-      a.href     = url;
-      a.download = `${key}-report-${from}-to-${to}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    } catch {
-      alert("Failed to download report.");
-    } finally {
-      setActionKey(null);
+  try {
+    const res = await fetch(
+      `http://localhost:8080/api/dean/${deanId}/report-requests`,
+      {
+        method:  "POST",
+        headers: {
+          "Content-Type":  "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    // read whole body first
+    const bodyText = await res.text();
+
+    // log & bail on error
+    if (!res.ok) {
+      console.error("Server responded with:", res.status, bodyText);
+      throw new Error(`HTTP ${res.status}`);
     }
-  };
+
+    // parse and prepend new request
+    const newReq = JSON.parse(bodyText);
+    setRequests((prev) => [newReq, ...prev]);
+
+  } catch (err) {
+    console.error(`Failed to request ${key}:`, err);
+    alert(`Failed to request ${reportOptions.find(r => r.key === key).label}`);
+  } finally {
+    setActionKey(null);
+  }
+};
+
+// ─── Download a completed report with your existing API ───
+const downloadReport = async (reportType, fromDate, toDate) => {
+  setActionKey(reportType);
+
+  try {
+    // 1) Build the URL exactly as your server expects:
+    const url =
+      `http://localhost:8080/api/dean/${deanId}/reports/${reportType}` +
+      `?from=${encodeURIComponent(fromDate + "T00:00:00")}` +
+      `&to=${encodeURIComponent(toDate   + "T23:59:59")}`;
+
+    // 2) Fetch the PDF
+    const res = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Accept":        "application/pdf",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+
+    // 3) Surface any server‐side error
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`HTTP ${res.status}: ${errText}`);
+    }
+
+    // 4) Turn the response into a Blob and download it
+    const blob        = await res.blob();
+    const downloadUrl = URL.createObjectURL(blob);
+    const a           = document.createElement("a");
+
+    a.href     = downloadUrl;
+    a.download = `${reportType}-${fromDate}-to-${toDate}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    // 5) Clean up
+    URL.revokeObjectURL(downloadUrl);
+  }
+  catch (err) {
+    console.error("Download failed:", err);
+    alert("Failed to download report. See console for details.");
+  }
+  finally {
+    setActionKey(null);
+  }
+};
 
   return (
     <LayoutDean>
@@ -145,11 +204,7 @@ const MakeReportDean = () => {
                 </thead>
                 <tbody>
                   {requests.length === 0 ? (
-                    <tr>
-                      <td colSpan="5" className="text-center">
-                        No requests yet
-                      </td>
-                    </tr>
+                    <tr key="no-requests"><td colSpan="5" className="text-center">No requests yet</td></tr>
                   ) : (
                     requests.map((r) => (
                       <tr key={r.id}>
@@ -157,19 +212,17 @@ const MakeReportDean = () => {
                         <td>{r.from}</td>
                         <td>{r.to}</td>
                         <td className={
-                          r.status === "ACCEPTED" ? "text-success" :
+                          r.status === "APPROVED" ? "text-success" :
                           r.status === "REJECTED" ? "text-danger" : ""
-                        }>
-                          {r.status}
-                        </td>
+                        }>{r.status}</td>
                         <td>
-                          {r.status === "ACCEPTED" && (
+                          {r.status === "APPROVED" && (
                             <button
                               className="btn btn-sm btn-primary"
                               disabled={actionKey === r.type}
                               onClick={() => downloadReport(r.type, r.from, r.to)}
                             >
-                              Download
+                              {actionKey === r.type ? "Downloading…" : "Download"}
                             </button>
                           )}
                         </td>

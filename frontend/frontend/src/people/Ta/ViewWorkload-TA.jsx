@@ -3,38 +3,52 @@ import React, { useState, useEffect } from "react";
 import LayoutTA from "./Layout-TA";
 
 const ViewWorkloadTA = () => {
-  const [items, setItems]     = useState([]);
+  const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    // obtain current TA’s ID however your app provides it
-    const taId = /* e.g. from context or props */ 123;
+  const taId = localStorage.getItem("userId");
+  const token = localStorage.getItem("authToken");
+  const BASE_URL = "http://localhost:8080/api";
 
-    fetch("/api/proctor-assignments")
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to fetch assignments");
-        return res.json();
-      })
-      .then((all) => {
-        // keep only this TA’s assignments
-        const mine = all
-          .filter((pa) => pa.assignedTA?.id === taId)
-          .map((pa) =>
-            `${pa.courseCode} — ${new Date(pa.date).toLocaleDateString()}`
+  useEffect(() => {
+    const loadApprovedDuties = async () => {
+      if (!taId) {
+        alert("No TA ID found. Please log in.");
+        setLoading(false);
+        return;
+      }
+      try {
+        const res = await fetch(
+          `${BASE_URL}/duty-logs?taId=${taId}`,
+          {
+            headers: {
+              "Accept": "application/json",
+              "Authorization": `Bearer ${token}`,
+            },
+          }
+        );
+        if (!res.ok) throw new Error(res.statusText);
+        const all = await res.json();
+        const approved = all
+          .filter((d) => d.status === "APPROVED")
+          .map((d) =>
+            `${d.taskType} — ${new Date(d.dateTime).toLocaleDateString()}`
           );
-        setItems(mine);
-      })
-      .catch((err) => {
-        console.error(err);
-        alert("Error loading workload");
-      })
-      .finally(() => setLoading(false));
-  }, []);
+        setItems(approved);
+      } catch (err) {
+        console.error("Error loading approved duties:", err);
+        alert("Error loading approved duties");
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadApprovedDuties();
+  }, [taId, token]);
 
   if (loading) {
     return (
       <LayoutTA>
-        <p>Loading workload…</p>
+        <p>Loading approved duties…</p>
       </LayoutTA>
     );
   }
@@ -43,9 +57,7 @@ const ViewWorkloadTA = () => {
     <LayoutTA>
       <div className="card shadow-sm border-0 mb-4">
         <div className="card-body">
-          <h4 className="fw-bold mb-4 text-primary">
-            Assist Courses / Workload
-          </h4>
+          <h4 className="fw-bold mb-4 text-primary">Approved Duties</h4>
           <ul className="list-group">
             {items.length > 0 ? (
               items.map((desc, i) => (
@@ -55,7 +67,7 @@ const ViewWorkloadTA = () => {
               ))
             ) : (
               <li className="list-group-item text-center">
-                No workload assigned
+                No approved duties found
               </li>
             )}
           </ul>

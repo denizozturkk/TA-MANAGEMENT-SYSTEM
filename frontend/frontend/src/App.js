@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 
 // import React from "react";
 // import { Routes, Route, Navigate } from "react-router-dom";
@@ -167,6 +168,9 @@
 // }
 
 // export default App;
+=======
+
+>>>>>>> 9bfcfd5e63c912d5c9c9edb163679d282f9801b7
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
@@ -358,6 +362,7 @@ function App() {
             element={<ReportTotalWorkloadTA />}
           />
           <Route path="leave" element={<SubmitLeaveRequestTA />} />
+<<<<<<< HEAD
           <Route
             path="swap-proctor"
             element={<SwapProctorTA />}
@@ -366,6 +371,11 @@ function App() {
             path="past-tasks"
             element={<ViewPastTasksTA />}
           />
+=======
+          {/* <Route path="swap" element={<SubmitSwapTA />} /> */}
+          <Route path="swap" element={<SwapProctorTA />} />
+          <Route path="past-tasks" element={<ViewPastTasksTA />} />
+>>>>>>> 9bfcfd5e63c912d5c9c9edb163679d282f9801b7
           <Route path="calendar" element={<CalendarTA />} />
         </Route>
 

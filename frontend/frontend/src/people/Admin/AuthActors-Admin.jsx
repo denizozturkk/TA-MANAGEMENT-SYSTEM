@@ -2,93 +2,171 @@
 import React, { useState, useEffect } from "react";
 import LayoutAdmin from "./Layout-Admin";
 
+// Rol seçenekleri enum’dan birebir çekilebilir; burada örnek olarak sabit liste kullandım.
+const ROLE_OPTIONS = [
+  "ROLE_TA",
+  "ROLE_FACULTY_MEMBER",
+  "ROLE_COORDINATOR",
+  "ROLE_DEAN",
+  "ROLE_ADMIN",
+  "ROLE_DEPARTMENT_STAFF"
+];
+
 const AuthActorsAdmin = () => {
-  const [actors, setActors] = useState([]);
-  const [loadingId, setLoadingId] = useState(null);
+  const [actorId,   setActorId]   = useState("");
+  const [newRole,   setNewRole]   = useState(ROLE_OPTIONS[0]);
+  const [deleteId,  setDeleteId]  = useState("");
+  const [loading,   setLoading]   = useState({ auth: false, del: false });
+  const token = localStorage.getItem("authToken");
+  const base  = "http://localhost:8080/api/admin";
 
-  // Fetch all actors on mount
-  useEffect(() => {
-    const loadActors = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        const res = await fetch("/api/admin/actors", {
-                  headers: { Authorization: `Bearer ${token}` }
-               });
-        if (!res.ok) throw new Error("Failed to fetch actors");
-        const data = await res.json();
-        setActors(data);
-      } catch (err) {
-        console.error(err);
-        alert("Error loading actors");
-      }
-    };
-    loadActors();
-  }, []);
+  if (!token) {
+    return (
+      <LayoutAdmin>
+        <p className="text-danger">
+          ⚠️ Admin olarak giriş yapmalısınız.
+        </p>
+      </LayoutAdmin>
+    );
+  }
 
-  const toggleAuth = async (actor) => {
-    setLoadingId(actor.id);
+  const parseError = async res => {
+    const ct = res.headers.get("content-type") || "";
+    if (ct.includes("application/json")) {
+      const json = await res.json();
+      return json.message ?? JSON.stringify(json);
+    }
+    return await res.text();
+  };
+
+  const handleAuthorize = async () => {
+    if (!actorId) {
+      alert("Lütfen Actor ID girin.");
+      return;
+    }
+    setLoading(l => ({ ...l, auth: true }));
     try {
-      await fetch("/api/admin/system/authorize", {
+      const res = await fetch(`${base}/system/authorize`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization:  `Bearer ${token}`,
+        },
         body: JSON.stringify({
-          actorId: actor.id,
-          authorize: !actor.authorized,
+          userId:  Number(actorId),
+          newRole: newRole
         }),
       });
-      // Flip locally
-      setActors((prev) =>
-        prev.map((a) =>
-          a.id === actor.id ? { ...a, authorized: !a.authorized } : a
-        )
-      );
+      if (!res.ok) {
+        const msg = await parseError(res);
+        throw new Error(msg || `HTTP ${res.status}`);
+      }
+      alert(`✅ Actor #${actorId} rolü '${newRole}' olarak güncellendi.`);
+      setActorId("");
     } catch (err) {
       console.error(err);
-      alert("Failed to update authorization");
+      alert(`❌ Yetkilendirme başarısız: ${err.message}`);
     } finally {
-      setLoadingId(null);
+      setLoading(l => ({ ...l, auth: false }));
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteId) {
+      alert("Lütfen silinecek User ID girin.");
+      return;
+    }
+    if (!window.confirm(`User #${deleteId} gerçekten silinsin mi?`)) {
+      return;
+    }
+    setLoading(l => ({ ...l, del: true }));
+    try {
+      const res = await fetch(`${base}/users/${deleteId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        const msg = await parseError(res);
+        throw new Error(msg || `HTTP ${res.status}`);
+      }
+      alert(`✅ User #${deleteId} başarıyla silindi.`);
+      setDeleteId("");
+    } catch (err) {
+      console.error(err);
+      alert(`❌ Silme başarısız: ${err.message}`);
+    } finally {
+      setLoading(l => ({ ...l, del: false }));
     }
   };
 
   return (
     <LayoutAdmin>
-      <div className="card shadow-sm border-0 mb-4">
+      {/* Yetkilendirme */}
+      <div className="card shadow-sm mb-4">
         <div className="card-body">
-          <h4 className="fw-bold mb-4 text-primary">Authorize Actors</h4>
-          <table className="table table-hover align-middle w-100">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Role</th>
-                <th>Authorization</th>
-              </tr>
-            </thead>
-            <tbody>
-              {actors.map((actor) => (
-                <tr key={actor.id}>
-                  <td>{actor.name}</td>
-                  <td>{actor.role}</td>
-                  <td>
-                    <button
-                      className={
-                        actor.authorized
-                          ? "btn btn-sm btn-success"
-                          : "btn btn-sm btn-outline-secondary"
-                      }
-                      disabled={loadingId === actor.id}
-                      onClick={() => toggleAuth(actor)}
-                    >
-                      {loadingId === actor.id
-                        ? "..."
-                        : actor.authorized
-                        ? "Revoke"
-                        : "Authorize"}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <h4 className="fw-bold mb-3 text-primary">Actor Yetkilendir / Rol Değiştir</h4>
+          <div className="row g-2 align-items-end">
+            <div className="col-md-4">
+              <label className="form-label">Actor ID</label>
+              <input
+                type="number"
+                className="form-control"
+                value={actorId}
+                onChange={e => setActorId(e.target.value)}
+                disabled={loading.auth}
+              />
+            </div>
+            <div className="col-md-4">
+              <label className="form-label">Yeni Rol</label>
+              <select
+                className="form-select"
+                value={newRole}
+                onChange={e => setNewRole(e.target.value)}
+                disabled={loading.auth}
+              >
+                {ROLE_OPTIONS.map(r => (
+                  <option key={r} value={r}>{r.replace("ROLE_", "")}</option>
+                ))}
+              </select>
+            </div>
+            <div className="col-md-4">
+              <button
+                className="btn btn-outline-primary w-100"
+                onClick={handleAuthorize}
+                disabled={loading.auth}
+              >
+                {loading.auth ? "İşleniyor…" : "Gönder"}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Kullanıcı Silme */}
+      <div className="card shadow-sm">
+        <div className="card-body">
+          <h4 className="fw-bold mb-3 text-primary">User Sil</h4>
+          <div className="row g-2 align-items-end">
+            <div className="col-md-8">
+              <label className="form-label">User ID</label>
+              <input
+                type="number"
+                className="form-control"
+                value={deleteId}
+                onChange={e => setDeleteId(e.target.value)}
+                disabled={loading.del}
+              />
+            </div>
+            <div className="col-md-4">
+              <button
+                className="btn btn-outline-danger w-100"
+                onClick={handleDelete}
+                disabled={loading.del}
+              >
+                {loading.del ? "Siliniyor…" : "Sil"}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </LayoutAdmin>

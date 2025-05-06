@@ -1,218 +1,407 @@
-// src/people/TA/ReportTotalWorkloadTA.jsx
+// src/people/TA/PendingDutiesTA.jsx
 import React, { useState, useEffect } from "react";
 import LayoutTA from "./Layout-TA";
 
-const ReportTotalWorkloadTA = () => {
-  const taId = /* your TA’s ID, e.g. from context */ 123;
+const PendingDutiesTA = () => {
+  const taId  = Number(localStorage.getItem("userId"));
+  const token = localStorage.getItem("authToken");
+  const BASE  = "http://localhost:8080/api";
+  const hdrs  = {
+    "Accept":        "application/json",
+    "Authorization": `Bearer ${token}`,
+  };
 
-  const [reports, setReports] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // data
+  const [duties,   setDuties]   = useState([]);
+  const [proctors, setProctors] = useState([]);
+  const [extReqs,  setExtReqs]  = useState([]);
+  const [leaves,   setLeaves]   = useState([]);
 
-  const [modalOpen, setModalOpen] = useState(false);
-  const [selectedReport, setSelectedReport] = useState(null);
-  const [proofFile, setProofFile] = useState(null);
-  const [proofDesc, setProofDesc] = useState("");
-  const [uploading, setUploading] = useState(false);
+  // modal state
+  const [modalType,     setModalType]     = useState(null);
+  const [selected,      setSelected]      = useState(null);
+  const [file,          setFile]          = useState(null);
+  const [reason,        setReason]        = useState("");
+  const [extensionDays, setExtensionDays] = useState(1);
+  const [leaveDates,    setLeaveDates]    = useState({ start: "", end: "" });
+  const [submitting,    setSubmitting]    = useState(false);
 
-  // load your workload reports and their statuses
+  // load everything
   useEffect(() => {
-    fetch(`/api/workload-reports?taId=${taId}`)
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to load reports");
-        return res.json();
-      })
-      .then((data) => setReports(data))
-      .catch((err) => {
+    const load = async () => {
+      try {
+        // 1) duty-logs
+        const allD = await (await fetch(`${BASE}/duty-logs`, { headers: hdrs })).json();
+        setDuties(allD
+          .filter(d => d.ta?.id === taId)
+          .filter(d => d.status !== "APPROVED")
+        );
+
+        // 2) extension-requests
+        const allE = await (await fetch(`${BASE}/extension-requests`, { headers: hdrs })).json();
+        setExtReqs(allE.filter(e => e.taId === taId));
+
+        // 3) proctor assignments
+        const allP = await (await fetch(`${BASE}/proctor-assignments`, { headers: hdrs })).json();
+        setProctors(allP
+          .filter(p => p.ta?.id === taId)
+          .filter(p => p.status !== "COMPLETED" && p.status !== "CANCELLED")
+        );
+
+        // 4) leave requests
+        const allL = await (await fetch(`${BASE}/leave-requests`, { headers: hdrs })).json();
+        setLeaves(allL.filter(l => l.taId === taId));
+      } catch (err) {
         console.error(err);
-        alert("Error loading reports");
-      })
-      .finally(() => setLoading(false));
+        alert("Failed to load pending duties");
+      }
+    };
+    load();
   }, [taId]);
 
-  const openModal = (report) => {
-    setSelectedReport(report);
-    setProofFile(null);
-    setProofDesc("");
-    setModalOpen(true);
+  // common handlers
+  const openModal = (type, item) => {
+    setModalType(type);
+    setSelected(item);
+    setFile(null);
+    setReason("");
+    setExtensionDays(1);
+    setLeaveDates({ start: "", end: "" });
   };
+  const closeModal = () => setModalType(null);
 
-  const closeModal = () => setModalOpen(false);
-
-  const handleFileChange = (e) => setProofFile(e.target.files[0]);
-  const handleDescChange = (e) => setProofDesc(e.target.value);
-
-  const submitProof = async (e) => {
+  // submiters
+  const submitDutyProof = async e => {
     e.preventDefault();
-    if (!proofFile) {
-      return alert("Please select a PDF to upload");
-    }
-    setUploading(true);
-    const formData = new FormData();
-    formData.append("file", proofFile);
-    formData.append("description", proofDesc);
-
+    setSubmitting(true);
     try {
+      const form = new FormData();
+      form.append("file", file);
       const res = await fetch(
-        `/api/workload-reports/${selectedReport.id}/proof`,
-        {
-          method: "POST",
-          body: formData,
-        }
+        `${BASE}/duty-logs/${selected.id}/submit?taId=${taId}`,
+        { method: "POST", headers: { "Authorization": `Bearer ${token}` }, body: form }
       );
-      if (!res.ok) throw new Error();
-      const updated = await res.json();
-      setReports((prev) =>
-        prev.map((r) => (r.id === updated.id ? updated : r))
-      );
+      if (!res.ok) throw new Error(await res.text());
+      const upd = await res.json();
+      setDuties(d => d.map(x => x.id === upd.id ? upd : x));
       closeModal();
     } catch (err) {
-      console.error(err);
-      alert("Failed to upload proof");
+      alert("Upload failed: " + err.message);
     } finally {
-      setUploading(false);
+      setSubmitting(false);
     }
   };
 
-  if (loading) {
-    return (
-      <LayoutTA>
-        <p>Loading workload reports…</p>
-      </LayoutTA>
-    );
-  }
+  const submitExtension = async e => {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      const body = {
+        dutyLogId: selected.id,
+        taId,
+        instructorId: selected.facultyId,
+        excuseType: "MEDICAL_REPORT",
+        requestedExtensionDays: extensionDays,
+        reason
+      };
+      const res = await fetch(`${BASE}/extension-requests`, {
+        method: "POST",
+        headers: { ...hdrs, "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const ext = await res.json();
+      setExtReqs(er => [...er, ext]);
+      closeModal();
+    } catch (err) {
+      alert("Extension request failed: " + err.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const submitProctorProof = async e => {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const res = await fetch(
+        `${BASE}/proctor-assignments/${selected.id}/submit?taId=${taId}`,
+        { method: "POST", headers: { "Authorization": `Bearer ${token}` }, body: form }
+      );
+      if (!res.ok) throw new Error(await res.text());
+      const upd = await res.json();
+      setProctors(p => p.map(x => x.id === upd.id ? upd : x));
+      closeModal();
+    } catch (err) {
+      alert("Upload failed: " + err.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const submitLeave = async e => {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      const body = {
+        taId,
+        proctorAssignmentId: selected.id,
+        startDate: leaveDates.start,
+        endDate: leaveDates.end,
+        reason
+      };
+      const res = await fetch(
+        `${BASE}/leave-requests?taId=${taId}&proctorAssignmentId=${selected.id}`,
+        {
+          method: "POST",
+          headers: { ...hdrs, "Content-Type": "application/json" },
+          body: JSON.stringify(body)
+        }
+      );
+      if (!res.ok) throw new Error(await res.text());
+      const lv = await res.json();
+      setLeaves(ls => [...ls, lv]);
+      closeModal();
+    } catch (err) {
+      alert("Leave request failed: " + err.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <LayoutTA>
-      <div className="card shadow-sm border-0 mb-4">
+      <h3 className="mb-4">Pending Duties & Proctoring</h3>
+
+      {/* ———————— Other Duties ———————— */}
+      <div className="card mb-5">
         <div className="card-body">
-          <h4 className="fw-bold mb-4 text-primary">
-            Report Total Workload
-          </h4>
-          <table className="table table-striped w-100">
+          <h5>Other Duties</h5>
+          <table className="table">
             <thead>
               <tr>
-                <th>Date</th>
-                <th>Work Type</th>
+                <th>When</th>
+                <th>Type</th>
                 <th>Hours</th>
-                <th>Notes</th>
                 <th>Status</th>
+                <th>Extension</th>
+                <th>Proof</th>
                 <th>Action</th>
               </tr>
             </thead>
             <tbody>
-              {reports.length === 0 ? (
-                <tr>
-                  <td colSpan="6" className="text-center">
-                    No reports yet
-                  </td>
-                </tr>
-              ) : (
-                reports.map((r) => (
-                  <tr key={r.id}>
-                    <td>{new Date(r.date).toLocaleDateString()}</td>
-                    <td>{r.workType}</td>
-                    <td>{r.hours}</td>
-                    <td>{r.notes}</td>
+              {duties.map(d => {
+                const ext = extReqs.find(x => x.dutyLogId === d.id);
+                return (
+                  <tr key={d.id}>
+                    <td>{new Date(d.dateTime).toLocaleString()}</td>
+                    <td>{d.taskType}</td>
+                    <td>{d.workload}</td>
+                    <td>{d.status}</td>
                     <td>
-                      {r.status === "WAITING_RESPONSE" && (
-                        <span className="badge bg-secondary">Waiting</span>
-                      )}
-                      {r.status === "ACCEPTED" && (
-                        <span className="badge bg-success">Accepted</span>
-                      )}
-                      {r.status === "REJECTED" && (
-                        <span className="badge bg-danger">Rejected</span>
-                      )}
+                      {ext
+                        ? ext.status
+                        : <button 
+                            className="btn btn-sm btn-outline-secondary"
+                            onClick={() => openModal("extension", d)}
+                          >Request</button>
+                      }
                     </td>
                     <td>
-                      {r.status === "WAITING_RESPONSE" ||
-                      r.status === "REJECTED" ? (
+                      {d.fileUrlTa
+                        ? <a href={d.fileUrlTa} className="btn btn-sm btn-primary" download>
+                            Download
+                          </a>
+                        : "—"
+                      }
+                    </td>
+                    <td>
+                      {d.status === "PENDING" && (
                         <button
                           className="btn btn-sm btn-outline-primary"
-                          onClick={() => openModal(r)}
-                        >
-                          {r.status === "REJECTED"
-                            ? "Resubmit Proof"
-                            : "Upload Proof"}
-                        </button>
-                      ) : r.status === "ACCEPTED" && r.proofUrl ? (
-                        <a
-                          href={r.proofUrl}
-                          className="btn btn-sm btn-primary"
-                          download
-                        >
-                          Download Proof
-                        </a>
-                      ) : null}
+                          onClick={() => openModal("proof-duty", d)}
+                        >Upload Proof</button>
+                      )}
                     </td>
                   </tr>
-                ))
-              )}
+                );
+              })}
             </tbody>
           </table>
         </div>
       </div>
 
-      {modalOpen && (
-        <div
-          className="modal fade show"
-          style={{ display: "block", background: "rgba(0,0,0,0.5)" }}
-        >
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content">
-              <form onSubmit={submitProof}>
-                <div className="modal-header">
-                  <h5 className="modal-title">Upload Proof for Report #{selectedReport.id}</h5>
-                  <button
-                    type="button"
-                    className="btn-close"
-                    onClick={closeModal}
-                  />
-                </div>
-                <div className="modal-body">
-                  <div className="mb-3">
-                    <label className="form-label">PDF File</label>
-                    <input
-                      type="file"
-                      accept="application/pdf"
-                      className="form-control"
-                      onChange={handleFileChange}
-                      required
-                    />
-                  </div>
-                  <div className="mb-3">
-                    <label className="form-label">Description</label>
-                    <textarea
-                      className="form-control"
-                      value={proofDesc}
-                      onChange={handleDescChange}
-                    />
-                  </div>
-                </div>
-                <div className="modal-footer">
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    onClick={closeModal}
-                    disabled={uploading}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="btn btn-primary"
-                    disabled={uploading}
-                  >
-                    {uploading ? "Uploading…" : "Send Proof"}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
+      {/* ———————— Proctoring ———————— */}
+      <div className="card">
+        <div className="card-body">
+          <h5>Proctoring Assignments</h5>
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Assignment ID</th>
+                <th>Status</th>
+                <th>Leave</th>
+                <th>Proof</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {proctors.map(p => {
+                const lv = leaves.find(l => l.proctorAssignmentId === p.id);
+                return (
+                  <tr key={p.id}>
+                    <td>{p.id}</td>
+                    <td>{p.status}</td>
+                    <td>
+                      {lv
+                        ? lv.status
+                        : <button 
+                            className="btn btn-sm btn-outline-secondary"
+                            onClick={() => openModal("leave", p)}
+                          >Request</button>
+                      }
+                    </td>
+                    <td>
+                      {p.proofUrl
+                        ? <a href={p.proofUrl} className="btn btn-sm btn-primary" download>
+                            Download
+                          </a>
+                        : "—"
+                      }
+                    </td>
+                    <td>
+                      {p.status === "ASSIGNED" && (
+                        <button 
+                          className="btn btn-sm btn-outline-primary"
+                          onClick={() => openModal("proof-proctor", p)}
+                        >Upload Proof</button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
+      </div>
+
+      {/* ———————— Modals ———————— */}
+      {modalType === "proof-duty" && (
+        <Modal title={`Upload Proof (#${selected.id})`} onClose={closeModal}>
+          <form onSubmit={submitDutyProof}>
+            <input
+              type="file"
+              accept="application/pdf"
+              onChange={e => setFile(e.target.files[0])}
+              required
+            />
+            <button type="submit" disabled={submitting}>
+              {submitting ? "Uploading…" : "Submit"}
+            </button>
+          </form>
+        </Modal>
+      )}
+
+      {modalType === "extension" && (
+        <Modal title={`Request Extension (#${selected.id})`} onClose={closeModal}>
+          <form onSubmit={submitExtension}>
+            <div>
+              <label>Days:</label>
+              <input
+                type="number"
+                min="1"
+                value={extensionDays}
+                onChange={e => setExtensionDays(+e.target.value)}
+              />
+            </div>
+            <div>  
+              <label>Reason:</label>
+              <textarea
+                value={reason}
+                onChange={e => setReason(e.target.value)}
+                required
+              />
+            </div>
+            <button type="submit" disabled={submitting}>
+              {submitting ? "Sending…" : "Send Request"}
+            </button>
+          </form>
+        </Modal>
+      )}
+
+      {modalType === "proof-proctor" && (
+        <Modal title={`Upload Proctor Proof (#${selected.id})`} onClose={closeModal}>
+          <form onSubmit={submitProctorProof}>
+            <input
+              type="file"
+              accept="application/pdf"
+              onChange={e => setFile(e.target.files[0])}
+              required
+            />
+            <button type="submit" disabled={submitting}>
+              {submitting ? "Uploading…" : "Submit"}
+            </button>
+          </form>
+        </Modal>
+      )}
+
+      {modalType === "leave" && (
+        <Modal title={`Request Leave (#${selected.id})`} onClose={closeModal}>
+          <form onSubmit={submitLeave}>
+            <div>
+              <label>From:</label>
+              <input
+                type="date"
+                value={leaveDates.start}
+                onChange={e => setLeaveDates(ld => ({ ...ld, start: e.target.value }))}
+                required
+              />
+            </div>
+            <div>
+              <label>To:</label>
+              <input
+                type="date"
+                value={leaveDates.end}
+                onChange={e => setLeaveDates(ld => ({ ...ld, end: e.target.value }))}
+                required
+              />
+            </div>
+            <div>
+              <label>Reason:</label>
+              <textarea
+                value={reason}
+                onChange={e => setReason(e.target.value)}
+                required
+              />
+            </div>
+            <button type="submit" disabled={submitting}>
+              {submitting ? "Sending…" : "Send Request"}
+            </button>
+          </form>
+        </Modal>
       )}
     </LayoutTA>
   );
 };
 
-export default ReportTotalWorkloadTA;
+export default PendingDutiesTA;
+
+// ------------------------------
+// Simple reusable Modal component
+function Modal({ title, onClose, children }) {
+  return (
+    <div className="modal-backdrop">
+      <div className="modal-dialog">
+        <div className="modal-content p-4">
+          <div className="modal-header">
+            <h5>{title}</h5>
+            <button onClick={onClose} className="btn-close" />
+          </div>
+          <div className="modal-body">{children}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
