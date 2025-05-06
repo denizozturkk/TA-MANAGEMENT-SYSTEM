@@ -6,82 +6,139 @@ const PrintStudentDistribution = () => {
   const facultyId = Number(localStorage.getItem("userId"));
   const token     = localStorage.getItem("authToken");
   const BASE      = "http://localhost:8080/api";
-  const hdrs      = {
+
+  // common headers *for JSON*
+  const jsonHdrs  = {
     "Accept":        "application/json",
     "Authorization": `Bearer ${token}`,
   };
 
-  // all exams
-  const [exams,  setExams]  = useState([]);
-  const [examId, setExamId] = useState("");
-
-  // distribution params
+  // ---- state ----
+  const [exams, setExams]              = useState([]);
+  const [studentsById, setStudentsById] = useState({});
+  const [examId, setExamId]            = useState("");
   const [distributionType, setDistributionType] = useState("random");
+  const [classA, setClassA]            = useState([]);
+  const [classB, setClassB]            = useState([]);
 
-  // preview lists
-  const [classA, setClassA] = useState([]);
-  const [classB, setClassB] = useState([]);
-
-  // fetch all exams on mount
+  // load exams
   useEffect(() => {
-    fetch(`${BASE}/faculty-members/${facultyId}/exams`, { headers: hdrs })
-      .then(res => res.ok ? res.json() : Promise.reject(res.statusText))
-      .then(data => setExams(data))
-      .catch(err => {
-        console.error("Could not load exams:", err);
+    fetch(`${BASE}/faculty-members/${facultyId}/exams`, { headers: jsonHdrs })
+      .then(r => r.ok ? r.json() : Promise.reject(r.statusText))
+      .then(setExams)
+      .catch(e => {
+        console.error("Could not load exams:", e);
         alert("Failed to load your exams");
       });
   }, [facultyId]);
 
+  // load all students for name lookup
+  useEffect(() => {
+    fetch(`${BASE}/students`, { headers: jsonHdrs })
+      .then(r => r.ok ? r.json() : Promise.reject(r.statusText))
+      .then(data => {
+        const map = {};
+        data.forEach(s => map[s.id] = s);
+        setStudentsById(map);
+      })
+      .catch(e => {
+        console.error("Could not load students:", e);
+      });
+  }, []);
+
+  // preview generation (ID + isim)
   const handleGenerate = () => {
     if (!examId) return alert("Please select an exam");
+
     fetch(
       `${BASE}/faculty-members/${facultyId}/exams/${examId}/distribution?random=${distributionType === "random"}`,
-      { headers: hdrs }
+      { headers: jsonHdrs }
     )
-      .then(res => res.ok ? res.json() : Promise.reject(res.statusText))
-      .then(dto => {
-        console.log("distribution DTO:", dto);
-        // dto.distributions is array of { roomId, students: [ { firstName, lastName } ] }
-        const allNames = dto.distributions
-          .flatMap(d => d.students.map(s => `${s.firstName} ${s.lastName}`));
+    .then(r => r.ok ? r.json() : Promise.reject(r.statusText))
+    .then(dto => {
+      console.log("distribution DTO:", dto);
+      // dto.distributions: [ { classroomId, studentIds: [ id, … ] }, … ]
+      const rawIds = Array.isArray(dto.distributions)
+        ? dto.distributions.flatMap(d => d.studentIds)
+        : [];
 
-        // sort if alphabetical, else randomize
-        if (distributionType === "alphabetical") {
-          allNames.sort((a,b) => a.localeCompare(b));
-        } else {
-          allNames.sort(() => Math.random() - 0.5);
-        }
-
-        // split evenly
-        const half = Math.ceil(allNames.length / 2);
-        setClassA(allNames.slice(0, half));
-        setClassB(allNames.slice(half));
-      })
-      .catch(err => {
-        console.error("Preview fetch failed:", err);
-        alert("Failed to load distribution preview");
+      // map to "ID – First Last"
+      const allNames = rawIds.map(id => {
+        const s = studentsById[id];
+        return s
+          ? `${id} – ${s.firstName} ${s.lastName}`
+          : `${id}`;
       });
+
+      // sort or shuffle
+      if (distributionType === "alphabetical") {
+        allNames.sort((a,b) => a.localeCompare(b));
+      } else {
+        allNames.sort(() => Math.random() - 0.5);
+      }
+
+      // split evenly
+      const half = Math.ceil(allNames.length / 2);
+      setClassA(allNames.slice(0, half));
+      setClassB(allNames.slice(half));
+    })
+    .catch(e => {
+      console.error("Preview fetch failed:", e);
+      alert("Failed to load distribution preview");
+    });
   };
 
+  // PDF download: Accept: application/pdf
   const handleDownloadPdf = () => {
     if (!examId) return alert("Select an exam first");
-    const random = distributionType === "random";
-    window.open(
-      `${BASE}/faculty-members/${facultyId}/exams/${examId}/distribution/pdf?random=${random}`,
-      "_blank"
-    );
+    const rand = distributionType === "random";
+
+    // derive filename from selected exam
+    const selExam = exams.find(e => e.id === +examId) || {};
+    const filename = `${selExam.courseCode || "exam"}_${selExam.examName || ""}.pdf`;
+
+    fetch(
+      `${BASE}/faculty-members/${facultyId}/exams/${examId}/distribution/pdf?random=${rand}`,
+      {
+        method: "GET",
+        headers: {
+          "Accept":        "application/pdf",
+          "Authorization": `Bearer ${token}`
+        }
+      }
+    )
+    .then(res => {
+      if (!res.ok) throw new Error(res.statusText);
+      return res.blob();
+    })
+    .then(blob => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    })
+    .catch(e => {
+      console.error("PDF download failed:", e);
+      alert("Failed to download PDF");
+    });
   };
 
   return (
     <div className="d-flex">
       <div style={{ width: "300px" }}>
-        <FacultymemberLayout />
+        <FacultymemberLayout/>
       </div>
       <div className="container py-5 flex-grow-1">
         <div className="card shadow-sm border-0">
           <div className="card-body">
-            <h4 className="fw-bold mb-4 text-primary">Print Student Distribution</h4>
+
+            <h4 className="fw-bold mb-4 text-primary">
+              Print Student Distribution
+            </h4>
 
             {/* Exam Selector */}
             <div className="mb-4">
@@ -110,27 +167,23 @@ const PrintStudentDistribution = () => {
                 <label className="form-label fw-semibold">Distribution Type</label>
                 <div className="form-check">
                   <input
-                    className="form-check-input"
-                    type="radio"
                     id="random"
+                    type="radio"
+                    className="form-check-input"
                     checked={distributionType === "random"}
                     onChange={() => setDistributionType("random")}
                   />
-                  <label className="form-check-label" htmlFor="random">
-                    Random
-                  </label>
+                  <label htmlFor="random" className="form-check-label">Random</label>
                 </div>
                 <div className="form-check">
                   <input
-                    className="form-check-input"
-                    type="radio"
                     id="alphabetical"
+                    type="radio"
+                    className="form-check-input"
                     checked={distributionType === "alphabetical"}
                     onChange={() => setDistributionType("alphabetical")}
                   />
-                  <label className="form-check-label" htmlFor="alphabetical">
-                    Alphabetical
-                  </label>
+                  <label htmlFor="alphabetical" className="form-check-label">Alphabetical</label>
                 </div>
               </div>
             )}
@@ -153,7 +206,7 @@ const PrintStudentDistribution = () => {
               </button>
             </div>
 
-            {/* Preview */}
+            {/* Preview Lists */}
             {(classA.length + classB.length) > 0 && (
               <div className="row">
                 <div className="col-md-6">
