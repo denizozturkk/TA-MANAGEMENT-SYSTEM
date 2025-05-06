@@ -1,13 +1,22 @@
 // src/people/Admin/AuthActors-Admin.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import LayoutAdmin from "./Layout-Admin";
 
-const AuthActorsAdmin = () => {
-  const [actorId,      setActorId]      = useState("");
-  const [authorize,    setAuthorize]    = useState(true);
-  const [deleteUserId, setDeleteUserId] = useState("");
-  const [loading,      setLoading]      = useState({ auth: false, del: false });
+// Rol seçenekleri enum’dan birebir çekilebilir; burada örnek olarak sabit liste kullandım.
+const ROLE_OPTIONS = [
+  "ROLE_TA",
+  "ROLE_FACULTY_MEMBER",
+  "ROLE_COORDINATOR",
+  "ROLE_DEAN",
+  "ROLE_ADMIN",
+  "ROLE_DEPARTMENT_STAFF"
+];
 
+const AuthActorsAdmin = () => {
+  const [actorId,   setActorId]   = useState("");
+  const [newRole,   setNewRole]   = useState(ROLE_OPTIONS[0]);
+  const [deleteId,  setDeleteId]  = useState("");
+  const [loading,   setLoading]   = useState({ auth: false, del: false });
   const token = localStorage.getItem("authToken");
   const base  = "http://localhost:8080/api/admin";
 
@@ -15,13 +24,12 @@ const AuthActorsAdmin = () => {
     return (
       <LayoutAdmin>
         <p className="text-danger">
-          ⚠️ You must be logged in as Admin to manage actors.
+          ⚠️ Admin olarak giriş yapmalısınız.
         </p>
       </LayoutAdmin>
     );
   }
 
-  // Parse JSON or text error body
   const parseError = async res => {
     const ct = res.headers.get("content-type") || "";
     if (ct.includes("application/json")) {
@@ -31,10 +39,9 @@ const AuthActorsAdmin = () => {
     return await res.text();
   };
 
-  // Authorize or revoke an actor
   const handleAuthorize = async () => {
     if (!actorId) {
-      alert("Please enter an Actor ID.");
+      alert("Lütfen Actor ID girin.");
       return;
     }
     setLoading(l => ({ ...l, auth: true }));
@@ -46,36 +53,35 @@ const AuthActorsAdmin = () => {
           Authorization:  `Bearer ${token}`,
         },
         body: JSON.stringify({
-          actorId:   Number(actorId),
-          authorize: Boolean(authorize),
+          userId:  Number(actorId),
+          newRole: newRole
         }),
       });
       if (!res.ok) {
         const msg = await parseError(res);
         throw new Error(msg || `HTTP ${res.status}`);
       }
-      alert(`✅ Actor #${actorId} ${authorize ? "authorized" : "revoked"}.`);
+      alert(`✅ Actor #${actorId} rolü '${newRole}' olarak güncellendi.`);
       setActorId("");
     } catch (err) {
       console.error(err);
-      alert(`❌ Authorization failed: ${err.message}`);
+      alert(`❌ Yetkilendirme başarısız: ${err.message}`);
     } finally {
       setLoading(l => ({ ...l, auth: false }));
     }
   };
 
-  // Delete a user
   const handleDelete = async () => {
-    if (!deleteUserId) {
-      alert("Please enter a User ID to delete.");
+    if (!deleteId) {
+      alert("Lütfen silinecek User ID girin.");
       return;
     }
-    if (!window.confirm(`Really delete user #${deleteUserId}?`)) {
+    if (!window.confirm(`User #${deleteId} gerçekten silinsin mi?`)) {
       return;
     }
     setLoading(l => ({ ...l, del: true }));
     try {
-      const res = await fetch(`${base}/users/${deleteUserId}`, {
+      const res = await fetch(`${base}/users/${deleteId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -83,11 +89,11 @@ const AuthActorsAdmin = () => {
         const msg = await parseError(res);
         throw new Error(msg || `HTTP ${res.status}`);
       }
-      alert(`✅ User #${deleteUserId} deleted successfully.`);
-      setDeleteUserId("");
+      alert(`✅ User #${deleteId} başarıyla silindi.`);
+      setDeleteId("");
     } catch (err) {
       console.error(err);
-      alert(`❌ Delete failed: ${err.message}`);
+      alert(`❌ Silme başarısız: ${err.message}`);
     } finally {
       setLoading(l => ({ ...l, del: false }));
     }
@@ -95,10 +101,10 @@ const AuthActorsAdmin = () => {
 
   return (
     <LayoutAdmin>
-      {/* Authorize / Revoke Actor */}
+      {/* Yetkilendirme */}
       <div className="card shadow-sm mb-4">
         <div className="card-body">
-          <h4 className="fw-bold mb-3 text-primary">Authorize Actor</h4>
+          <h4 className="fw-bold mb-3 text-primary">Actor Yetkilendir / Rol Değiştir</h4>
           <div className="row g-2 align-items-end">
             <div className="col-md-4">
               <label className="form-label">Actor ID</label>
@@ -111,15 +117,16 @@ const AuthActorsAdmin = () => {
               />
             </div>
             <div className="col-md-4">
-              <label className="form-label">Action</label>
+              <label className="form-label">Yeni Rol</label>
               <select
                 className="form-select"
-                value={authorize}
-                onChange={e => setAuthorize(e.target.value === "true")}
+                value={newRole}
+                onChange={e => setNewRole(e.target.value)}
                 disabled={loading.auth}
               >
-                <option value="true">Authorize</option>
-                <option value="false">Revoke</option>
+                {ROLE_OPTIONS.map(r => (
+                  <option key={r} value={r}>{r.replace("ROLE_", "")}</option>
+                ))}
               </select>
             </div>
             <div className="col-md-4">
@@ -128,25 +135,25 @@ const AuthActorsAdmin = () => {
                 onClick={handleAuthorize}
                 disabled={loading.auth}
               >
-                {loading.auth ? "Processing…" : "Submit"}
+                {loading.auth ? "İşleniyor…" : "Gönder"}
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Delete User */}
+      {/* Kullanıcı Silme */}
       <div className="card shadow-sm">
         <div className="card-body">
-          <h4 className="fw-bold mb-3 text-primary">Delete User</h4>
+          <h4 className="fw-bold mb-3 text-primary">User Sil</h4>
           <div className="row g-2 align-items-end">
             <div className="col-md-8">
               <label className="form-label">User ID</label>
               <input
                 type="number"
                 className="form-control"
-                value={deleteUserId}
-                onChange={e => setDeleteUserId(e.target.value)}
+                value={deleteId}
+                onChange={e => setDeleteId(e.target.value)}
                 disabled={loading.del}
               />
             </div>
@@ -156,7 +163,7 @@ const AuthActorsAdmin = () => {
                 onClick={handleDelete}
                 disabled={loading.del}
               >
-                {loading.del ? "Deleting…" : "Delete"}
+                {loading.del ? "Siliniyor…" : "Sil"}
               </button>
             </div>
           </div>
