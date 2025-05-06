@@ -3,49 +3,64 @@ import React, { useState, useEffect } from "react";
 import LayoutTA from "./Layout-TA";
 
 const SubmitSwapTA = () => {
-  const [form, setForm] = useState({ taskId: "", toTA: "", comment: "" });
+  const taId  = Number(localStorage.getItem("userId"));
+  const token = localStorage.getItem("authToken");
+  const BASE  = "http://localhost:8080/api";
+
+  const [form,     setForm]     = useState({ taskId: "", toTA: "", comment: "" });
   const [outgoing, setOutgoing] = useState([]);
   const [incoming, setIncoming] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [loading,  setLoading]  = useState(true);
+  const [saving,   setSaving]   = useState(false);
 
+  // load swap requests
   useEffect(() => {
-    const taId = /* your TA’s ID, e.g. from context */ 123;
-
-    fetch("/api/swap-requests")
+    fetch(`${BASE}/swap-requests`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
       .then((res) => {
-        if (!res.ok) throw new Error("Failed to fetch swaps");
+        if (!res.ok) throw new Error("Failed to fetch swap requests");
         return res.json();
       })
       .then((all) => {
-        setOutgoing(all.filter((r) => r.fromTa?.id === taId));
-        setIncoming(all.filter((r) => r.toTa?.id === taId));
+        setOutgoing(
+          all.filter(
+            (r) =>
+              // support either nested or flat
+              (r.ta?.id === taId) || (r.taId === taId)
+          )
+        );
+        setIncoming(
+          all.filter(
+            (r) =>
+              (r.toTa?.id === taId) || (r.toTaId === taId)
+          )
+        );
       })
       .catch((err) => {
         console.error(err);
         alert("Error loading swap requests");
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [taId]);
 
   const handleChange = (e) =>
     setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const taId = /* your TA’s ID */ 123;
     setSaving(true);
     try {
-      const res = await fetch(`/api/swap-requests?taId=${taId}`, {
+      const originalId = Number(form.taskId);
+      const targetId   = Number(form.toTA);
+      const url = `${BASE}/swap-requests/send?originalId=${originalId}&targetId=${targetId}&taId=${taId}`;
+
+      const res = await fetch(url, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          taskId:  form.taskId,
-          toTaId:  form.toTA,
-          comment: form.comment,
-        }),
+        headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error("Failed to send swap request");
+
       const created = await res.json();
       setOutgoing((prev) => [created, ...prev]);
       setForm({ taskId: "", toTA: "", comment: "" });
@@ -126,8 +141,8 @@ const SubmitSwapTA = () => {
               ) : (
                 outgoing.map((o) => (
                   <tr key={o.id}>
-                    <td>{o.taskId}</td>
-                    <td>{o.toTa?.name || o.toTaId}</td>
+                    <td>{o.originalId ?? o.taskId}</td>
+                    <td>{o.toTa?.name ?? o.toTaId}</td>
                     <td>{o.comment}</td>
                   </tr>
                 ))
@@ -154,8 +169,8 @@ const SubmitSwapTA = () => {
               ) : (
                 incoming.map((i) => (
                   <tr key={i.id}>
-                    <td>{i.taskId}</td>
-                    <td>{i.fromTa?.name}</td>
+                    <td>{i.originalId ?? i.taskId}</td>
+                    <td>{i.fromTa?.name ?? i.fromTaId}</td>
                     <td>{i.comment}</td>
                   </tr>
                 ))
