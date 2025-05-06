@@ -486,4 +486,32 @@ public class EntityMapperService {
         c.setDepartment(dto.getDepartment());
         return c;
     }
+
+    public CourseDto toDto(Course c) {
+        CourseDto dto = modelMapper.map(c, CourseDto.class);
+        if (c.getOfferings() != null) {
+            dto.setOfferingIds(
+                    c.getOfferings()
+                            .stream()
+                            .map(Offering::getId)
+                            .collect(Collectors.toSet())
+            );
+        }
+        return dto;
+    }
+
+    public Course toEntity(CourseDto dto) {
+        Course c = modelMapper.map(dto, Course.class);
+        if (dto.getOfferingIds() != null) {
+            Set<Offering> offs = dto.getOfferingIds().stream()
+                    .map(id -> {
+                        Offering o = new Offering();
+                        o.setId(id);
+                        return o;
+                    })
+                    .collect(Collectors.toSet());
+            c.setOfferings(offs);
+        }
+        return c;
+    }
 }

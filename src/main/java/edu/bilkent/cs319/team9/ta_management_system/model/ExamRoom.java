@@ -5,6 +5,7 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 @Entity
+@Table(name = "exam_rooms")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -14,12 +15,12 @@ public class ExamRoom {
     @EmbeddedId
     private ExamRoomId id;
 
-    @ManyToOne(optional = false)
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @MapsId("examId")
     @JoinColumn(name = "exam_id")
     private Exam exam;
 
-    @ManyToOne(optional = false)
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @MapsId("classroomId")
     @JoinColumn(name = "classroom_id")
     private Classroom classroom;

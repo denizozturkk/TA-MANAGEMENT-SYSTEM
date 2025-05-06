@@ -4,17 +4,20 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
-import java.util.List;
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity
+@Table(name = "classroom")
 @Data
 @NoArgsConstructor
 @SuperBuilder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Classroom {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "classroom_id")      // ← explicitly map the real column name
     @EqualsAndHashCode.Include
     private Long id;
 
@@ -23,6 +26,11 @@ public class Classroom {
     private Integer capacity;
     private Integer examCapacity;
 
-    @OneToMany(mappedBy = "classroom")
-    private List<ProctorAssignment> proctorAssignments;
+    @OneToMany(
+            mappedBy = "classroom",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true,
+            fetch = FetchType.LAZY
+    )
+    private Set<ProctorAssignment> proctorAssignments = new HashSet<>();
 }

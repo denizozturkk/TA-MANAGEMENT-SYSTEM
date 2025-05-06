@@ -1,9 +1,10 @@
 package edu.bilkent.cs319.team9.ta_management_system.controller;
 
+import edu.bilkent.cs319.team9.ta_management_system.dto.CourseDto;
+import edu.bilkent.cs319.team9.ta_management_system.mapper.EntityMapperService;
 import edu.bilkent.cs319.team9.ta_management_system.model.Course;
 import edu.bilkent.cs319.team9.ta_management_system.service.CourseService;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -12,28 +13,37 @@ import java.util.List;
 @RequestMapping("/api/courses")
 public class CourseController {
     private final CourseService courseService;
-    public CourseController(CourseService courseService) {
+    private final EntityMapperService mapper;
+
+    public CourseController(CourseService courseService, EntityMapperService mapper) {
         this.courseService = courseService;
+        this.mapper       = mapper;
     }
 
     @PostMapping
-    public ResponseEntity<Course> create(@RequestBody Course c) {
-        return new ResponseEntity<>(courseService.create(c), HttpStatus.CREATED);
+    public ResponseEntity<CourseDto> create(@RequestBody CourseDto dto) {
+        Course saved = courseService.create(mapper.toEntity(dto));
+        return new ResponseEntity<>(mapper.toDto(saved), HttpStatus.CREATED);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Course> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(courseService.findById(id));
+    public ResponseEntity<CourseDto> getById(@PathVariable Long id) {
+        return ResponseEntity.ok(mapper.toDto(courseService.findById(id)));
     }
 
     @GetMapping
-    public ResponseEntity<List<Course>> getAll() {
-        return ResponseEntity.ok(courseService.findAll());
+    public ResponseEntity<List<CourseDto>> getAll() {
+        List<CourseDto> list = courseService.findAll().stream()
+                .map(mapper::toDto)
+                .toList();
+        return ResponseEntity.ok(list);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Course> update(@PathVariable Long id, @RequestBody Course c) {
-        return ResponseEntity.ok(courseService.update(id, c));
+    public ResponseEntity<CourseDto> update(@PathVariable Long id,
+                                            @RequestBody CourseDto dto) {
+        Course updated = courseService.update(id, mapper.toEntity(dto));
+        return ResponseEntity.ok(mapper.toDto(updated));
     }
 
     @DeleteMapping("/{id}")

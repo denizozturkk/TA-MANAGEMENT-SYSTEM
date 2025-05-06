@@ -1,14 +1,15 @@
 package edu.bilkent.cs319.team9.ta_management_system.model;
 
-
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity
+@Table(name = "exam")
 @NoArgsConstructor
 @SuperBuilder
 @Data
@@ -26,19 +27,26 @@ public class Exam {
     private String examType;
     private Integer numProctors;
 
-    @ManyToOne @JoinColumn(name = "offering_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "offering_id")
     private Offering offering;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "faculty_member_id")
     private FacultyMember faculty;
 
-    @OneToMany(mappedBy = "exam")
-    private Set<ProctorAssignment> proctorAssignments;
+    @OneToMany(mappedBy = "exam", fetch = FetchType.LAZY)
+    private Set<ProctorAssignment> proctorAssignments = new HashSet<>();
 
-    @OneToMany(mappedBy = "exam", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<ExamRoom> examRooms;
+    @OneToMany(
+            mappedBy = "exam",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true,
+            fetch = FetchType.LAZY
+    )
+    private Set<ExamRoom> examRooms = new HashSet<>();
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "defined_by_id")
     private FacultyMember definedBy;
 }
