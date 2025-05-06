@@ -3,6 +3,7 @@ package edu.bilkent.cs319.team9.ta_management_system.controller;
 import com.itextpdf.text.DocumentException;
 import edu.bilkent.cs319.team9.ta_management_system.dto.ClassroomDistributionDto;
 import edu.bilkent.cs319.team9.ta_management_system.dto.DutyLogDto;
+import edu.bilkent.cs319.team9.ta_management_system.dto.ExamDto;
 import edu.bilkent.cs319.team9.ta_management_system.dto.FacultyMemberDto;
 import edu.bilkent.cs319.team9.ta_management_system.mapper.EntityMapperService;
 import edu.bilkent.cs319.team9.ta_management_system.model.*;
@@ -253,5 +254,14 @@ public class FacultyMemberController {
     public ResponseEntity<Void> importEnrollments(@RequestParam("file") MultipartFile file) throws IOException {
         excelImportService.importEnrollmentSheet(file);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/{facultyId}/exams")
+    public ResponseEntity<List<ExamDto>> getExamsByFaculty(@PathVariable Long facultyId) {
+        List<Exam> exams = examRepository.findAllByFaculty_Id(facultyId);
+        List<ExamDto> dtos = exams.stream()
+                .map(mapper::toDto)        // zaten EntityMapperService içinde Exam→ExamDto mapping’in var
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(dtos);
     }
 }
