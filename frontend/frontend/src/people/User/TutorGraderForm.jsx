@@ -4,7 +4,7 @@ const TutorGraderForm = () => {
   const [formData, setFormData] = useState({
     studentId: "",
     fullName: "",
-    classYear: 1,
+    classYear: "",
     cgpa: "",
     dept: "",
     email: "",
@@ -22,8 +22,11 @@ const TutorGraderForm = () => {
     additionalNotes: "",
     infoConfirmed: false
   });
-
   const [transcript, setTranscript] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  // JWT Token’ı localStorage’dan al
+  const token = localStorage.getItem("authToken");
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -34,9 +37,13 @@ const TutorGraderForm = () => {
   };
 
   const handleArrayInput = (e, field) => {
+    const items = e.target.value
+      .split(",")
+      .map(v => v.trim())
+      .filter(v => v);
     setFormData(prev => ({
       ...prev,
-      [field]: e.target.value.split(",").map(v => v.trim())
+      [field]: items
     }));
   };
 
@@ -46,107 +53,272 @@ const TutorGraderForm = () => {
       ...prev,
       [field]: {
         ...prev[field],
-        [name]: value
+        [name]: value.trim()
       }
     }));
   };
 
   const handleFileChange = (e) => {
-    setTranscript(e.target.files[0]);
+    setTranscript(e.target.files[0] || null);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!transcript) {
-      alert("Please upload your transcript.");
+      alert("Lütfen transkript dosyanızı yükleyin.");
       return;
     }
 
-    const formPayload = new FormData();
-    formPayload.append("data", JSON.stringify(formData));
-    formPayload.append("transcript", transcript);
-
+    setSubmitting(true);
     try {
-      const res = await fetch("/api/applications", {
+      // classYear ve cgpa'yı sayıya çevir
+      const payloadData = {
+        ...formData,
+        classYear: parseInt(formData.classYear, 10),
+        cgpa: parseFloat(formData.cgpa)
+      };
+
+      const formPayload = new FormData();
+      formPayload.append("data", JSON.stringify(payloadData));
+      formPayload.append("transcript", transcript);
+
+      const res = await fetch("http://localhost:8080/api/applications", {
         method: "POST",
+        headers: {
+          ...(token && { Authorization: `Bearer ${token}` })
+        },
         body: formPayload
       });
 
-      if (!res.ok) throw new Error("Failed to submit application");
+      if (!res.ok) {
+        const errText = await res.text().catch(() => res.statusText);
+        throw new Error(errText || "Sunucu hatası");
+      }
 
-      alert("Application submitted successfully!");
+      const created = await res.json();
+      alert("Başvurunuz başarıyla gönderildi!");
+      console.log("Oluşan başvuru:", created);
+
+      // formu sıfırla
+      setFormData({
+        studentId: "",
+        fullName: "",
+        classYear: "",
+        cgpa: "",
+        dept: "",
+        email: "",
+        mobilePhone: "",
+        turkishCitizen: false,
+        completedOneYear: false,
+        cgpaAbove2: false,
+        noDisciplinary: false,
+        notOnLeave: false,
+        labCourses: [],
+        gradershipCourses: [],
+        preferredSectionsByCourse: {},
+        letterGradesByCourse: {},
+        priorExperience: "",
+        additionalNotes: "",
+        infoConfirmed: false
+      });
+      setTranscript(null);
     } catch (err) {
-      console.error(err);
-      alert("Submission error.");
+      console.error("Başvuru gönderme hatası:", err);
+      alert(`Gönderme hatası: ${err.message}`);
+    } finally {
+      setSubmitting(false);
     }
   };
 
   return (
     <div className="container my-5 p-4 bg-light rounded shadow" style={{ maxWidth: "800px" }}>
-      <h3 className="mb-4">Tutor/Grader Application Form</h3>
+      <h3 className="mb-4">Tutor/Grader Başvuru Formu</h3>
       <form onSubmit={handleSubmit}>
-        <input className="form-control mb-2" name="studentId" placeholder="Student ID" onChange={handleChange} required />
-        <input className="form-control mb-2" name="fullName" placeholder="Full Name" onChange={handleChange} required />
-        <input className="form-control mb-2" name="classYear" type="number" placeholder="Class Year" onChange={handleChange} required />
-        <input className="form-control mb-2" name="cgpa" type="number" step="0.01" placeholder="CGPA" onChange={handleChange} required />
-        <select className="form-select mb-2" name="dept" onChange={handleChange} required>
-          <option value="">Select Department</option>
+        {/* Temel Bilgiler */}
+        <input
+          name="studentId"
+          className="form-control mb-2"
+          placeholder="Student ID"
+          value={formData.studentId}
+          onChange={handleChange}
+          required
+        />
+        <input
+          name="fullName"
+          className="form-control mb-2"
+          placeholder="Full Name"
+          value={formData.fullName}
+          onChange={handleChange}
+          required
+        />
+        <input
+          name="classYear"
+          type="number"
+          className="form-control mb-2"
+          placeholder="Class Year"
+          value={formData.classYear}
+          onChange={handleChange}
+          required
+        />
+        <input
+          name="cgpa"
+          type="number"
+          step="0.01"
+          className="form-control mb-2"
+          placeholder="CGPA"
+          value={formData.cgpa}
+          onChange={handleChange}
+          required
+        />
+        <select
+          name="dept"
+          className="form-select mb-2"
+          value={formData.dept}
+          onChange={handleChange}
+          required
+        >
+          <option value="">Bölüm Seçin</option>
           <option value="CS">CS</option>
           <option value="EE">EE</option>
           <option value="CHEM">CHEM</option>
           <option value="ME">ME</option>
-          {/* Ek departmanlar */}
         </select>
-        <input className="form-control mb-2" name="email" placeholder="Email" onChange={handleChange} required />
-        <input className="form-control mb-2" name="mobilePhone" placeholder="Mobile Phone" onChange={handleChange} required />
+        <input
+          name="email"
+          type="email"
+          className="form-control mb-2"
+          placeholder="Email"
+          value={formData.email}
+          onChange={handleChange}
+          required
+        />
+        <input
+          name="mobilePhone"
+          className="form-control mb-2"
+          placeholder="Mobile Phone"
+          value={formData.mobilePhone}
+          onChange={handleChange}
+          required
+        />
 
-        <div className="form-check mb-1">
-          <input className="form-check-input" type="checkbox" name="turkishCitizen" onChange={handleChange} />
-          <label className="form-check-label">Turkish Citizen</label>
-        </div>
-        <div className="form-check mb-1">
-          <input className="form-check-input" type="checkbox" name="completedOneYear" onChange={handleChange} />
-          <label className="form-check-label">Completed at least one academic year</label>
-        </div>
-        <div className="form-check mb-1">
-          <input className="form-check-input" type="checkbox" name="cgpaAbove2" onChange={handleChange} />
-          <label className="form-check-label">CGPA above 2.0</label>
-        </div>
-        <div className="form-check mb-1">
-          <input className="form-check-input" type="checkbox" name="noDisciplinary" onChange={handleChange} />
-          <label className="form-check-label">No disciplinary record</label>
-        </div>
-        <div className="form-check mb-3">
-          <input className="form-check-input" type="checkbox" name="notOnLeave" onChange={handleChange} />
-          <label className="form-check-label">Not currently on leave</label>
-        </div>
+        {/* Checkbox kriterleri */}
+        {[
+          { name: "turkishCitizen", label: "Turkish Citizen" },
+          { name: "completedOneYear", label: "Completed ≥1 Academic Year" },
+          { name: "cgpaAbove2", label: "CGPA above 2.0" },
+          { name: "noDisciplinary", label: "No Disciplinary Record" },
+          { name: "notOnLeave", label: "Not Currently on Leave" }
+        ].map(({ name, label }) => (
+          <div className="form-check mb-2" key={name}>
+            <input
+              className="form-check-input"
+              type="checkbox"
+              name={name}
+              checked={formData[name]}
+              onChange={handleChange}
+            />
+            <label className="form-check-label">{label}</label>
+          </div>
+        ))}
 
-        <input className="form-control mb-2" placeholder="Lab Courses (e.g. CS102,EE200)" onChange={(e) => handleArrayInput(e, "labCourses")} />
-        <input className="form-control mb-2" placeholder="Gradership Courses (e.g. CS101,EE150)" onChange={(e) => handleArrayInput(e, "gradershipCourses")} />
+        {/* Dizi Girdileri */}
+        <input
+          className="form-control mb-2"
+          placeholder="Lab Courses (örn: CS102, EE200)"
+          onChange={e => handleArrayInput(e, "labCourses")}
+          value={formData.labCourses.join(", ")}
+        />
+        <input
+          className="form-control mb-2"
+          placeholder="Gradership Courses (örn: CS101, EE150)"
+          onChange={e => handleArrayInput(e, "gradershipCourses")}
+          value={formData.gradershipCourses.join(", ")}
+        />
 
+        {/* Harita Girdileri */}
         <h5 className="mt-3">Preferred Sections (Course → Section)</h5>
-        <input className="form-control mb-2" name="CS102" placeholder="CS102 → Section" onChange={(e) => handleMapInput(e, "preferredSectionsByCourse")} />
-        <input className="form-control mb-2" name="EE200" placeholder="EE200 → Section" onChange={(e) => handleMapInput(e, "preferredSectionsByCourse")} />
+        <input
+          className="form-control mb-2"
+          name="CS102"
+          placeholder="CS102 → Section"
+          onChange={e => handleMapInput(e, "preferredSectionsByCourse")}
+          value={formData.preferredSectionsByCourse["CS102"] || ""}
+        />
+        <input
+          className="form-control mb-2"
+          name="EE200"
+          placeholder="EE200 → Section"
+          onChange={e => handleMapInput(e, "preferredSectionsByCourse")}
+          value={formData.preferredSectionsByCourse["EE200"] || ""}
+        />
 
         <h5 className="mt-3">Letter Grades (Course → Grade)</h5>
-        <input className="form-control mb-2" name="CS102" placeholder="CS102 → Grade (e.g. A-)" onChange={(e) => handleMapInput(e, "letterGradesByCourse")} />
-        <input className="form-control mb-2" name="EE200" placeholder="EE200 → Grade (e.g. B+)" onChange={(e) => handleMapInput(e, "letterGradesByCourse")} />
+        <input
+          className="form-control mb-2"
+          name="CS102"
+          placeholder="CS102 → Grade (örn: A-)"
+          onChange={e => handleMapInput(e, "letterGradesByCourse")}
+          value={formData.letterGradesByCourse["CS102"] || ""}
+        />
+        <input
+          className="form-control mb-2"
+          name="EE200"
+          placeholder="EE200 → Grade (örn: B+)"
+          onChange={e => handleMapInput(e, "letterGradesByCourse")}
+          value={formData.letterGradesByCourse["EE200"] || ""}
+        />
 
-        <textarea className="form-control mb-2" name="priorExperience" placeholder="Prior Experience" rows="3" onChange={handleChange}></textarea>
-        <textarea className="form-control mb-2" name="additionalNotes" placeholder="Additional Notes" rows="3" onChange={handleChange}></textarea>
+        {/* Serbest Metin */}
+        <textarea
+          className="form-control mb-2"
+          name="priorExperience"
+          placeholder="Prior Experience"
+          rows="3"
+          value={formData.priorExperience}
+          onChange={handleChange}
+        />
+        <textarea
+          className="form-control mb-2"
+          name="additionalNotes"
+          placeholder="Additional Notes"
+          rows="3"
+          value={formData.additionalNotes}
+          onChange={handleChange}
+        />
 
+        {/* Onay Checkbox */}
         <div className="form-check mb-3">
-          <input className="form-check-input" type="checkbox" name="infoConfirmed" onChange={handleChange} required />
+          <input
+            className="form-check-input"
+            type="checkbox"
+            name="infoConfirmed"
+            checked={formData.infoConfirmed}
+            onChange={handleChange}
+            required
+          />
           <label className="form-check-label">I confirm all information is correct</label>
         </div>
 
+        {/* Transkript Yükleme */}
         <div className="mb-3">
           <label className="form-label">Upload Transcript (PDF)</label>
-          <input type="file" className="form-control" accept=".pdf" onChange={handleFileChange} required />
+          <input
+            type="file"
+            accept=".pdf"
+            className="form-control"
+            onChange={handleFileChange}
+            required
+          />
         </div>
 
-        <button type="submit" className="btn btn-primary">Submit Application</button>
+        {/* Gönder Butonu */}
+        <button
+          type="submit"
+          className="btn btn-primary"
+          disabled={submitting}
+        >
+          {submitting ? "Gönderiliyor..." : "Başvuruyu Gönder"}
+        </button>
       </form>
     </div>
   );

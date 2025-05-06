@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import DepartmentStaffLayout from "../DepartmentStaff.jsx/DepartmentStaffLayout";
+import DepartmentStaffLayout from "./DepartmentStaffLayout";
 
 const TutorGraderApplications = () => {
   const [applications, setApplications] = useState([]);

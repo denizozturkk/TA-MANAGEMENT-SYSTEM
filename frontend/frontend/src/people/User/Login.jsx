@@ -93,6 +93,7 @@
 
 // export default SignInPage;
 // src/people/User/SignInPage.jsx
+// src/people/User/SignInPage.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Loginimg from "../User/login-img.svg";
@@ -119,24 +120,21 @@ const SignInPage = () => {
       }
 
       const { token, role, id } = await res.json();
-      // persist
       localStorage.setItem("authToken", token);
       localStorage.setItem("userRole", role);
       localStorage.setItem("userId", id);
 
-      // redirect by role
       let target = "/";
       switch (role) {
-        case "ROLE_ADMIN":             target = "/authorize-actors"; break;
-        case "ROLE_TA":                target = "/leave";            break;
-        case "ROLE_COORDINATOR":       target = "/manageexamclassroom"; break;
-        case "ROLE_FACULTY_MEMBER":    target = "/classroomlist";    break;
-        case "ROLE_DEAN":              target = "/make-report";      break;
-        case "ROLE_DEPARTMENT_STAFF":  target = "/tutorgraderformview"; break;
-        default:                       target = "/";                 
+        case "ROLE_ADMIN":             target = "/authorize-actors";        break;
+        case "ROLE_TA":                target = "/leave";                   break;
+        case "ROLE_COORDINATOR":       target = "/manageexamclassroom";     break;
+        case "ROLE_FACULTY_MEMBER":    target = "/classroomlist";           break;
+        case "ROLE_DEAN":              target = "/make-report";             break;
+        case "ROLE_DEPARTMENT_STAFF":  target = "/tutorgraderformview";     break;
+        default:                       target = "/";
       }
       navigate(target, { replace: true });
-
     } catch (err) {
       console.error("❌ Login error:", err);
       setError(err.message);
@@ -149,6 +147,7 @@ const SignInPage = () => {
         <div className="body d-flex p-0 p-xl-5">
           <div className="container-xxl">
             <div className="row g-0">
+
               {/* Left Panel */}
               <div className="col-lg-6 d-none d-lg-flex justify-content-center align-items-center rounded-lg auth-h100">
                 <div style={{ maxWidth: "25rem" }}>
@@ -164,7 +163,7 @@ const SignInPage = () => {
                 </div>
               </div>
 
-              {/* Sign In Form */}
+              {/* Sign In Form Panel */}
               <div className="col-lg-6 d-flex justify-content-center align-items-center border-0 rounded-lg auth-h100">
                 <div className="w-100 p-3 p-md-5 card border-0 bg-dark text-light" style={{ maxWidth: "32rem" }}>
                   <form className="row g-1 p-3 p-md-4" onSubmit={handleSubmit}>
@@ -201,6 +200,16 @@ const SignInPage = () => {
                     <div className="col-12 text-center mt-4">
                       <button type="submit" className="btn btn-lg btn-block btn-light lift text-uppercase">
                         SIGN IN
+                      </button>
+                    </div>
+                    {/* New public button below */}
+                    <div className="col-12 text-center mt-3">
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => navigate("/tutorgraderform")}
+                      >
+                        Tutor/Grader Başvurusu Yap
                       </button>
                     </div>
                   </form>

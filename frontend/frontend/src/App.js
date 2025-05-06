@@ -1,3 +1,4 @@
+
 // import React from "react";
 // import { Routes, Route, Navigate } from "react-router-dom";
 // import "bootstrap/dist/js/bootstrap.bundle.min.js";
@@ -11,7 +12,7 @@
 // import ForgetPassword from "./people/User/ForgetPassword.jsx";
 // import RecoverPassword from "./people/User/RecoverPassword.jsx";
 
-// // User
+// // User / Common Authenticated
 // import ViewProfile from "./people/User/ViewProfile.jsx";
 // import ChangePassword from "./people/User/ChangePassword.jsx";
 // import ChangeContactInformation from "./people/User/ChangeContactInformation.jsx";
@@ -26,9 +27,10 @@
 // import ProtectedRoute from "./Layouts/Login/ProtectedRoute.jsx";
 
 // // Coordinator
-// import ReplaceTA from "./people/Coordinator/ReplaceTa.jsx";
+// import ReplaceTA from "./people/Coordinator/SwapProcturing.jsx";
 // import ManageExamClassrooms from "./people/Coordinator/ManageClassRoomFromExam.jsx";
 // import AssignTaToAnotherLesson from "./people/FacultyMember/AssignTaToAnotherLesson.jsx";
+// import SwapDuties from "./people/Coordinator/SwapDuties.jsx";
 
 // // Faculty Member
 // import ClassroomList from "./people/FacultyMember/CreateClassRoomList.jsx";
@@ -47,7 +49,7 @@
 // import ViewWorkloadTA from "./people/Ta/ViewWorkload-TA.jsx";
 // import ReportTotalWorkloadTA from "./people/Ta/ReportTotalWorkload-TA.jsx";
 // import SubmitLeaveRequestTA from "./people/Ta/SubmitLeaveRequest-TA.jsx";
-// import SubmitSwapTA from "./people/Ta/SubmitSwap-TA.jsx";
+// // import SubmitSwapTA from "./people/Ta/SubmitSwapTA.jsx";
 // import SwapProctorTA from "./people/Ta/SwapProctor-TA.jsx";
 // import ViewPastTasksTA from "./people/Ta/ViewPastTasks-TA.jsx";
 // import CalendarTA from "./people/Ta/Calendar-TA.jsx";
@@ -78,8 +80,22 @@
 //         <Route path="/forgetpassword" element={<ForgetPassword />} />
 //         <Route path="/recoverpassword" element={<RecoverPassword />} />
 
-//         {/* User Routes */}
-//         <Route element={<ProtectedRoute allowedRoles={["ROLE_USER"]} />}>
+//         {/* Common Authenticated Routes */}
+//         <Route
+//           element={
+//             <ProtectedRoute
+//               allowedRoles={[
+//                 "ROLE_USER",
+//                 "ROLE_FACULTY_MEMBER",
+//                 "ROLE_TA",
+//                 "ROLE_COORDINATOR",
+//                 "ROLE_DEAN",
+//                 "ROLE_ADMIN",
+//                 "ROLE_DEPARMENT_STAFF",
+//               ]}
+//             />
+//           }
+//         >
 //           <Route path="/viewprofile" element={<ViewProfile />} />
 //           <Route path="/changepassword" element={<ChangePassword />} />
 //           <Route path="/changecontactinformation" element={<ChangeContactInformation />} />
@@ -91,20 +107,21 @@
 //           <Route path="/tutorgraderformview" element={<TutorGraderFormView />} />
 //         </Route>
 
-//         {/* Department Staff */}
-//         <Route element={<ProtectedRoute allowedRoles={["ROLE_DEPARMENT_STAFF"]} />}>
-//           <Route path="/tutorgraderformview" element={<TutorGraderFormView />} />
-//         </Route>
-
 //         {/* Coordinator */}
-//         <Route element={<ProtectedRoute allowedRoles={["ROLE_COORDINATOR"]} />}>
+//         <Route
+//           element={<ProtectedRoute allowedRoles={["ROLE_COORDINATOR"]} />}
+//         >
 //           <Route path="/replaceta" element={<ReplaceTA />} />
 //           <Route path="/manageexamclassroom" element={<ManageExamClassrooms />} />
 //           <Route path="/assigntaanotherlesson" element={<AssignTaToAnotherLesson />} />
+//           <Route path="/swapduties" element={<SwapDuties />} />
+
 //         </Route>
 
 //         {/* Faculty Member */}
-//         <Route element={<ProtectedRoute allowedRoles={["ROLE_FACULTY_MEMBER"]} />}>
+//         <Route
+//           element={<ProtectedRoute allowedRoles={["ROLE_FACULTY_MEMBER"]} />}
+//         >
 //           <Route path="/classroomlist" element={<ClassroomList />} />
 //           <Route path="/leaverequest" element={<LeaveRequest />} />
 //           <Route path="/excelupload" element={<ExcelUpload />} />
@@ -123,7 +140,7 @@
 //           <Route path="workload/view" element={<ViewWorkloadTA />} />
 //           <Route path="workload/report" element={<ReportTotalWorkloadTA />} />
 //           <Route path="leave" element={<SubmitLeaveRequestTA />} />
-//           <Route path="swap" element={<SubmitSwapTA />} />
+//           {/* <Route path="swap" element={<SubmitSwapTA />} /> */}
 //           <Route path="swap-proctor" element={<SwapProctorTA />} />
 //           <Route path="past-tasks" element={<ViewPastTasksTA />} />
 //           <Route path="calendar" element={<CalendarTA />} />
@@ -172,15 +189,21 @@ import NotificationDetail from "./people/User/NotificationDetail.jsx";
 import GiveFeedback from "./people/User/GiveNotification.jsx";
 import ViewRatings from "./people/User/ViewRatings.jsx";
 import TutorGraderForm from "./people/User/TutorGraderForm.jsx";
-import TutorGraderFormView from "./people/FacultyMember/TutorGraderFormView.jsx";
+
+// Department Staff (sadece bu role açık)
+import TutorGraderFormView from "./people/DepartmentStaff/DepartmentStaff.jsx";
 
 // ProtectedRoute for role-based access
 import ProtectedRoute from "./Layouts/Login/ProtectedRoute.jsx";
 
 // Coordinator
-import ReplaceTA from "./people/Coordinator/ReplaceTa.jsx";
+import ReplaceTA from "./people/Coordinator/SwapProcturing.jsx";
 import ManageExamClassrooms from "./people/Coordinator/ManageClassRoomFromExam.jsx";
 import AssignTaToAnotherLesson from "./people/FacultyMember/AssignTaToAnotherLesson.jsx";
+import SwapDuties from "./people/Coordinator/SwapDuties.jsx";
+import SwapProctor from "./people/Coordinator/SwapProcturing.jsx";
+import ReplaceProctor from "./people/Coordinator/ReplaceProcturing.jsx";
+import ReplaceDuties from "./people/Coordinator/ReplaceDuties.jsx";
 
 // Faculty Member
 import ClassroomList from "./people/FacultyMember/CreateClassRoomList.jsx";
@@ -199,7 +222,6 @@ import DutyExtensionRequest from "./people/FacultyMember/ReviewDutyExtension.jsx
 import ViewWorkloadTA from "./people/Ta/ViewWorkload-TA.jsx";
 import ReportTotalWorkloadTA from "./people/Ta/ReportTotalWorkload-TA.jsx";
 import SubmitLeaveRequestTA from "./people/Ta/SubmitLeaveRequest-TA.jsx";
-// import SubmitSwapTA from "./people/Ta/SubmitSwapTA.jsx";
 import SwapProctorTA from "./people/Ta/SwapProctor-TA.jsx";
 import ViewPastTasksTA from "./people/Ta/ViewPastTasks-TA.jsx";
 import CalendarTA from "./people/Ta/Calendar-TA.jsx";
@@ -219,7 +241,6 @@ import PendingReportsAdmin from "./people/Admin/PendingReports-Admin.jsx";
 function App() {
   return (
     <>
-      {/* Header appears on every page */}
       <UserHeader />
 
       <Routes>
@@ -230,7 +251,10 @@ function App() {
         <Route path="/forgetpassword" element={<ForgetPassword />} />
         <Route path="/recoverpassword" element={<RecoverPassword />} />
 
-        {/* Common Authenticated Routes */}
+        {/* Form doldurma herkesin ulaşabileceği public sayfa */}
+        <Route path="/tutorgraderform" element={<TutorGraderForm />} />
+
+        {/* Ortak login gerekenler */}
         <Route
           element={
             <ProtectedRoute
@@ -241,20 +265,34 @@ function App() {
                 "ROLE_COORDINATOR",
                 "ROLE_DEAN",
                 "ROLE_ADMIN",
-                "ROLE_DEPARMENT_STAFF",
+                "ROLE_DEPARTMENT_STAFF",  // Buraya eklenebilir; ama biz alt route ile ayırdık
               ]}
             />
           }
         >
           <Route path="/viewprofile" element={<ViewProfile />} />
           <Route path="/changepassword" element={<ChangePassword />} />
-          <Route path="/changecontactinformation" element={<ChangeContactInformation />} />
+          <Route
+            path="/changecontactinformation"
+            element={<ChangeContactInformation />}
+          />
           <Route path="/notification" element={<ViewNotification />} />
-          <Route path="/notification/:id" element={<NotificationDetail />} />
+          <Route
+            path="/notification/:id"
+            element={<NotificationDetail />}
+          />
           <Route path="/givefeedback" element={<GiveFeedback />} />
           <Route path="/viewratings" element={<ViewRatings />} />
-          <Route path="/tutorgraderform" element={<TutorGraderForm />} />
-          <Route path="/tutorgraderformview" element={<TutorGraderFormView />} />
+        </Route>
+
+        {/* Department Staff */}
+        <Route
+          element={<ProtectedRoute allowedRoles={["ROLE_DEPARTMENT_STAFF"]} />}
+        >
+          <Route
+            path="/tutorgraderformview"
+            element={<TutorGraderFormView />}
+          />
         </Route>
 
         {/* Coordinator */}
@@ -262,8 +300,19 @@ function App() {
           element={<ProtectedRoute allowedRoles={["ROLE_COORDINATOR"]} />}
         >
           <Route path="/replaceta" element={<ReplaceTA />} />
-          <Route path="/manageexamclassroom" element={<ManageExamClassrooms />} />
-          <Route path="/assigntaanotherlesson" element={<AssignTaToAnotherLesson />} />
+          <Route
+            path="/manageexamclassroom"
+            element={<ManageExamClassrooms />}
+          />
+          <Route
+            path="/assigntaanotherlesson"
+            element={<AssignTaToAnotherLesson />}
+          />
+          <Route path="/swapduties" element={<SwapDuties />} />
+          <Route path="/replaceduties" element={<ReplaceDuties />} />
+          <Route path="/swapprocturing" element={<SwapProctor />} />
+          <Route path="/replaceprocturing" element={<ReplaceProctor />} />
+
         </Route>
 
         {/* Faculty Member */}
@@ -273,41 +322,88 @@ function App() {
           <Route path="/classroomlist" element={<ClassroomList />} />
           <Route path="/leaverequest" element={<LeaveRequest />} />
           <Route path="/excelupload" element={<ExcelUpload />} />
-          <Route path="/generateclassroomlist" element={<GenerateClassroomList />} />
-          <Route path="/printstudentdistribution" element={<PrintStudentDistribution />} />
-          <Route path="/selectassignmenttype" element={<SelectAssignmentType />} />
+          <Route
+            path="/generateclassroomlist"
+            element={<GenerateClassroomList />}
+          />
+          <Route
+            path="/printstudentdistribution"
+            element={<PrintStudentDistribution />}
+          />
+          <Route
+            path="/selectassignmenttype"
+            element={<SelectAssignmentType />}
+          />
           <Route path="/reviewworkload" element={<ReviewWorkload />} />
           <Route path="/defineexam" element={<DefineExam />} />
           <Route path="/talist" element={<TAList />} />
-          <Route path="/assignassignment" element={<AssignAssignment />} />
-          <Route path="/dutyextension" element={<DutyExtensionRequest />} />
+          <Route
+            path="/assignassignment"
+            element={<AssignAssignment />}
+          />
+          <Route
+            path="/dutyextension"
+            element={<DutyExtensionRequest />}
+          />
         </Route>
 
         {/* TA */}
         <Route element={<ProtectedRoute allowedRoles={["ROLE_TA"]} />}>
-          <Route path="workload/view" element={<ViewWorkloadTA />} />
-          <Route path="workload/report" element={<ReportTotalWorkloadTA />} />
+          <Route
+            path="workload/view"
+            element={<ViewWorkloadTA />}
+          />
+          <Route
+            path="workload/report"
+            element={<ReportTotalWorkloadTA />}
+          />
           <Route path="leave" element={<SubmitLeaveRequestTA />} />
-          {/* <Route path="swap" element={<SubmitSwapTA />} /> */}
-          <Route path="swap-proctor" element={<SwapProctorTA />} />
-          <Route path="past-tasks" element={<ViewPastTasksTA />} />
+          <Route
+            path="swap-proctor"
+            element={<SwapProctorTA />}
+          />
+          <Route
+            path="past-tasks"
+            element={<ViewPastTasksTA />}
+          />
           <Route path="calendar" element={<CalendarTA />} />
         </Route>
 
         {/* Dean */}
         <Route element={<ProtectedRoute allowedRoles={["ROLE_DEAN"]} />}>
-          <Route path="manage-course-data" element={<ManageCourseDataDean />} />
-          <Route path="exam-scheduling" element={<ExamSchedulingDean />} />
-          <Route path="assign-proctoring" element={<AssignProctoringDean />} />
+          <Route
+            path="manage-course-data"
+            element={<ManageCourseDataDean />}
+          />
+          <Route
+            path="exam-scheduling"
+            element={<ExamSchedulingDean />}
+          />
+          <Route
+            path="assign-proctoring"
+            element={<AssignProctoringDean />}
+          />
           <Route path="make-report" element={<MakeReportDean />} />
         </Route>
 
         {/* Admin */}
         <Route element={<ProtectedRoute allowedRoles={["ROLE_ADMIN"]} />}>
-          <Route path="authorize-actors" element={<AuthActorsAdmin />} />
-          <Route path="review-requests" element={<ReviewReportRequestsAdmin />} />
-          <Route path="make-reports" element={<MakeReportsAdmin />} />
-          <Route path="pending-reports" element={<PendingReportsAdmin />} />
+          <Route
+            path="authorize-actors"
+            element={<AuthActorsAdmin />}
+          />
+          <Route
+            path="review-requests"
+            element={<ReviewReportRequestsAdmin />}
+          />
+          <Route
+            path="make-reports"
+            element={<MakeReportsAdmin />}
+          />
+          <Route
+            path="pending-reports"
+            element={<PendingReportsAdmin />}
+          />
         </Route>
       </Routes>
     </>
