@@ -58,7 +58,7 @@ public class DutyLog {
     @Column(
             name           = "data",
             columnDefinition= "LONGBLOB",
-            nullable       = false
+            nullable       = true
     )
     private byte[] data;
 
