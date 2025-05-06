@@ -184,6 +184,16 @@ public class FacultyMemberController {
         return ResponseEntity.ok(dto);
     }
 
+    @GetMapping("/{facultyId}/exams/{examId}/distribution")
+    public ResponseEntity<ClassroomDistributionDto> getDistributionList(
+            @PathVariable Long facultyId,
+            @PathVariable Long examId,
+            @RequestParam(defaultValue = "false") boolean random
+    ) {
+        ClassroomDistributionDto dto = distributionService.distribute(examId, random);
+        return ResponseEntity.ok(dto);
+    }
+
     @GetMapping(
             path = "/{facultyId}/exams/{examId}/distribution/pdf",
             produces = MediaType.APPLICATION_PDF_VALUE

@@ -17,4 +17,5 @@ public class ExamDto {
     private Long offeringId;
     private Long facultyId;
     private List<ExamRoomDto> examRooms;
+    private String courseCode;
 }

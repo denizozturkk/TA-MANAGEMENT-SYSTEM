@@ -121,19 +121,32 @@ public class EntityMapperService {
 
     public ExamDto toDto(Exam e) {
         ExamDto dto = modelMapper.map(e, ExamDto.class);
-        dto.setOfferingId(e.getOffering() != null ? e.getOffering().getId() : null);
-        dto.setFacultyId(e.getFaculty() != null ? e.getFaculty().getId() : null);
+
+        dto.setOfferingId(e.getOffering() != null
+                ? e.getOffering().getId()
+                : null);
+        dto.setFacultyId(e.getFaculty() != null
+                ? e.getFaculty().getId()
+                : null);
+
+        dto.setCourseCode(
+                e.getOffering() != null
+                        && e.getOffering().getCourse() != null
+                        ? e.getOffering().getCourse().getCourseCode()
+                        : null
+        );
 
         if (e.getExamRooms() != null) {
-            List<ExamRoomDto> examRoomDtos = e.getExamRooms().stream().map(er -> {
-                ExamRoomDto rdto = new ExamRoomDto();
-                rdto.setClassroomId(er.getClassroom().getId());
-                rdto.setNumProctors(er.getNumProctors());
-                return rdto;
-            }).toList();
+            List<ExamRoomDto> examRoomDtos = e.getExamRooms().stream()
+                    .map(er -> {
+                        ExamRoomDto rdto = new ExamRoomDto();
+                        rdto.setClassroomId(er.getClassroom().getId());
+                        rdto.setNumProctors(er.getNumProctors());
+                        return rdto;
+                    })
+                    .toList();
             dto.setExamRooms(examRoomDtos);
         }
-
 
         return dto;
     }
