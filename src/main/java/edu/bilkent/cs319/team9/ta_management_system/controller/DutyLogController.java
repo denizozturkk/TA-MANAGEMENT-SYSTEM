@@ -112,4 +112,5 @@ public class DutyLogController {
                 .collect(Collectors.toList());
         return ResponseEntity.ok(dtos);
     }
+
 }

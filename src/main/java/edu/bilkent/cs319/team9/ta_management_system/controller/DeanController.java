@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/deans")
+@RequestMapping("/api/dean")
 public class DeanController {
     private final DeanService deanService;
     private final ExamService examService;
@@ -146,7 +146,7 @@ public class DeanController {
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/{deanId}/report‐requests")
+    @PostMapping("/{deanId}/report-requests")
     public ResponseEntity<ReportRequestDto> createReportRequest(
             @PathVariable Long deanId,
             @RequestBody ReportRequestDto dto
@@ -162,7 +162,7 @@ public class DeanController {
     /**
      * Dean lists all of their own report requests.
      */
-    @GetMapping("/{deanId}/report‐requests")
+    @GetMapping("/{deanId}/report-requests")
     public ResponseEntity<List<ReportRequestDto>> getMyReportRequests(@PathVariable Long deanId) {
         List<ReportRequest> requests = deanService.findRequestsByRequester(deanId);
         List<ReportRequestDto> dtos = requests.stream()
