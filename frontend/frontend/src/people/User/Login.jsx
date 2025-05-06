@@ -1,10 +1,4 @@
 
-<<<<<<< HEAD
-// export default SignInPage;
-// src/people/User/SignInPage.jsx
-// src/people/User/SignInPage.jsx
-=======
->>>>>>> 9bfcfd5e63c912d5c9c9edb163679d282f9801b7
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Loginimg from "../User/login-img.svg";
@@ -29,14 +23,8 @@ const SignInPage = () => {
         const errBody = await res.json().catch(() => ({}));
         throw new Error(errBody.message || "Login failed");
       }
-<<<<<<< HEAD
-
-      const { token, role, id } = await res.json();
-=======
       const { token, role, userId } = await res.json();
-      localStorage.setItem("userId", userId);
       // persist
->>>>>>> 9bfcfd5e63c912d5c9c9edb163679d282f9801b7
       localStorage.setItem("authToken", token);
       localStorage.setItem("userRole", role);
       localStorage.setItem("userId", userId);
