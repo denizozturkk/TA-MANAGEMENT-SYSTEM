@@ -10,7 +10,7 @@ const PendingReportsAdmin = () => {
   useEffect(() => {
     const loadPending = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const token = localStorage.getItem("authToken");
         const res = await fetch("http://localhost:8080/api/admin/report-requests", {
           headers: {
             Authorization: `Bearer ${token}`,

@@ -117,12 +117,12 @@ const SignInPage = () => {
         const errBody = await res.json().catch(() => ({}));
         throw new Error(errBody.message || "Login failed");
       }
-
-      const { token, role, id } = await res.json();
+      const { token, role, userId } = await res.json();
+      localStorage.setItem("userId", userId);
       // persist
       localStorage.setItem("authToken", token);
       localStorage.setItem("userRole", role);
-      localStorage.setItem("userId", id);
+      localStorage.setItem("userId", userId);
 
       // redirect by role
       let target = "/";
