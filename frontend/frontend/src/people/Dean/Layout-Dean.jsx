@@ -4,10 +4,13 @@ import { NavLink } from "react-router-dom";
 
 const LayoutDean = ({ children }) => {
   const [open, setOpen] = useState({
-    courses:    false,
-    scheduling: false,
-    proctoring: false,
-    report:     false,
+    courses:           false,
+    scheduling:        false,
+    proctoring:        false,
+    report:            false,
+    classrooms:        false,
+    "update-proctors": false,
+    reschedule:        false,
   });
 
   const toggle = (key) =>
@@ -40,7 +43,7 @@ const LayoutDean = ({ children }) => {
                   <NavLink to="/manage-course-data" className={linkClass}>
                     Manage Course Data
                   </NavLink>
-                  <button className="btn btn-link text-light p-0" onClick={() => toggle("courses")}>
+                  <button className="btn btn-link text-light p-0" onClick={() => toggle("courses")}>                
                     <i className={`icofont-rounded-${open.courses ? "up" : "down"}`} />
                   </button>
                 </div>
@@ -52,7 +55,7 @@ const LayoutDean = ({ children }) => {
                   <NavLink to="/exam-scheduling" className={linkClass}>
                     Exam Scheduling
                   </NavLink>
-                  <button className="btn btn-link text-light p-0" onClick={() => toggle("scheduling")}>
+                  <button className="btn btn-link text-light p-0" onClick={() => toggle("scheduling")}>                
                     <i className={`icofont-rounded-${open.scheduling ? "up" : "down"}`} />
                   </button>
                 </div>
@@ -64,7 +67,7 @@ const LayoutDean = ({ children }) => {
                   <NavLink to="/assign-proctoring" className={linkClass}>
                     Assign Proctoring Duties
                   </NavLink>
-                  <button className="btn btn-link text-light p-0" onClick={() => toggle("proctoring")}>
+                  <button className="btn btn-link text-light p-0" onClick={() => toggle("proctoring")}>                
                     <i className={`icofont-rounded-${open.proctoring ? "up" : "down"}`} />
                   </button>
                 </div>
@@ -76,11 +79,48 @@ const LayoutDean = ({ children }) => {
                   <NavLink to="/make-report" className={linkClass}>
                     Make Report Requests
                   </NavLink>
-                  <button className="btn btn-link text-light p-0" onClick={() => toggle("report")}>
+                  <button className="btn btn-link text-light p-0" onClick={() => toggle("report")}>                
                     <i className={`icofont-rounded-${open.report ? "up" : "down"}`} />
                   </button>
                 </div>
               </li>
+
+              {/* Manage Exam Classrooms */}
+              <li className="mb-3">
+                <div className="d-flex justify-content-between align-items-center">
+                  <NavLink to="/manage-classrooms" className={linkClass}>
+                    Manage Exam Classrooms
+                  </NavLink>
+                  <button className="btn btn-link text-light p-0" onClick={() => toggle("classrooms")}>                
+                    <i className={`icofont-rounded-${open.classrooms ? "up" : "down"}`} />
+                  </button>
+                </div>
+              </li>
+
+              {/* Update Proctor Count */}
+              <li className="mb-3">
+                <div className="d-flex justify-content-between align-items-center">
+                  <NavLink to="/update-proctor-count" className={linkClass}>
+                    Update Proctor Count
+                  </NavLink>
+                  <button className="btn btn-link text-light p-0" onClick={() => toggle("update-proctors")}>                
+                    <i className={`icofont-rounded-${open["update-proctors"] ? "up" : "down"}`} />
+                  </button>
+                </div>
+              </li>
+
+              {/* Reschedule Exam */}
+              <li className="mb-3">
+                <div className="d-flex justify-content-between align-items-center">
+                  <NavLink to="/reschedule-exam" className={linkClass}>
+                    Reschedule Exam
+                  </NavLink>
+                  <button className="btn btn-link text-light p-0" onClick={() => toggle("reschedule")}>                
+                    <i className={`icofont-rounded-${open.reschedule ? "up" : "down"}`} />
+                  </button>
+                </div>
+              </li>
+
             </ul>
 
             <button className="btn btn-link sidebar-mini-btn text-light mt-auto">
