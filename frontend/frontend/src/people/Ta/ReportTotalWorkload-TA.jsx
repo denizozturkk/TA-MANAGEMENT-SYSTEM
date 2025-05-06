@@ -7,8 +7,8 @@ const PendingDutiesTA = () => {
   const token = localStorage.getItem("authToken");
   const BASE  = "http://localhost:8080/api";
   const hdrs  = {
-    "Accept":        "application/json",
-    "Authorization": `Bearer ${token}`,
+    Accept:        "application/json",
+    Authorization: `Bearer ${token}`,
   };
 
   // data
@@ -111,6 +111,36 @@ const PendingDutiesTA = () => {
       closeModal();
     } catch (err) {
       alert("Extension request failed: " + err.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const submitLeave = async e => {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      const body = {
+        taId,
+        proctorAssignmentId: selected.id,
+        startDate: leaveDates.start,
+        endDate: leaveDates.end,
+        reason
+      };
+      const res = await fetch(
+        `${BASE}/leave-requests?taId=${taId}&proctorAssignmentId=${selected.id}`,
+        {
+          method: "POST",
+          headers: { ...hdrs, "Content-Type": "application/json" },
+          body: JSON.stringify(body)
+        }
+      );
+      if (!res.ok) throw new Error(await res.text());
+      const lv = await res.json();
+      setLeaves(ls => [...ls, lv]);
+      closeModal();
+    } catch (err) {
+      alert("Leave request failed: " + err.message);
     } finally {
       setSubmitting(false);
     }
@@ -283,7 +313,61 @@ const PendingDutiesTA = () => {
         </div>
       )}
 
-      {/* proof-duty, proof-proctor, leave modals unchanged */}
+      {/* ———————— Leave Request Modal ———————— */}
+      {modalType === "leave" && (
+        <div className="modal-backdrop">
+          <div className="modal-dialog">
+            <div className="modal-content p-4">
+              <div className="modal-header">
+                <h5>Request Leave</h5>
+                <button onClick={closeModal} className="btn-close" />
+              </div>
+              <form onSubmit={submitLeave} className="modal-body">
+                <div className="mb-3">
+                  <label className="form-label">Assignment ID:</label>
+                  <p><strong>{selected.id}</strong></p>
+                </div>
+                <div className="mb-3">
+                  <label className="form-label">Start Date</label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    value={leaveDates.start}
+                    onChange={e => setLeaveDates(ld => ({ ...ld, start: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div className="mb-3">
+                  <label className="form-label">End Date</label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    value={leaveDates.end}
+                    onChange={e => setLeaveDates(ld => ({ ...ld, end: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div className="mb-3">
+                  <label className="form-label">Reason</label>
+                  <textarea
+                    className="form-control"
+                    rows={3}
+                    value={reason}
+                    onChange={e => setReason(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="d-flex justify-content-end gap-2">
+                  <button type="button" className="btn btn-secondary" onClick={closeModal}>Cancel</button>
+                  <button type="submit" className="btn btn-primary" disabled={submitting}>
+                    {submitting ? 'Submitting...' : 'Submit Leave'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </LayoutTA>
   );
 };
