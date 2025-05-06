@@ -138,7 +138,7 @@ function App() {
           <Route path="workload/report" element={<ReportTotalWorkloadTA />} />
           <Route path="leave" element={<SubmitLeaveRequestTA />} />
           {/* <Route path="swap" element={<SubmitSwapTA />} /> */}
-          <Route path="swap-proctor" element={<SwapProctorTA />} />
+          <Route path="swap" element={<SwapProctorTA />} />
           <Route path="past-tasks" element={<ViewPastTasksTA />} />
           <Route path="calendar" element={<CalendarTA />} />
         </Route>
