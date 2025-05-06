@@ -3,12 +3,12 @@ import React, { useState, useEffect } from "react";
 import LayoutTA from "./Layout-TA";
 
 const ViewWorkloadTA = () => {
-  const [items, setItems] = useState([]);
+  const [items, setItems]   = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const taId = localStorage.getItem("userId");
-  const token = localStorage.getItem("authToken");
-  const BASE_URL = "http://localhost:8080/api";
+  const taId   = localStorage.getItem("userId");
+  const token  = localStorage.getItem("authToken");
+  const BASE   = "http://localhost:8080/api";
 
   useEffect(() => {
     const loadApprovedDuties = async () => {
@@ -18,23 +18,39 @@ const ViewWorkloadTA = () => {
         return;
       }
       try {
-        const res = await fetch(
-          `${BASE_URL}/duty-logs?taId=${taId}`,
-          {
-            headers: {
-              "Accept": "application/json",
-              "Authorization": `Bearer ${token}`,
-            },
-          }
-        );
+        // 1) fetch all duties for this TA
+        const res = await fetch(`${BASE}/duty-logs?taId=${taId}`, {
+          headers: {
+            "Accept":        "application/json",
+            "Authorization": `Bearer ${token}`,
+          },
+        });
         if (!res.ok) throw new Error(res.statusText);
         const all = await res.json();
-        const approved = all
-          .filter((d) => d.status === "APPROVED")
-          .map((d) =>
-            `${d.taskType} — ${new Date(d.dateTime).toLocaleDateString()}`
-          );
-        setItems(approved);
+
+        // 2) filter only APPROVED
+        const approved = all.filter(d => d.status === "APPROVED");
+
+        // 3) for each approved, fetch its faculty member
+        const enriched = await Promise.all(
+          approved.map(async d => {
+            // adjust path if your faculty controller differs
+            const fRes = await fetch(`${BASE}/faculty-members/${d.facultyId}`, {
+              headers: {
+                "Accept":        "application/json",
+                "Authorization": `Bearer ${token}`,
+              }
+            });
+            if (!fRes.ok) throw new Error("Failed to load faculty");
+            const faculty = await fRes.json();
+
+            const dateStr = new Date(d.dateTime).toLocaleDateString();
+            const facultyName = `${faculty.firstName} ${faculty.lastName}`;
+            return `${d.taskType} — ${dateStr} — ${facultyName}`;
+          })
+        );
+
+        setItems(enriched);
       } catch (err) {
         console.error("Error loading approved duties:", err);
         alert("Error loading approved duties");
@@ -42,6 +58,7 @@ const ViewWorkloadTA = () => {
         setLoading(false);
       }
     };
+
     loadApprovedDuties();
   }, [taId, token]);
 
