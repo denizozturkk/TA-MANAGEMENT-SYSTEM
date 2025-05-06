@@ -7,6 +7,8 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Optional;
+
 public interface OfferingRepository extends JpaRepository<Offering, Long> {
     @Modifying
     @Transactional
@@ -21,5 +23,10 @@ public interface OfferingRepository extends JpaRepository<Offering, Long> {
             @Param("offeringId") Long offeringId,
             @Param("oldTaId")    Long oldTaId,
             @Param("newTaId")    Long newTaId
+    );
+    Optional<Offering> findByCourse_IdAndSemesterAndYear(
+            Long courseId,
+            String semester,
+            Integer year
     );
 }
