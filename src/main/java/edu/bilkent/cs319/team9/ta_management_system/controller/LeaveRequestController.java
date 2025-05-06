@@ -80,5 +80,13 @@ public class LeaveRequestController {
         leaveRequestService.delete(id);
         return ResponseEntity.noContent().build();
     }
+    @GetMapping("/ta/{taId}")
+    public ResponseEntity<List<LeaveRequestDto>> getByTaId(@PathVariable Long taId) {
+        List<LeaveRequest> list = leaveRequestService.findByTaId(taId);
+        List<LeaveRequestDto> dtos = list.stream()
+                .map(mapper::toDto)
+                .toList();
+        return ResponseEntity.ok(dtos);
+    }
 }
 

@@ -48,10 +48,7 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
     }
 
     @Override
-    @Transactional(readOnly = true)
     public List<LeaveRequest> findByTaId(Long taId) {
-        return repo.findAll().stream()
-                .filter(lr -> lr.getTa() != null && lr.getTa().getId().equals(taId))
-                .collect(Collectors.toList());
+        return repo.findAllByTa_Id(taId);
     }
 }

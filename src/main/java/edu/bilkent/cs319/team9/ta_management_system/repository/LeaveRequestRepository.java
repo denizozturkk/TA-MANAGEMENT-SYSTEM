@@ -13,12 +13,5 @@ public interface LeaveRequestRepository extends JpaRepository<LeaveRequest, Long
             LeaveStatus status
     );
 
-    /**
-     * (Optional) Fetch a specific request by its id *and* ensure it belongs to this faculty.
-     */
-    Optional<LeaveRequest> findByIdAndProctorAssignmentExamFacultyId(
-            Long requestId,
-            Long facultyId
-    );
-
+    List<LeaveRequest> findAllByTa_Id(Long taId);
 }
