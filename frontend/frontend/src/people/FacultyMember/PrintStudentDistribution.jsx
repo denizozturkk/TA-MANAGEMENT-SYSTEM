@@ -45,10 +45,10 @@ const PrintStudentDistribution = () => {
         if (distributionType === "random") {
           all.sort(() => Math.random() - 0.5);
         } else {
-          all.sort((a,b) => a.localeCompare(b));
+          all.sort((a, b) => a.localeCompare(b));
         }
-        const half = Math.ceil(all.length/2);
-        setClassA(all.slice(0,half));
+        const half = Math.ceil(all.length / 2);
+        setClassA(all.slice(0, half));
         setClassB(all.slice(half));
       })
       .catch(err => {
@@ -59,7 +59,7 @@ const PrintStudentDistribution = () => {
 
   const handleDownloadPdf = () => {
     if (!examId) return alert("Select an exam first");
-    const random = distributionType==="random";
+    const random = distributionType === "random";
     window.open(
       `${BASE}/faculty-members/${facultyId}/exams/${examId}/distribution/pdf?random=${random}`,
       "_blank"
@@ -68,7 +68,7 @@ const PrintStudentDistribution = () => {
 
   return (
     <div className="d-flex">
-      <div style={{ width: '300px' }}>
+      <div style={{ width: "300px" }}>
         <FacultymemberLayout />
       </div>
       <div className="container py-5 flex-grow-1">
@@ -87,7 +87,7 @@ const PrintStudentDistribution = () => {
                 <option value="">-- Choose an Exam --</option>
                 {exams.map(e => (
                   <option key={e.id} value={e.id}>
-                    {e.offering.course.courseCode} – {e.examName}
+                    {e.courseCode} – {e.examName}
                   </option>
                 ))}
               </select>
@@ -95,25 +95,33 @@ const PrintStudentDistribution = () => {
 
             {/* Distribution Type */}
             {examId && (
-            <div className="mb-4">
-              <label className="form-label fw-semibold">Distribution Type</label>
-              <div className="form-check">
-                <input className="form-check-input" type="radio" id="random"
-                  checked={distributionType==="random"}
-                  onChange={()=>setDistributionType("random")} />
-                <label className="form-check-label" htmlFor="random">
-                  Random
-                </label>
+              <div className="mb-4">
+                <label className="form-label fw-semibold">Distribution Type</label>
+                <div className="form-check">
+                  <input
+                    className="form-check-input"
+                    type="radio"
+                    id="random"
+                    checked={distributionType === "random"}
+                    onChange={() => setDistributionType("random")}
+                  />
+                  <label className="form-check-label" htmlFor="random">
+                    Random
+                  </label>
+                </div>
+                <div className="form-check">
+                  <input
+                    className="form-check-input"
+                    type="radio"
+                    id="alphabetical"
+                    checked={distributionType === "alphabetical"}
+                    onChange={() => setDistributionType("alphabetical")}
+                  />
+                  <label className="form-check-label" htmlFor="alphabetical">
+                    Alphabetical
+                  </label>
+                </div>
               </div>
-              <div className="form-check">
-                <input className="form-check-input" type="radio" id="alphabetical"
-                  checked={distributionType==="alphabetical"}
-                  onChange={()=>setDistributionType("alphabetical")} />
-                <label className="form-check-label" htmlFor="alphabetical">
-                  Alphabetical
-                </label>
-              </div>
-            </div>
             )}
 
             {/* Actions */}
@@ -140,16 +148,20 @@ const PrintStudentDistribution = () => {
                 <div className="col-md-6">
                   <h5>Class A</h5>
                   <ul className="list-group">
-                    {classA.map((stu,i) => (
-                      <li key={i} className="list-group-item">{stu}</li>
+                    {classA.map((stu, i) => (
+                      <li key={i} className="list-group-item">
+                        {stu}
+                      </li>
                     ))}
                   </ul>
                 </div>
                 <div className="col-md-6">
                   <h5>Class B</h5>
                   <ul className="list-group">
-                    {classB.map((stu,i) => (
-                      <li key={i} className="list-group-item">{stu}</li>
+                    {classB.map((stu, i) => (
+                      <li key={i} className="list-group-item">
+                        {stu}
+                      </li>
                     ))}
                   </ul>
                 </div>
