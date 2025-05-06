@@ -3,12 +3,12 @@ import React, { useState, useEffect } from "react";
 import LayoutTA from "./Layout-TA";
 
 const PendingDutiesTA = () => {
-  const taId   = localStorage.getItem("userId");
-  const token  = localStorage.getItem("authToken");
-  const BASE   = "http://localhost:8080/api";
-  const hdrs   = { 
-    "Accept":        "application/json", 
-    "Authorization": `Bearer ${token}` 
+  const taId  = Number(localStorage.getItem("userId"));
+  const token = localStorage.getItem("authToken");
+  const BASE  = "http://localhost:8080/api";
+  const hdrs  = {
+    "Accept":        "application/json",
+    "Authorization": `Bearer ${token}`,
   };
 
   // data
@@ -18,36 +18,39 @@ const PendingDutiesTA = () => {
   const [leaves,   setLeaves]   = useState([]);
 
   // modal state
-  const [modalType,      setModalType]      = useState(null);
-  const [selected,       setSelected]       = useState(null);
-  const [file,           setFile]           = useState(null);
-  const [reason,         setReason]         = useState("");
-  const [extensionDays,  setExtensionDays]  = useState(1);
-  const [leaveDates,     setLeaveDates]     = useState({start:"", end:""});
-  const [submitting,     setSubmitting]     = useState(false);
+  const [modalType,     setModalType]     = useState(null);
+  const [selected,      setSelected]      = useState(null);
+  const [file,          setFile]          = useState(null);
+  const [reason,        setReason]        = useState("");
+  const [extensionDays, setExtensionDays] = useState(1);
+  const [leaveDates,    setLeaveDates]    = useState({ start: "", end: "" });
+  const [submitting,    setSubmitting]    = useState(false);
 
   // load everything
   useEffect(() => {
     const load = async () => {
       try {
         // 1) duty-logs
-        const respD = await fetch(`${BASE}/duty-logs?taId=${taId}`, { headers: hdrs });
-        const allD  = await respD.json();
-        setDuties(allD.filter(d => d.status !== "APPROVED"));
+        const allD = await (await fetch(`${BASE}/duty-logs`, { headers: hdrs })).json();
+        setDuties(allD
+          .filter(d => d.ta?.id === taId)
+          .filter(d => d.status !== "APPROVED")
+        );
 
-        // 2) extension-requests (by TA)
-        const respE = await fetch(`${BASE}/extension-requests/ta/${taId}`, { headers: hdrs });
-        setExtReqs(await respE.json());
+        // 2) extension-requests
+        const allE = await (await fetch(`${BASE}/extension-requests`, { headers: hdrs })).json();
+        setExtReqs(allE.filter(e => e.taId === taId));
 
         // 3) proctor assignments
-        const respP = await fetch(`${BASE}/proctor-assignments/ta/${taId}`, { headers: hdrs });
-        setProctors((await respP.json()).filter(p => 
-          p.status !== "COMPLETED" && p.status !== "CANCELLED"
-        ));
+        const allP = await (await fetch(`${BASE}/proctor-assignments`, { headers: hdrs })).json();
+        setProctors(allP
+          .filter(p => p.ta?.id === taId)
+          .filter(p => p.status !== "COMPLETED" && p.status !== "CANCELLED")
+        );
 
         // 4) leave requests
-        const respL = await fetch(`${BASE}/leave-requests/ta/${taId}`, { headers: hdrs });
-        setLeaves(await respL.json());
+        const allL = await (await fetch(`${BASE}/leave-requests`, { headers: hdrs })).json();
+        setLeaves(allL.filter(l => l.taId === taId));
       } catch (err) {
         console.error(err);
         alert("Failed to load pending duties");
@@ -75,12 +78,12 @@ const PendingDutiesTA = () => {
       const form = new FormData();
       form.append("file", file);
       const res = await fetch(
-        `${BASE}/duty-logs/${selected.id}/submit?taId=${taId}`, 
+        `${BASE}/duty-logs/${selected.id}/submit?taId=${taId}`,
         { method: "POST", headers: { "Authorization": `Bearer ${token}` }, body: form }
       );
       if (!res.ok) throw new Error(await res.text());
       const upd = await res.json();
-      setDuties(d => d.map(x => x.id===upd.id ? upd : x));
+      setDuties(d => d.map(x => x.id === upd.id ? upd : x));
       closeModal();
     } catch (err) {
       alert("Upload failed: " + err.message);
@@ -96,8 +99,8 @@ const PendingDutiesTA = () => {
       const body = {
         dutyLogId: selected.id,
         taId,
-        instructorId: selected.facultyId,  // from DTO
-        excuseType: "MEDICAL_REPORT",      // or let TA pick
+        instructorId: selected.facultyId,
+        excuseType: "MEDICAL_REPORT",
         requestedExtensionDays: extensionDays,
         reason
       };
@@ -121,16 +124,15 @@ const PendingDutiesTA = () => {
     e.preventDefault();
     setSubmitting(true);
     try {
-      // TODO: your proctor-submit endpoint & form field names
       const form = new FormData();
       form.append("file", file);
       const res = await fetch(
-        `${BASE}/proctor-assignments/${selected.id}/submit?taId=${taId}`, 
+        `${BASE}/proctor-assignments/${selected.id}/submit?taId=${taId}`,
         { method: "POST", headers: { "Authorization": `Bearer ${token}` }, body: form }
       );
       if (!res.ok) throw new Error(await res.text());
       const upd = await res.json();
-      setProctors(p => p.map(x => x.id===upd.id ? upd : x));
+      setProctors(p => p.map(x => x.id === upd.id ? upd : x));
       closeModal();
     } catch (err) {
       alert("Upload failed: " + err.message);
@@ -147,11 +149,11 @@ const PendingDutiesTA = () => {
         taId,
         proctorAssignmentId: selected.id,
         startDate: leaveDates.start,
-        endDate:   leaveDates.end,
+        endDate: leaveDates.end,
         reason
       };
       const res = await fetch(
-        `${BASE}/leave-requests?taId=${taId}&proctorAssignmentId=${selected.id}`, 
+        `${BASE}/leave-requests?taId=${taId}&proctorAssignmentId=${selected.id}`,
         {
           method: "POST",
           headers: { ...hdrs, "Content-Type": "application/json" },
@@ -180,7 +182,13 @@ const PendingDutiesTA = () => {
           <table className="table">
             <thead>
               <tr>
-                <th>When</th><th>Type</th><th>Hours</th><th>Status</th><th>Extension</th><th>Proof</th><th>Action</th>
+                <th>When</th>
+                <th>Type</th>
+                <th>Hours</th>
+                <th>Status</th>
+                <th>Extension</th>
+                <th>Proof</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -197,12 +205,12 @@ const PendingDutiesTA = () => {
                         ? ext.status
                         : <button 
                             className="btn btn-sm btn-outline-secondary"
-                            onClick={()=>openModal("extension", d)}
+                            onClick={() => openModal("extension", d)}
                           >Request</button>
                       }
                     </td>
                     <td>
-                      {d.fileUrlTa 
+                      {d.fileUrlTa
                         ? <a href={d.fileUrlTa} className="btn btn-sm btn-primary" download>
                             Download
                           </a>
@@ -213,7 +221,7 @@ const PendingDutiesTA = () => {
                       {d.status === "PENDING" && (
                         <button
                           className="btn btn-sm btn-outline-primary"
-                          onClick={()=>openModal("proof-duty", d)}
+                          onClick={() => openModal("proof-duty", d)}
                         >Upload Proof</button>
                       )}
                     </td>
@@ -232,7 +240,11 @@ const PendingDutiesTA = () => {
           <table className="table">
             <thead>
               <tr>
-                <th>Assignment ID</th><th>Status</th><th>Leave</th><th>Proof</th><th>Action</th>
+                <th>Assignment ID</th>
+                <th>Status</th>
+                <th>Leave</th>
+                <th>Proof</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -247,15 +259,15 @@ const PendingDutiesTA = () => {
                         ? lv.status
                         : <button 
                             className="btn btn-sm btn-outline-secondary"
-                            onClick={()=>openModal("leave", p)}
+                            onClick={() => openModal("leave", p)}
                           >Request</button>
                       }
                     </td>
                     <td>
-                      {p.proofUrl 
+                      {p.proofUrl
                         ? <a href={p.proofUrl} className="btn btn-sm btn-primary" download>
                             Download
-                          </a> 
+                          </a>
                         : "—"
                       }
                     </td>
@@ -263,7 +275,7 @@ const PendingDutiesTA = () => {
                       {p.status === "ASSIGNED" && (
                         <button 
                           className="btn btn-sm btn-outline-primary"
-                          onClick={()=>openModal("proof-proctor", p)}
+                          onClick={() => openModal("proof-proctor", p)}
                         >Upload Proof</button>
                       )}
                     </td>
@@ -279,8 +291,12 @@ const PendingDutiesTA = () => {
       {modalType === "proof-duty" && (
         <Modal title={`Upload Proof (#${selected.id})`} onClose={closeModal}>
           <form onSubmit={submitDutyProof}>
-            <input type="file" accept="application/pdf" 
-                   onChange={e=>setFile(e.target.files[0])} required />
+            <input
+              type="file"
+              accept="application/pdf"
+              onChange={e => setFile(e.target.files[0])}
+              required
+            />
             <button type="submit" disabled={submitting}>
               {submitting ? "Uploading…" : "Submit"}
             </button>
@@ -293,16 +309,18 @@ const PendingDutiesTA = () => {
           <form onSubmit={submitExtension}>
             <div>
               <label>Days:</label>
-              <input type="number" 
-                     min="1" 
-                     value={extensionDays} 
-                     onChange={e=>setExtensionDays(+e.target.value)} />
+              <input
+                type="number"
+                min="1"
+                value={extensionDays}
+                onChange={e => setExtensionDays(+e.target.value)}
+              />
             </div>
-            <div>
+            <div>  
               <label>Reason:</label>
-              <textarea 
-                value={reason} 
-                onChange={e=>setReason(e.target.value)} 
+              <textarea
+                value={reason}
+                onChange={e => setReason(e.target.value)}
                 required
               />
             </div>
@@ -316,8 +334,12 @@ const PendingDutiesTA = () => {
       {modalType === "proof-proctor" && (
         <Modal title={`Upload Proctor Proof (#${selected.id})`} onClose={closeModal}>
           <form onSubmit={submitProctorProof}>
-            <input type="file" accept="application/pdf" 
-                   onChange={e=>setFile(e.target.files[0])} required />
+            <input
+              type="file"
+              accept="application/pdf"
+              onChange={e => setFile(e.target.files[0])}
+              required
+            />
             <button type="submit" disabled={submitting}>
               {submitting ? "Uploading…" : "Submit"}
             </button>
@@ -330,27 +352,27 @@ const PendingDutiesTA = () => {
           <form onSubmit={submitLeave}>
             <div>
               <label>From:</label>
-              <input 
-                type="date" 
+              <input
+                type="date"
                 value={leaveDates.start}
-                onChange={e=>setLeaveDates(ld=>({...ld, start: e.target.value}))}
+                onChange={e => setLeaveDates(ld => ({ ...ld, start: e.target.value }))}
                 required
               />
             </div>
             <div>
               <label>To:</label>
-              <input 
-                type="date" 
+              <input
+                type="date"
                 value={leaveDates.end}
-                onChange={e=>setLeaveDates(ld=>({...ld, end: e.target.value}))}
+                onChange={e => setLeaveDates(ld => ({ ...ld, end: e.target.value }))}
                 required
               />
             </div>
             <div>
               <label>Reason:</label>
-              <textarea 
-                value={reason} 
-                onChange={e=>setReason(e.target.value)} 
+              <textarea
+                value={reason}
+                onChange={e => setReason(e.target.value)}
                 required
               />
             </div>
