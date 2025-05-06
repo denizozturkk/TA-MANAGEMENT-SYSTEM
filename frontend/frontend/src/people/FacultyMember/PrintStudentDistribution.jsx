@@ -12,14 +12,14 @@ const PrintStudentDistribution = () => {
   };
 
   // all exams for this faculty
-  const [exams, setExams]     = useState([]);
-  const [examId, setExamId]   = useState("");
+  const [exams,   setExams]   = useState([]);
+  const [examId,  setExamId]  = useState("");
 
   // distribution params
   const [distributionType, setDistributionType] = useState("random");
   // preview result
-  const [classA, setClassA] = useState([]);
-  const [classB, setClassB] = useState([]);
+  const [classA,  setClassA]  = useState([]);
+  const [classB,  setClassB]  = useState([]);
 
   // load exams on mount
   useEffect(() => {
@@ -33,19 +33,21 @@ const PrintStudentDistribution = () => {
   }, [facultyId]);
 
   const handleGenerate = () => {
-    if (!examId) return alert("Please select an exam");
+    if (!examId) {
+      return alert("Please select an exam");
+    }
     fetch(
-      `${BASE}/faculty-members/${facultyId}/exams/${examId}/distribution?random=${distributionType==="random"}`,
+      `${BASE}/faculty-members/${facultyId}/exams/${examId}/distribution?random=${distributionType === "random"}`,
       { headers: hdrs }
     )
       .then(res => res.ok ? res.json() : Promise.reject(res.statusText))
       .then(dto => {
         const rooms = Object.values(dto.classrooms || {});
-        const all = rooms.flat();
+        let all = rooms.flat();
         if (distributionType === "random") {
-          all.sort(() => Math.random() - 0.5);
+          all = all.sort(() => Math.random() - 0.5);
         } else {
-          all.sort((a, b) => a.localeCompare(b));
+          all = all.sort((a, b) => a.localeCompare(b));
         }
         const half = Math.ceil(all.length / 2);
         setClassA(all.slice(0, half));
@@ -58,7 +60,9 @@ const PrintStudentDistribution = () => {
   };
 
   const handleDownloadPdf = () => {
-    if (!examId) return alert("Select an exam first");
+    if (!examId) {
+      return alert("Select an exam first");
+    }
     const random = distributionType === "random";
     window.open(
       `${BASE}/faculty-members/${facultyId}/exams/${examId}/distribution/pdf?random=${random}`,
@@ -82,12 +86,16 @@ const PrintStudentDistribution = () => {
               <select
                 className="form-select"
                 value={examId}
-                onChange={e => setExamId(e.target.value)}
+                onChange={e => {
+                  setExamId(e.target.value);
+                  setClassA([]);
+                  setClassB([]);
+                }}
               >
                 <option value="">-- Choose an Exam --</option>
-                {exams.map(e => (
-                  <option key={e.id} value={e.id}>
-                    {e.courseCode} – {e.examName}
+                {exams.map(exam => (
+                  <option key={exam.id} value={exam.id}>
+                    {exam.courseCode} – {exam.examName}
                   </option>
                 ))}
               </select>
@@ -149,9 +157,7 @@ const PrintStudentDistribution = () => {
                   <h5>Class A</h5>
                   <ul className="list-group">
                     {classA.map((stu, i) => (
-                      <li key={i} className="list-group-item">
-                        {stu}
-                      </li>
+                      <li key={i} className="list-group-item">{stu}</li>
                     ))}
                   </ul>
                 </div>
@@ -159,14 +165,13 @@ const PrintStudentDistribution = () => {
                   <h5>Class B</h5>
                   <ul className="list-group">
                     {classB.map((stu, i) => (
-                      <li key={i} className="list-group-item">
-                        {stu}
-                      </li>
+                      <li key={i} className="list-group-item">{stu}</li>
                     ))}
                   </ul>
                 </div>
               </div>
             )}
+
           </div>
         </div>
       </div>
