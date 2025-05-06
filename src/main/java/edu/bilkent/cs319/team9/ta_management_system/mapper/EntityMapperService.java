@@ -416,6 +416,7 @@ public class EntityMapperService {
                 .firstName(fm.getFirstName())
                 .lastName(fm.getLastName())
                 .email(fm.getEmail())
+                .password(fm.getPassword())
                 .phoneNumber(fm.getPhoneNumber())
                 .photoURL(fm.getPhotoURL())
                 // don't include password in toDto if you don't want to expose it
@@ -444,6 +445,7 @@ public class EntityMapperService {
         // password should be encoded in service layer
         fm.setRole(dto.getRole());
         fm.setDepartment(dto.getDepartment());
+        fm.setPassword(dto.getPassword());
 
         if (dto.getOfferingIds() != null) {
             fm.setOfferings(dto.getOfferingIds().stream()
