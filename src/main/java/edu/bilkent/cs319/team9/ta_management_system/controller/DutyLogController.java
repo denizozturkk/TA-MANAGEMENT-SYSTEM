@@ -113,12 +113,4 @@ public class DutyLogController {
         return ResponseEntity.ok(dtos);
     }
 
-    @GetMapping("/ta/{taId}")
-    public ResponseEntity<List<DutyLogDto>> getByTa(@PathVariable Long taId) {
-        var logs = dutyLogService.findByTaId(taId);
-        var dtos = logs.stream()
-                .map(mapper::toDto)
-                .toList();
-        return ResponseEntity.ok(dtos);
-    }
 }

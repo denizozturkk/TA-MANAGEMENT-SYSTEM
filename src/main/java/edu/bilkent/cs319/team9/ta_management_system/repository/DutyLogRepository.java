@@ -8,6 +8,6 @@ import java.util.List;
 
 public interface DutyLogRepository extends JpaRepository<DutyLog, Long> {
     List<DutyLog> findByDateTimeBetween(LocalDateTime from, LocalDateTime to);
-    List<DutyLog> findAllByTaId(Long taId);
+    List<DutyLog> findByTa_Id(Long taId);
 
 }
