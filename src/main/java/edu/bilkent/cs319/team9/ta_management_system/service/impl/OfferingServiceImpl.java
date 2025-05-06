@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Transactional
@@ -44,5 +45,11 @@ public class OfferingServiceImpl implements OfferingService {
     @Override
     public void delete(Long id) {
         repo.deleteById(id);
+    }
+    @Override
+    public Optional<Offering> findByCourseSemesterYear(
+            Long courseId, String semester, Integer year
+    ) {
+        return repo.findByCourse_IdAndSemesterAndYear(courseId, semester, year);
     }
 }
