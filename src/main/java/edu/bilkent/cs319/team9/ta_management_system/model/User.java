@@ -33,7 +33,7 @@ public abstract class User {
     private String password; // `password`
 
     @Column(name = "photourl")
-    private String photoURL;  // explicitly map to `photourl`
+    private String photoURLss;  // explicitly map to `photourl`
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
