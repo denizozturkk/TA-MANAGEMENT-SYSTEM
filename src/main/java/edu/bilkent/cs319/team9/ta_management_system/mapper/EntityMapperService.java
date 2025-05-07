@@ -539,4 +539,24 @@ public class EntityMapperService {
         }
         return c;
     }
+
+    public BusyHourDto toDto(BusyHour bh) {
+        BusyHourDto dto = new BusyHourDto();
+        dto.setId(bh.getId());
+        dto.setDayOfWeek(bh.getDayOfWeek());
+        dto.setStartTime(bh.getStartTime());
+        dto.setEndTime(bh.getEndTime());
+        dto.setTaId(bh.getTa() != null ? bh.getTa().getId() : null);
+        return dto;
+    }
+
+    public BusyHour toEntity(BusyHourDto dto) {
+        BusyHour bh = new BusyHour();
+        bh.setId(dto.getId());
+        bh.setDayOfWeek(dto.getDayOfWeek());
+        bh.setStartTime(dto.getStartTime());
+        bh.setEndTime(dto.getEndTime());
+        // ta must be set by controller/service using TAService.findById
+        return bh;
+    }
 }
