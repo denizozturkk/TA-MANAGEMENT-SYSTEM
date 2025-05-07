@@ -193,19 +193,20 @@ public class ExcelImportServiceImpl implements ExcelImportService {
                         : offeringRepository.findById(Long.parseLong(idText))
                         .orElse(Offering.builder().build());
 
-                o.setSemester(fmt.formatCellValue(row.getCell(1)));
-                o.setYear(Integer.valueOf(fmt.formatCellValue(row.getCell(2))));
+                o.setSection(fmt.formatCellValue(row.getCell(1)));
+                o.setSemester(fmt.formatCellValue(row.getCell(2)));
+                o.setYear(Integer.valueOf(fmt.formatCellValue(row.getCell(3))));
 
                 // instructor by ID in column 4
-                Long instrId = Long.parseLong(fmt.formatCellValue(row.getCell(3)));
+                Long instrId = Long.parseLong(fmt.formatCellValue(row.getCell(4)));
                 facultyRepository.findById(instrId).ifPresent(o::setInstructor);
 
                 // course by ID in column 5
-                Long courseId = Long.parseLong(fmt.formatCellValue(row.getCell(4)));
+                Long courseId = Long.parseLong(fmt.formatCellValue(row.getCell(5)));
                 courseRepository.findById(courseId).ifPresent(o::setCourse);
 
                 // semesterData by ID in column 6
-                Long semDataId = Long.parseLong(fmt.formatCellValue(row.getCell(5)));
+                Long semDataId = Long.parseLong(fmt.formatCellValue(row.getCell(6)));
                 semesterDataRepository.findById(semDataId).ifPresent(o::setSemesterData);
 
                 offeringRepository.save(o);

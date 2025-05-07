@@ -1,5 +1,6 @@
 package edu.bilkent.cs319.team9.ta_management_system.model;
 
+
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -17,15 +18,14 @@ public class Offering {
     @EqualsAndHashCode.Include
     private Long id;
 
+    private String section;
     private String semester;
     private Integer year;
 
-    @ManyToOne
-    @JoinColumn(name = "instructor_id")
+    @ManyToOne @JoinColumn(name = "instructor_id")
     private FacultyMember instructor;
 
-    @ManyToOne
-    @JoinColumn(name = "course_id")
+    @ManyToOne @JoinColumn(name = "course_id")
     private Course course;
 
     @ManyToMany
@@ -47,7 +47,6 @@ public class Offering {
     @OneToMany(mappedBy = "offering")
     private Set<Exam> exams;
 
-    @ManyToOne
-    @JoinColumn(name = "semester_data_id")
+    @ManyToOne @JoinColumn(name = "semester_data_id")
     private SemesterData semesterData;
 }
