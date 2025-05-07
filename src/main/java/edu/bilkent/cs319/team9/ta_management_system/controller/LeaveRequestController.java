@@ -88,5 +88,15 @@ public class LeaveRequestController {
                 .toList();
         return ResponseEntity.ok(dtos);
     }
+
+    @GetMapping("/faculty/{facultyId}")
+    public ResponseEntity<List<LeaveRequestDto>> getByFacultyId(@PathVariable Long facultyId) {
+        List<LeaveRequestDto> dtos = leaveRequestService
+                .findByFacultyMemberId(facultyId)
+                .stream()
+                .map(mapper::toDto)
+                .toList();
+        return ResponseEntity.ok(dtos);
+    }
 }
 

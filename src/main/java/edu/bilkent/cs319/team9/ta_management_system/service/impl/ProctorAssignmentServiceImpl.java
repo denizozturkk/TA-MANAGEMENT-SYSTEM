@@ -56,4 +56,10 @@ public class ProctorAssignmentServiceImpl implements ProctorAssignmentService {
         return repo.findByAssignedTA_Id(taId);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<ProctorAssignment> findByExamId(Long examId) {
+        return repo.findByExam_Id(examId);
+    }
+
 }

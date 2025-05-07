@@ -1,6 +1,7 @@
 package edu.bilkent.cs319.team9.ta_management_system.controller;
 
 import edu.bilkent.cs319.team9.ta_management_system.dto.OfferingDto;
+import edu.bilkent.cs319.team9.ta_management_system.exception.NotFoundException;
 import edu.bilkent.cs319.team9.ta_management_system.mapper.EntityMapperService;
 import edu.bilkent.cs319.team9.ta_management_system.model.Offering;
 import edu.bilkent.cs319.team9.ta_management_system.service.OfferingService;
@@ -51,5 +52,21 @@ public class OfferingController {
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         offeringService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+    @GetMapping("/search")
+    public ResponseEntity<OfferingDto> getByCourseCodeSemesterYear(
+            @RequestParam("courseCode") String courseCode,
+            @RequestParam("semester") String semester,
+            @RequestParam("year") Integer year
+    ) {
+        Offering offering = offeringService
+                .findByCourseCodeSemesterYear(courseCode, semester, year)
+                .orElseThrow(() ->
+                        new NotFoundException(
+                                "Offering not found for courseCode=" + courseCode +
+                                        ", semester=" + semester + ", year=" + year
+                        )
+                );
+        return ResponseEntity.ok(mapper.toDto(offering));
     }
 }

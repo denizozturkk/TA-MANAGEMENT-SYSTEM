@@ -5,6 +5,7 @@ import edu.bilkent.cs319.team9.ta_management_system.dto.ClassroomDistributionDto
 import edu.bilkent.cs319.team9.ta_management_system.dto.DutyLogDto;
 import edu.bilkent.cs319.team9.ta_management_system.dto.ExamDto;
 import edu.bilkent.cs319.team9.ta_management_system.dto.FacultyMemberDto;
+import edu.bilkent.cs319.team9.ta_management_system.dto.LeaveRequestDto;
 import edu.bilkent.cs319.team9.ta_management_system.mapper.EntityMapperService;
 import edu.bilkent.cs319.team9.ta_management_system.model.*;
 import edu.bilkent.cs319.team9.ta_management_system.repository.ClassroomRepository;
@@ -82,40 +83,45 @@ public class FacultyMemberController {
      * Assign proctors for an exam, based on mode and optional TA selection
      */
     @PostMapping("/{facultyId}/exams/{examId}/proctor")
-    public ResponseEntity<ProctorAssignment> assignProctor(
+    public ResponseEntity<Void> assignProctor(
             @PathVariable Long facultyId,
             @PathVariable Long examId,
             @RequestParam AssignmentType mode,
             @RequestParam(required = false) Long taId
-    )
-    {
+    ) {
         facultyMemberService.assignProctor(examId, mode, taId);
         return ResponseEntity.ok().build();
     }
 
     /**
-     * List pending leave requests for this faculty
+     * List pending leave requests for this faculty (now returns DTOs)
      */
     @GetMapping("/{facultyId}/leave-requests")
-    public ResponseEntity<List<LeaveRequest>> listLeaveRequests(@PathVariable Long facultyId) {
-        return ResponseEntity.ok(facultyMemberService.listLeaveRequests(facultyId));
+    public ResponseEntity<List<LeaveRequestDto>> listLeaveRequests(@PathVariable Long facultyId) {
+        List<LeaveRequestDto> dtos = facultyMemberService
+                .listLeaveRequests(facultyId)
+                .stream()
+                .map(mapper::toDto)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(dtos);
     }
 
     /**
-     * Approve a specific leave request
+     * Approve a specific leave request (returns DTO)
      */
-
     @PostMapping("/leave-requests/{requestId}/approve")
-    public ResponseEntity<LeaveRequest> approveLeave(@PathVariable Long requestId) {
-        return ResponseEntity.ok(facultyMemberService.approveLeaveRequest(requestId));
+    public ResponseEntity<LeaveRequestDto> approveLeave(@PathVariable Long requestId) {
+        LeaveRequest lr = facultyMemberService.approveLeaveRequest(requestId);
+        return ResponseEntity.ok(mapper.toDto(lr));
     }
 
     /**
-     * Reject a specific leave request
+     * Reject a specific leave request (returns DTO)
      */
     @PostMapping("/leave-requests/{requestId}/reject")
-    public ResponseEntity<LeaveRequest> rejectLeave(@PathVariable Long requestId) {
-        return ResponseEntity.ok(facultyMemberService.rejectLeaveRequest(requestId));
+    public ResponseEntity<LeaveRequestDto> rejectLeave(@PathVariable Long requestId) {
+        LeaveRequest lr = facultyMemberService.rejectLeaveRequest(requestId);
+        return ResponseEntity.ok(mapper.toDto(lr));
     }
 
     @PostMapping("/{facultyId}/tas/{taId}/duty-logs")
@@ -143,7 +149,8 @@ public class FacultyMemberController {
                 workload, startTime, duration, status, classrooms
         );
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(mapper.toDto(created));    }
+                .body(mapper.toDto(created));
+    }
 
     @PostMapping("/{facultyId}/duty-logs/automatic")
     public ResponseEntity<DutyLogDto> uploadDutyLogAutomatic(
@@ -180,8 +187,7 @@ public class FacultyMemberController {
             @RequestParam DutyStatus status,
             @RequestParam(required = false) String reason ) {
         DutyLog updated = facultyMemberService.reviewDutyLog(facultyId, taId, dutyLogId, status, reason);
-        DutyLogDto dto = mapper.toDto(updated);
-        return ResponseEntity.ok(dto);
+        return ResponseEntity.ok(mapper.toDto(updated));
     }
 
     @GetMapping("/{facultyId}/exams/{examId}/distribution")
@@ -203,21 +209,15 @@ public class FacultyMemberController {
             @PathVariable Long examId,
             @RequestParam(defaultValue = "false") boolean random
     ) {
-        // 1) Load the Exam (with its Offering→Course, ExamRooms→Classroom, Offering→Students)
         Exam exam = examRepository.findById(examId)
                 .orElseThrow(() -> new NoSuchElementException("Exam not found: " + examId));
 
-        // 2) Extract these for the filename
         String courseCode = exam.getOffering().getCourse().getCourseCode();
         String examName   = exam.getExamName();
-
-        // 3) Compute the distribution DTO
         ClassroomDistributionDto dto = distributionService.distribute(examId, random);
 
-        // 4) Generate the PDF bytes
         byte[] pdf;
         try {
-            // if random==false then we want alphabetical ordering, so pass !random
             pdf = pdfGeneratorService.generateDistributionPdf(exam, dto, !random);
         } catch (DocumentException e) {
             return ResponseEntity
@@ -225,7 +225,6 @@ public class FacultyMemberController {
                     .build();
         }
 
-        // 5) Return the file, naming it like "CS101_Midterm1.pdf"
         String filename = courseCode + "_" + examName + ".pdf";
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
@@ -268,9 +267,10 @@ public class FacultyMemberController {
 
     @GetMapping("/{facultyId}/exams")
     public ResponseEntity<List<ExamDto>> getExamsByFaculty(@PathVariable Long facultyId) {
-        List<Exam> exams = examRepository.findAllByFaculty_Id(facultyId);
-        List<ExamDto> dtos = exams.stream()
-                .map(mapper::toDto)        // zaten EntityMapperService içinde Exam→ExamDto mapping’in var
+        List<ExamDto> dtos = examRepository
+                .findAllByFaculty_Id(facultyId)
+                .stream()
+                .map(mapper::toDto)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(dtos);
     }

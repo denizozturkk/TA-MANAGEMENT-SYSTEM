@@ -77,4 +77,26 @@ public class TAController {
 
         return ResponseEntity.ok(available);
     }
+
+    @GetMapping("/available/department")
+    public ResponseEntity<List<TADto>> getAvailableTAsByDepartment(
+            @RequestParam("startTime")
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+            LocalDateTime startTime,
+            @RequestParam("duration")
+            Long durationInMinutes,
+            @RequestParam("department")
+            String department
+    ) {
+        LocalDateTime endTime = startTime.plusMinutes(durationInMinutes);
+
+        List<TADto> filtered = taService.findAll().stream()
+                .filter(ta -> ta.getDepartment() != null
+                        && ta.getDepartment().equalsIgnoreCase(department))
+                .filter(ta -> busyHourService.isTAAvailable(ta.getId(), startTime, endTime))
+                .map(mapper::toDto)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(filtered);
+    }
 }

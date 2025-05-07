@@ -10,7 +10,9 @@ public interface OfferingService {
     List<Offering> findAll();
     Offering update(Long id, Offering o);
     void delete(Long id);
-    Optional<Offering> findByCourseSemesterYear(
-            Long courseId, String semester, Integer year
+    Optional<Offering> findByCourseCodeSemesterYear(
+            String courseCode,
+            String semester,
+            Integer year
     );
 }

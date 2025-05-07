@@ -32,4 +32,5 @@ public interface ProctorAssignmentRepository extends JpaRepository<ProctorAssign
                                                 Long classroomId,
                                                 ProctorStatus status);
     List<ProctorAssignment> findByAssignedTA_Id(Long taId);
+    List<ProctorAssignment> findByExam_Id(Long examId);
 }

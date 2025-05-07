@@ -87,14 +87,24 @@ public class EntityMapperService {
     }
 
     public LeaveRequestDto toDto(LeaveRequest lr) {
-        LeaveRequestDto dto = modelMapper.map(lr, LeaveRequestDto.class);
+        LeaveRequestDto dto = new LeaveRequestDto();
+        dto.setId(lr.getId());
+        dto.setReason(lr.getReason());
+        dto.setStatus(lr.getStatus());
         dto.setTaId(lr.getTa() != null ? lr.getTa().getId() : null);
-        dto.setProctorAssignmentId(lr.getProctorAssignment() != null ? lr.getProctorAssignment().getId() : null);
+        dto.setProctorAssignmentId(
+                lr.getProctorAssignment() != null
+                        ? lr.getProctorAssignment().getId()
+                        : null
+        );
         return dto;
     }
 
     public LeaveRequest toEntity(LeaveRequestDto dto) {
-        LeaveRequest lr = modelMapper.map(dto, LeaveRequest.class);
+        LeaveRequest lr = new LeaveRequest();
+        lr.setId(dto.getId());
+        lr.setReason(dto.getReason());
+        lr.setStatus(dto.getStatus());
 
         if (dto.getTaId() != null) {
             TA ta = new TA();

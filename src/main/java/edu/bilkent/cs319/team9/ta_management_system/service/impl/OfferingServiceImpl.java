@@ -47,9 +47,12 @@ public class OfferingServiceImpl implements OfferingService {
         repo.deleteById(id);
     }
     @Override
-    public Optional<Offering> findByCourseSemesterYear(
-            Long courseId, String semester, Integer year
+    @Transactional(readOnly = true)
+    public Optional<Offering> findByCourseCodeSemesterYear(
+            String courseCode,
+            String semester,
+            Integer year
     ) {
-        return repo.findByCourse_IdAndSemesterAndYear(courseId, semester, year);
+        return repo.findByCourse_CodeAndSemesterAndYear(courseCode, semester, year);
     }
 }

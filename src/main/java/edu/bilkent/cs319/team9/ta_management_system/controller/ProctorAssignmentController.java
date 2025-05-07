@@ -58,4 +58,13 @@ public class ProctorAssignmentController {
                 .collect(Collectors.toList());
         return ResponseEntity.ok(dtos);
     }
+
+    @GetMapping("/exam/{examId}")
+    public ResponseEntity<List<ProctorAssignmentDto>> getByExamId(@PathVariable Long examId) {
+        List<ProctorAssignmentDto> dtos = paService.findByExamId(examId)
+                .stream()
+                .map(mapper::toDto)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(dtos);
+    }
 }
