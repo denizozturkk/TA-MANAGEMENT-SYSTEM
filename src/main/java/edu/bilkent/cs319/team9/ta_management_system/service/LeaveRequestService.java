@@ -10,5 +10,5 @@ public interface LeaveRequestService {
     LeaveRequest update(Long id, LeaveRequest l);
     void delete(Long id);
     List<LeaveRequest> findByTaId(Long taId);
-    List<LeaveRequest> findByFacultyMemberId(Long facultyId);
+    List<LeaveRequest> findByExamFacultyMemberId(Long facultyId);
 }

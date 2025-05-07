@@ -51,8 +51,9 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
     public List<LeaveRequest> findByTaId(Long taId) {
         return repo.findAllByTa_Id(taId);
     }
-
-    public List<LeaveRequest> findByFacultyMemberId(Long facultyId) {
-        return repo.findByFacultyMemberId(facultyId);
+    @Override
+    @Transactional(readOnly = true)
+    public List<LeaveRequest> findByExamFacultyMemberId(Long facultyId) {
+        return repo.findByProctorAssignment_Exam_Faculty_Id(facultyId);
     }
 }

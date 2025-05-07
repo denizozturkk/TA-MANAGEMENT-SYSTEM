@@ -112,9 +112,7 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
         String title = "Leave Request Approved";
         String body  = String.format(
                 "Your leave request (ID %d) from %s to %s has been approved.",
-                saved.getId(),
-                saved.getStartDate(),
-                saved.getEndDate()
+                saved.getId()
         );
         notificationService.notifyUser(
                 ta.getId(),
@@ -143,9 +141,7 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
         String notifTitle = "Leave Request Rejected";
         String notifBody  = String.format(
                 "Your leave request (ID %d) from %s to %s has been rejected.",
-                saved.getId(),
-                saved.getStartDate(),
-                saved.getEndDate()
+                saved.getId()
         );
         notificationService.notifyUser(
                 ta.getId(),
@@ -161,7 +157,7 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
         mail.setText(
                 "Hello " + ta.getFirstName() + ",\n\n" +
                         "We’re sorry to inform you that your leave request (ID " + saved.getId() +
-                        ") covering " + saved.getStartDate() + " to " + saved.getEndDate() +
+                        ") covering " + " to " +
                         " has been rejected.\n\n" +
                         "Please contact your faculty member if you have any questions.\n\n" +
                         "Best regards,\n" +

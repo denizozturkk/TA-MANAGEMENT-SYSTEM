@@ -53,6 +53,6 @@ public class OfferingServiceImpl implements OfferingService {
             String semester,
             Integer year
     ) {
-        return repo.findByCourse_CodeAndSemesterAndYear(courseCode, semester, year);
+        return repo.findByCourse_CourseCodeAndSemesterAndYear(courseCode, semester, year);
     }
 }

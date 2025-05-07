@@ -15,10 +15,5 @@ public interface LeaveRequestRepository extends JpaRepository<LeaveRequest, Long
             LeaveStatus status
     );
     List<LeaveRequest> findAllByTa_Id(Long taId);
-    @Query("""
-      SELECT lr
-        FROM LeaveRequest lr
-       WHERE lr.proctorAssignment.facultyMember.id = :facultyId
-    """)
-    List<LeaveRequest> findByFacultyMemberId(@Param("facultyId") Long facultyId);;
+    List<LeaveRequest> findByProctorAssignment_Exam_Faculty_Id(Long facultyId);
 }

@@ -24,7 +24,7 @@ public interface OfferingRepository extends JpaRepository<Offering, Long> {
             @Param("oldTaId")    Long oldTaId,
             @Param("newTaId")    Long newTaId
     );
-    Optional<Offering> findByCourse_CodeAndSemesterAndYear(
+    Optional<Offering> findByCourse_CourseCodeAndSemesterAndYear(
             String courseCode,
             String semester,
             Integer year

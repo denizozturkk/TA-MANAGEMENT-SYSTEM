@@ -92,7 +92,7 @@ public class LeaveRequestController {
     @GetMapping("/faculty/{facultyId}")
     public ResponseEntity<List<LeaveRequestDto>> getByFacultyId(@PathVariable Long facultyId) {
         List<LeaveRequestDto> dtos = leaveRequestService
-                .findByFacultyMemberId(facultyId)
+                .findByExamFacultyMemberId(facultyId)
                 .stream()
                 .map(mapper::toDto)
                 .toList();
