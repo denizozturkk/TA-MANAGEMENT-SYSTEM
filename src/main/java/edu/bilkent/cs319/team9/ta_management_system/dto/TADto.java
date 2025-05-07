@@ -29,7 +29,5 @@ public class TADto {
     private Float totalWorkload;
     private String department;
     private DegreeStatus msPhdStatus;
-
-    private String bilkentTaId;
     private String fullName;
 }
