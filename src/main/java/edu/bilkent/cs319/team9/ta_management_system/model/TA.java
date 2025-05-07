@@ -19,6 +19,9 @@ public class TA extends User {
     @Enumerated(EnumType.STRING)
     private DegreeStatus msPhdStatus;
 
+    @Column(name = "bilkent_ta_id", unique = true, nullable = false)
+    private String bilkentTaId;
+
     @ManyToMany(mappedBy = "tas")
     private Set<Offering> offerings;
 

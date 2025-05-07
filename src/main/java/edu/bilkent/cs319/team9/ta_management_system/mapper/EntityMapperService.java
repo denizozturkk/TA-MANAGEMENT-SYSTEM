@@ -310,29 +310,36 @@ public class EntityMapperService {
     public OfferingDto toDto(Offering offering) {
         OfferingDto dto = new OfferingDto();
         dto.setId(offering.getId());
-        dto.setSection(offering.getSection());
         dto.setSemester(offering.getSemester());
         dto.setYear(offering.getYear());
+        dto.setInstructorId(
+                offering.getInstructor() != null ? offering.getInstructor().getId() : null
+        );
+        dto.setCourseId(
+                offering.getCourse() != null ? offering.getCourse().getId() : null
+        );
+        dto.setSemesterDataId(
+                offering.getSemesterData() != null ? offering.getSemesterData().getId() : null
+        );
 
-        dto.setInstructorId(offering.getInstructor() != null ? offering.getInstructor().getId() : null);
-        dto.setCourseId(offering.getCourse() != null ? offering.getCourse().getId() : null);
-        dto.setSemesterDataId(offering.getSemesterData() != null ? offering.getSemesterData().getId() : null);
-
-        dto.setTaIds(offering.getTas() != null ?
-                offering.getTas().stream().map(TA::getId).collect(Collectors.toSet()) : null);
-
-        dto.setStudentIds(offering.getStudents() != null ?
-                offering.getStudents().stream().map(Student::getId).collect(Collectors.toSet()) : null);
-
-        dto.setExamIds(offering.getExams() != null ?
-                offering.getExams().stream().map(Exam::getId).collect(Collectors.toSet()) : null);
+        if (offering.getTas() != null) {
+            dto.setTaIds(offering.getTas()
+                    .stream().map(TA::getId).collect(Collectors.toSet()));
+        }
+        if (offering.getStudents() != null) {
+            dto.setStudentIds(offering.getStudents()
+                    .stream().map(Student::getId).collect(Collectors.toSet()));
+        }
+        if (offering.getExams() != null) {
+            dto.setExamIds(offering.getExams()
+                    .stream().map(Exam::getId).collect(Collectors.toSet()));
+        }
         return dto;
     }
 
     public Offering toEntity(OfferingDto dto) {
         Offering offering = new Offering();
         offering.setId(dto.getId());
-        offering.setSection(dto.getSection());
         offering.setSemester(dto.getSemester());
         offering.setYear(dto.getYear());
 
@@ -341,19 +348,16 @@ public class EntityMapperService {
             instructor.setId(dto.getInstructorId());
             offering.setInstructor(instructor);
         }
-
         if (dto.getCourseId() != null) {
             Course course = new Course();
             course.setId(dto.getCourseId());
             offering.setCourse(course);
         }
-
         if (dto.getSemesterDataId() != null) {
             SemesterData sd = new SemesterData();
             sd.setId(dto.getSemesterDataId());
             offering.setSemesterData(sd);
         }
-
         if (dto.getTaIds() != null) {
             Set<TA> tas = dto.getTaIds().stream().map(id -> {
                 TA ta = new TA();
@@ -362,7 +366,6 @@ public class EntityMapperService {
             }).collect(Collectors.toSet());
             offering.setTas(tas);
         }
-
         if (dto.getStudentIds() != null) {
             Set<Student> students = dto.getStudentIds().stream().map(id -> {
                 Student student = new Student();
@@ -371,7 +374,6 @@ public class EntityMapperService {
             }).collect(Collectors.toSet());
             offering.setStudents(students);
         }
-
         if (dto.getExamIds() != null) {
             Set<Exam> exams = dto.getExamIds().stream().map(id -> {
                 Exam exam = new Exam();
@@ -380,7 +382,6 @@ public class EntityMapperService {
             }).collect(Collectors.toSet());
             offering.setExams(exams);
         }
-
         return offering;
     }
 
