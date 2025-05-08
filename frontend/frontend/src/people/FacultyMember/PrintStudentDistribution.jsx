@@ -117,7 +117,7 @@ const PrintStudentDistribution = () => {
       <div className="w-100 w-lg-auto" style={{ maxWidth: "300px" }}>
         <FacultymemberLayout />
       </div>
-  
+
       <div className="container-fluid py-4">
         <div className="row justify-content-center">
           <div className="col-12 col-md-10 col-lg-9">
@@ -126,7 +126,7 @@ const PrintStudentDistribution = () => {
                 <h3 className="fw-bold mb-4 text-primary text-center text-lg-start border-bottom pb-2">
                   Print Student Distribution
                 </h3>
-  
+
                 {/* Exam Selector */}
                 <div className="mb-4">
                   <label className="form-label fw-semibold">Select Exam</label>
@@ -147,7 +147,7 @@ const PrintStudentDistribution = () => {
                     ))}
                   </select>
                 </div>
-  
+
                 {/* Distribution Type */}
                 {examId && (
                   <div className="mb-4">
@@ -180,16 +180,9 @@ const PrintStudentDistribution = () => {
                     </div>
                   </div>
                 )}
-  
-                {/* Action Buttons */}
-                <div className="d-flex flex-column flex-sm-row justify-content-end gap-2 mb-4">
-                  <button
-                    className="btn btn-outline-primary"
-                    onClick={handleGenerate}
-                    disabled={!examId}
-                  >
-                    Preview
-                  </button>
+
+                {/* Action Button */}
+                <div className="d-flex justify-content-end mb-4">
                   <button
                     className="btn btn-success"
                     onClick={handleDownloadPdf}
@@ -198,7 +191,7 @@ const PrintStudentDistribution = () => {
                     Download PDF
                   </button>
                 </div>
-  
+
                 {/* Preview Lists */}
                 {(classA.length + classB.length) > 0 && (
                   <div className="row g-4">
