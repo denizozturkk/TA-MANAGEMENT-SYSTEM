@@ -25,59 +25,88 @@ const TutorGraderApplications = () => {
   }, [token]);
 
   return (
-    <div className="d-flex">
-      <div style={{ width: "300px" }}>
+    <div className="d-flex flex-column flex-md-row">
+      {/* Sidebar */}
+      <div className="flex-shrink-0" style={{ width: "300px" }}>
         <DepartmentStaffLayout />
       </div>
-      <div className="container py-5 flex-grow-1">
+
+      {/* Main content */}
+      <div className="container py-4 flex-grow-1">
         <h3 className="fw-bold mb-4">Tutor/Grader Applications</h3>
 
-        <table className="table table-hover align-middle mb-5">
-          <thead>
-            <tr>
-              <th>Student ID</th>
-              <th>Full Name</th>
-              <th>Dept</th>
-              <th>Year</th>
-              <th>CGPA</th>
-              <th>Email</th>
-              <th>Submitted At</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {applications.map(app => (
-              <tr key={app.id}>
-                <td>{app.studentId}</td>
-                <td>{app.fullName}</td>
-                <td>{app.dept}</td>
-                <td>{app.classYear}</td>
-                <td>{app.cgpa.toFixed(2)}</td>
-                <td>{app.email}</td>
-                <td>{new Date(app.submittedAt).toLocaleString()}</td>
-                <td>
-                  <button
-                    className="btn btn-sm btn-outline-primary"
-                    onClick={() => setSelectedApp(app)}
-                  >
-                    View
-                  </button>
-                </td>
-              </tr>
-            ))}
-            {applications.length === 0 && (
+        {/* Mobile cards */}
+        <div className="d-block d-md-none">
+          {applications.length === 0 && (
+            <p className="text-center text-muted">No applications found.</p>
+          )}
+          {applications.map(app => (
+            <div key={app.id} className="card mb-3 shadow-sm">
+              <div className="card-body">
+                <p><strong>{app.fullName}</strong> (ID: {app.studentId})</p>
+                <p className="mb-1">{app.dept}, Year {app.classYear}</p>
+                <p className="mb-1">CGPA: {app.cgpa.toFixed(2)}</p>
+                <p className="mb-1">{new Date(app.submittedAt).toLocaleDateString()}</p>
+                <button
+                  className="btn btn-sm btn-outline-primary mt-2"
+                  onClick={() => setSelectedApp(app)}
+                >
+                  View Details
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop table */}
+        <div className="table-responsive d-none d-md-block">
+          <table className="table table-hover align-middle mb-5">
+            <thead>
               <tr>
-                <td colSpan="8" className="text-center text-muted">
-                  No applications found.
-                </td>
+                <th>Student ID</th>
+                <th>Full Name</th>
+                <th>Dept</th>
+                <th>Year</th>
+                <th>CGPA</th>
+                <th>Email</th>
+                <th>Submitted At</th>
+                <th>Actions</th>
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {applications.map(app => (
+                <tr key={app.id}>
+                  <td>{app.studentId}</td>
+                  <td>{app.fullName}</td>
+                  <td>{app.dept}</td>
+                  <td>{app.classYear}</td>
+                  <td>{app.cgpa.toFixed(2)}</td>
+                  <td>{app.email}</td>
+                  <td>{new Date(app.submittedAt).toLocaleString()}</td>
+                  <td>
+                    <button
+                      className="btn btn-sm btn-outline-primary"
+                      onClick={() => setSelectedApp(app)}
+                    >
+                      View
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {applications.length === 0 && (
+                <tr>
+                  <td colSpan="8" className="text-center text-muted">
+                    No applications found.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
 
         {/* Detail panel */}
         {selectedApp && (
-          <div className="border rounded p-4 bg-white shadow-sm">
+          <div className="border rounded p-4 bg-white shadow-sm mb-4">
             <h4 className="mb-3">Application Details</h4>
             <p><strong>Student ID:</strong> {selectedApp.studentId}</p>
             <p><strong>Full Name:</strong> {selectedApp.fullName}</p>
@@ -109,7 +138,11 @@ const TutorGraderApplications = () => {
             <p><strong>Additional Notes:</strong> {selectedApp.additionalNotes}</p>
             <p>
               <strong>Transcript:</strong>{" "}
-              <a href={`http://localhost:8080/uploads/${selectedApp.transcriptPath.split("/").pop()}`} target="_blank" rel="noreferrer">
+              <a
+                href={`http://localhost:8080/uploads/${selectedApp.transcriptPath.split("/").pop()}`}
+                target="_blank"
+                rel="noreferrer"
+              >
                 View PDF
               </a>
             </p>

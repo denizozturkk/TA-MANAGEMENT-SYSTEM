@@ -7,6 +7,7 @@ import TALayout from "../Ta/Layout-TA.jsx";
 import DeanLayout from "../Dean/Layout-Dean.jsx";
 import AdminLayout from "../Admin/Layout-Admin.jsx";
 import avatarPlaceholder from "../User/avatar3.jpg"; // same as header
+import SidebarDepartmentStaff from "../DepartmentStaff/DepartmentStaffLayout.jsx";
 
 // Simple JWT parser
 function parseJwt(token) {
@@ -26,6 +27,7 @@ const RoleBasedLayout = ({ children }) => {
   else if (role === "ROLE_TA") SidebarComponent = TALayout;
   else if (role === "ROLE_DEAN") SidebarComponent = DeanLayout;
   else if (role === "ROLE_ADMIN") SidebarComponent = AdminLayout;
+  else if (role === "ROLE_DEPARTMENT_STAFF") SidebarComponent = SidebarDepartmentStaff;
 
   return (
     <>

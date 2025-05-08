@@ -1,58 +1,142 @@
+// src/people/User/Sidebar.jsx
 import React from "react";
 import { Link } from "react-router-dom";
 
-const SidebarDepartmentStaff = () => {
-  return (
-    <div className="sidebar px-4 py-4 py-md-5 me-0" style={{ backgroundColor: 'purple' }}>
-      <div className="d-flex flex-column h-100">
-        <Link to="/" className="mb-0 brand-icon">
-          <span className="logo-icon">
-            <svg width="35" height="35" fill="currentColor" className="bi bi-clipboard-check" viewBox="0 0 16 16">
-              <path fillRule="evenodd" d="M10.854 7.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 9.793l2.646-2.647a.5.5 0 0 1 .708 0z" />
-              <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z" />
-              <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z" />
-            </svg>
-          </span>
-          <span className="logo-text">My-Task</span>
-        </Link>
+const Sidebar = () => (
+  <>
+    {/* Mobile toggle button */}
+    <button
+      className="btn btn-link text-light d-md-none p-2 position-fixed"
+      style={{ top: '1rem', left: '1rem', zIndex: 1050 }}
+      type="button"
+      data-bs-toggle="offcanvas"
+      data-bs-target="#mobileSidebar"
+      aria-controls="mobileSidebar"
+      aria-label="Toggle sidebar"
+    >
+      <i className="icofont-navigation-menu fs-3"></i>
+    </button>
 
-        <ul className="menu-list flex-grow-1 mt-3">
-
-          {/* Department Staff Menu */}
-          <li className="collapsed">
-            <a className="m-link" data-bs-toggle="collapse" data-bs-target="#departmentMenu" href="#">
-              <i className="icofont-ui-file"></i>
-              <span>Department Panel</span>
-              <span className="arrow icofont-dotted-down ms-auto text-end fs-5"></span>
+    {/* Mobile offcanvas sidebar */}
+    <div
+      className="offcanvas offcanvas-start d-md-none text-light"
+      tabIndex="-1"
+      id="mobileSidebar"
+      aria-labelledby="mobileSidebarLabel"
+      style={{ backgroundColor: '#2D2A62', width: '240px' }}
+    >
+      <div className="offcanvas-header">
+        <h5 className="offcanvas-title text-light" id="mobileSidebarLabel">My-Task</h5>
+        <button
+          type="button"
+          className="btn-close btn-close-white"
+          data-bs-dismiss="offcanvas"
+          aria-label="Close"
+        />
+      </div>
+      <div className="offcanvas-body p-0">
+        <ul className="menu-list list-unstyled mb-0">
+          <li className="border-bottom">
+            <a
+              className="m-link text-light d-flex align-items-center p-3"
+              data-bs-toggle="collapse"
+              data-bs-target="#facultyMenuMobile"
+              href="#"
+            >
+              <i className="icofont-user-male me-2"></i>Department Staff Panel
+              <i className="icofont-dotted-down ms-auto"></i>
             </a>
-            <ul className="sub-menu collapse" id="departmentMenu">
-              <li><Link className="ms-link" to="/tutorgraderformview"><span>View Applications</span></Link></li>
+            <ul className="collapse ms-4" id="facultyMenuMobile">
+              <li><Link className="ms-link text-light d-block py-2" to="/generateclassroomlist">Generate Classroom List</Link></li>
+              <li><Link className="ms-link text-light d-block py-2" to="/printstudentdistribution">Print Student Distribution</Link></li>
+              <li><Link className="ms-link text-light d-block py-2" to="/leaverequest">Review TA Leave Request</Link></li>
+              <li><Link className="ms-link text-light d-block py-2" to="/excelupload">Upload Semester Excel</Link></li>
+              <li><Link className="ms-link text-light d-block py-2" to="/dutyextension">Review Duty Extension</Link></li>
+              <li><Link className="ms-link text-light d-block py-2" to="/reviewworkload">Review TA Workload</Link></li>
+              <li><Link className="ms-link text-light d-block py-2" to="/defineexam">Define Exam</Link></li>
+              <li><Link className="ms-link text-light d-block py-2" to="/assignassignment">Assign Assignment</Link></li>
             </ul>
           </li>
-
-          {/* Profile Links */}
-          <li className="collapsed">
-            <a className="m-link" data-bs-toggle="collapse" data-bs-target="#profileMenu" href="#">
-              <i className="icofont-user-alt-2"></i>
-              <span>Profile</span>
-              <span className="arrow icofont-dotted-down ms-auto text-end fs-5"></span>
+          <li className="border-bottom">
+            <a
+              className="m-link text-light d-flex align-items-center p-3"
+              data-bs-toggle="collapse"
+              data-bs-target="#profileMenuMobile"
+              href="#"
+            >
+              <i className="icofont-user-alt-2 me-2"></i>My Profile
+              <i className="icofont-dotted-down ms-auto"></i>
             </a>
-            <ul className="sub-menu collapse" id="profileMenu">
-              <li><Link className="ms-link" to="/changecontactinformation"><span>Change Contact Info</span></Link></li>
-              <li><Link className="ms-link" to="/changepassword"><span>Change Password</span></Link></li>
-              <li><Link className="ms-link" to="/notification"><span>Notifications</span></Link></li>
-              <li><Link className="ms-link" to="/viewprofile"><span>View Profile</span></Link></li>
+            <ul className="collapse ms-4" id="profileMenuMobile">
+              <li><Link className="ms-link text-light d-block py-2" to="/changecontactinformation">Change Contact Info</Link></li>
+              <li><Link className="ms-link text-light d-block py-2" to="/changepassword">Change Password</Link></li>
+              <li><Link className="ms-link text-light d-block py-2" to="/notification">Notifications</Link></li>
+              <li><Link className="ms-link text-light d-block py-2" to="/viewprofile">View Profile</Link></li>
             </ul>
           </li>
-
         </ul>
-
-        <button type="button" className="btn btn-link sidebar-mini-btn text-light">
-          <span className="ms-2"><i className="icofont-bubble-right"></i></span>
-        </button>
       </div>
     </div>
-  );
-};
 
-export default SidebarDepartmentStaff;
+    {/* Desktop sidebar */}
+    <aside
+      className="sidebar d-none d-md-flex flex-column px-4 py-4 py-md-5"
+      style={{ backgroundColor: '#2D2A62', width: '240px' }}
+    >
+      <style>{`
+        .sidebar .menu-list .ms-link:hover {
+          background-color: #E31B23 !important;
+          color: #FFFFFF !important;
+        }
+        .sidebar .m-link:hover {
+          color: #E31B23 !important;
+        }
+        .sidebar .ms-link,
+        .sidebar .m-link {
+          transition: background-color 0.2s, color 0.2s;
+        }
+      `}</style>
+
+      <Link to="/" className="mb-4 text-light d-flex align-items-center">
+        <span className="logo-icon me-2">
+          <svg width="35" height="35" fill="currentColor" viewBox="0 0 16 16">
+            <path fillRule="evenodd" d="M10.854 7.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 9.793l2.646-2.647a.5.5 0 0 1 .708 0z" />
+            <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z" />
+            <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z" />
+          </svg>
+        </span>
+        <span className="logo-text fs-5">My-Task</span>
+      </Link>
+
+      <ul className="menu-list flex-grow-1 list-unstyled">
+        <li className="collapsed">
+          <a className="m-link text-light d-flex align-items-center mb-2" data-bs-toggle="collapse" data-bs-target="#facultyMenuDesktop" href="#">
+            <i className="icofont-user-male me-2"></i>Department Staff Panel
+            <span className="arrow icofont-dotted-down ms-auto fs-5"></span>
+          </a>
+          <ul className="collapse sub-menu" id="facultyMenuDesktop">
+            <li><Link className="ms-link text-light d-block py-1 px-2" to="/tutorgraderformview">Tutor / Grader Form View</Link></li>
+              </ul>
+        </li>
+        <li className="collapsed mt-3">
+          <a className="m-link text-light d-flex align-items-center mb-2" data-bs-toggle="collapse" data-bs-target="#profileMenuDesktop" href="#">
+            <i className="icofont-user-alt-2 me-2"></i>My Profile
+            <span className="arrow icofont-dotted-down ms-auto fs-5"></span>
+          </a>
+          <ul className="collapse sub-menu" id="profileMenuDesktop">
+            <li><Link className="ms-link text-light d-block py-1 px-2" to="/changecontactinformation">Change Contact Info</Link></li>
+            <li><Link className="ms-link text-light d-block py-1 px-2" to="/changepassword">Change Password</Link></li>
+            <li><Link className="ms-link text-light d-block py-1 px-2" to="/notification">Notifications</Link></li>
+            <li><Link className="ms-link text-light d-block py-1 px-2" to="/viewprofile">View Profile</Link></li>
+          </ul>
+        </li>
+      </ul>
+
+      <button type="button" className="btn btn-link sidebar-mini-btn text-light mt-auto">
+        <i className="icofont-bubble-right"></i>
+      </button>
+    </aside>
+  </>
+);
+
+export default Sidebar;

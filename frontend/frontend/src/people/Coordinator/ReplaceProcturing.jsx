@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import CoordinatorLayout from "./CoordinatorLayout"; // adjust path if needed
 
 const ViewAssignedTAs = () => {
   const [exams, setExams] = useState([]);
@@ -72,7 +73,7 @@ const ViewAssignedTAs = () => {
       {
         method: "PUT",
         headers,
-        body: JSON.stringify({ ...selectedAssignment, taId: parseInt(replacementTaId) }),
+        body: JSON.stringify({ ...selectedAssignment, taId: parseInt(replacementTaId, 10) }),
       }
     )
       .then(() => fetch("http://localhost:8080/api/proctor-assignments", { headers }))
@@ -84,108 +85,109 @@ const ViewAssignedTAs = () => {
   };
 
   return (
-    <div className="container mt-4">
-      <h4 className="mb-3">Exam Proctor Reassignment</h4>
-
-      {/* Select Exam */}
-      <div className="mb-3">
-        <label className="form-label">Select Exam</label>
-        <select
-          className="form-select"
-          value={selectedExamId}
-          onChange={handleExamChange}
-        >
-          <option value="">-- Choose Exam --</option>
-          {exams.map(ex => (
-            <option key={ex.id} value={ex.id}>
-              {ex.examName}
-            </option>
-          ))}
-        </select>
+    <div className="d-flex">
+      {/* Sidebar */}
+      <div style={{ width: "300px" }}>
+        <CoordinatorLayout />
       </div>
 
-      {/* List proctors for chosen exam */}
-      {selectedExam && (
-        <div className="card mt-3">
-          <div className="card-body">
-            <h5>{selectedExam.examName}</h5>
-            <ul className="list-group">
-              {filteredProctors.map(pa => (
-                <li
-                  key={pa.id}
-                  className="list-group-item d-flex justify-content-between align-items-center"
-                >
-                  <div>
-                    {getProctorName(pa.taId)} – {getRoomInfo(pa.classroomId)}
-                  </div>
-                  <button
-                    className="btn btn-sm btn-outline-primary"
-                    onClick={() => openModal(pa)}
-                  >
-                    Reassign TA
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      )}
+      {/* Main Content */}
+      <div className="container mt-4 flex-grow-1">
+        <h4 className="mb-3">Exam Proctor Reassignment</h4>
 
-      {/* Modal: pick new TA */}
-      {showModal && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            backgroundColor: "rgba(0,0,0,0.5)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 9999,
-          }}
-        >
-          <div
-            style={{
-              background: "white",
-              padding: 20,
-              borderRadius: 8,
-              width: 300,
-            }}
+        {/* Select Exam */}
+        <div className="mb-3">
+          <label className="form-label">Select Exam</label>
+          <select
+            className="form-select"
+            value={selectedExamId}
+            onChange={handleExamChange}
           >
-            <h5 className="mb-3">Reassign TA</h5>
+            <option value="">-- Choose Exam --</option>
+            {exams.map(ex => (
+              <option key={ex.id} value={ex.id}>
+                {ex.examName}
+              </option>
+            ))}
+          </select>
+        </div>
 
-            <label className="form-label">Select New TA</label>
-            <select
-              className="form-select mb-4"
-              value={replacementTaId}
-              onChange={e => setReplacementTaId(e.target.value)}
-            >
-              <option value="">-- choose TA --</option>
-              {allTAs.map(ta => (
-                <option key={ta.id} value={ta.id}>
-                  {ta.firstName} {ta.lastName}
-                </option>
-              ))}
-            </select>
-
-            <div className="d-flex justify-content-end gap-2">
-              <button
-                className="btn btn-secondary"
-                onClick={() => setShowModal(false)}
-              >
-                Cancel
-              </button>
-              <button
-                className="btn btn-primary"
-                disabled={!replacementTaId}
-                onClick={handleConfirm}
-              >
-                Confirm
-              </button>
+        {/* List proctors for chosen exam */}
+        {selectedExam && (
+          <div className="card mt-3">
+            <div className="card-body">
+              <h5>{selectedExam.examName}</h5>
+              <ul className="list-group">
+                {filteredProctors.map(pa => (
+                  <li
+                    key={pa.id}
+                    className="list-group-item d-flex justify-content-between align-items-center"
+                  >
+                    <div>
+                      {getProctorName(pa.taId)} – {getRoomInfo(pa.classroomId)}
+                    </div>
+                    <button
+                      className="btn btn-sm btn-outline-primary"
+                      onClick={() => openModal(pa)}
+                    >
+                      Reassign TA
+                    </button>
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {/* Modal: pick new TA */}
+        {showModal && (
+          <div
+            style={{
+              position: "fixed",
+              inset: 0,
+              backgroundColor: "rgba(0,0,0,0.5)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 1050,
+            }}
+          >
+            <div className="bg-white p-4 rounded" style={{ width: 320 }}>
+              <h5 className="mb-3">Reassign TA</h5>
+
+              <label className="form-label">Select New TA</label>
+              <select
+                className="form-select mb-4"
+                value={replacementTaId}
+                onChange={e => setReplacementTaId(e.target.value)}
+              >
+                <option value="">-- choose TA --</option>
+                {allTAs.map(ta => (
+                  <option key={ta.id} value={ta.id}>
+                    {ta.firstName} {ta.lastName}
+                  </option>
+                ))}
+              </select>
+
+              <div className="d-flex justify-content-end gap-2">
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => setShowModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="btn btn-primary"
+                  disabled={!replacementTaId}
+                  onClick={handleConfirm}
+                >
+                  Confirm
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

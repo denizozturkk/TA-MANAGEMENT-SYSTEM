@@ -8,6 +8,7 @@ import CoordinatorLayout from "../Coordinator/CoordinatorLayout.jsx";
 import TALayout from "../Ta/Layout-TA.jsx";
 import DeanLayout from "../Dean/Layout-Dean.jsx";
 import AdminLayout from "../Admin/Layout-Admin.jsx";
+import DepartmentLayout from "../DepartmentStaff/DepartmentStaffLayout.jsx";
 
 // Basit JWT parser
 function parseJwt(token) {
@@ -39,6 +40,8 @@ const RoleBasedLayout = ({ children }) => {
       Sidebar = DeanLayout; break;
     case "ROLE_ADMIN":
       Sidebar = AdminLayout; break;
+      case "ROLE_DEPARTMENT_STAFF":
+      Sidebar = DepartmentLayout; break;
     default:
       Sidebar = null;
   }

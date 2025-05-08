@@ -54,6 +54,22 @@ const LayoutAdmin = ({ children }) => {
                 </div>
               </li>
 
+              {/* View viewfeedback */}
+              <li className="mb-3">
+                <div className="d-flex justify-content-between align-items-center">
+                  <NavLink to="/viewfeedback" className={linkClass}>
+                    <i className="icofont-ui-user fs-5 me-2" />
+                    Authorize Actors
+                  </NavLink>
+                  <button
+                    className="btn btn-link text-light p-0"
+                    onClick={() => toggle("actors")}
+                  >
+                    <i className={`icofont-rounded-${open.actors ? "up" : "down"}`} />
+                  </button>
+                </div>
+              </li>
+
               {/* Review Requests */}
               <li className="mb-3">
                 <div className="d-flex justify-content-between align-items-center">

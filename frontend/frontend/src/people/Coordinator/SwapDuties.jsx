@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import CoordinatorLayout from "./CoordinatorLayout"; // adjust path if needed
 
 const DutySwapTwo = () => {
   const [dutyLogs, setDutyLogs] = useState([]);
@@ -18,10 +19,7 @@ const DutySwapTwo = () => {
         if (!res.ok) throw new Error(`Status ${res.status}`);
         return res.json();
       })
-      .then(data => {
-        console.log("Fetched duty-logs:", data);
-        setDutyLogs(Array.isArray(data) ? data : []);
-      })
+      .then(data => setDutyLogs(Array.isArray(data) ? data : []))
       .catch(err => console.error("Duty-logs fetch error:", err));
   }, []);
 
@@ -55,58 +53,66 @@ const DutySwapTwo = () => {
   };
 
   return (
-    <div className="container mt-4">
-      <h4 className="mb-3">Swap Two Duties’ TAs</h4>
+    <div className="d-flex flex-column flex-md-row">
+      {/* Sidebar */}
+      <div className="w-100 w-md-auto" style={{ maxWidth: "300px" }}>
+        <CoordinatorLayout />
+      </div>
 
-      <div className="row g-3 align-items-end">
-        <div className="col-md-5">
-          <label className="form-label">Duty A</label>
-          <select
-            className="form-select"
-            value={selectedA}
-            onChange={e => {
-              setSelectedA(e.target.value);
-              if (e.target.value === selectedB) {
-                setSelectedB("");
-              }
-            }}
-          >
-            <option value="">-- Select Duty A --</option>
-            {dutyLogs.map(d => (
-              <option key={d.id} value={d.id}>
-                {d.taskType} @ {new Date(d.startTime).toLocaleString()} (TA #{d.taId})
-              </option>
-            ))}
-          </select>
-        </div>
+      {/* Main Content */}
+      <div className="container mt-4 px-3 px-md-5 flex-grow-1">
+        <h4 className="mb-4 text-center text-md-start">Swap Two Duties’ TAs</h4>
 
-        <div className="col-md-5">
-          <label className="form-label">Duty B</label>
-          <select
-            className="form-select"
-            value={selectedB}
-            onChange={e => setSelectedB(e.target.value)}
-            disabled={!selectedA}
-          >
-            <option value="">-- Select Duty B --</option>
-            {dutyLogs
-              .filter(d => String(d.id) !== selectedA)
-              .map(d => (
+        <div className="row g-3">
+          <div className="col-12 col-md-5">
+            <label className="form-label">Duty A</label>
+            <select
+              className="form-select"
+              value={selectedA}
+              onChange={e => {
+                setSelectedA(e.target.value);
+                if (e.target.value === selectedB) {
+                  setSelectedB("");
+                }
+              }}
+            >
+              <option value="">-- Select Duty A --</option>
+              {dutyLogs.map(d => (
                 <option key={d.id} value={d.id}>
                   {d.taskType} @ {new Date(d.startTime).toLocaleString()} (TA #{d.taId})
                 </option>
               ))}
-          </select>
-        </div>
+            </select>
+          </div>
 
-        <div className="col-md-2">
-          <button
-            className="btn btn-secondary"
-            onClick={handleSwap}
-            disabled={!selectedA || !selectedB}
-          >
-            Swap TAs
-          </button>
+          <div className="col-12 col-md-5">
+            <label className="form-label">Duty B</label>
+            <select
+              className="form-select"
+              value={selectedB}
+              onChange={e => setSelectedB(e.target.value)}
+              disabled={!selectedA}
+            >
+              <option value="">-- Select Duty B --</option>
+              {dutyLogs
+                .filter(d => String(d.id) !== selectedA)
+                .map(d => (
+                  <option key={d.id} value={d.id}>
+                    {d.taskType} @ {new Date(d.startTime).toLocaleString()} (TA #{d.taId})
+                  </option>
+                ))}
+            </select>
+          </div>
+
+          <div className="col-12 col-md-2 d-grid">
+            <button
+              className="btn btn-secondary mt-2 mt-md-4"
+              onClick={handleSwap}
+              disabled={!selectedA || !selectedB}
+            >
+              Swap TAs
+            </button>
+          </div>
         </div>
       </div>
     </div>
