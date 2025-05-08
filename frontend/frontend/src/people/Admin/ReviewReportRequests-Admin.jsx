@@ -1,19 +1,105 @@
 // src/people/Admin/ReviewReportRequests-Admin.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import LayoutAdmin from "./Layout-Admin";
 
-const ReviewReportRequestsAdmin = () => {
-  const [requests, setRequests] = useState([
-    { id: 1, from: "Dean Smith", type: "Login Reports", status: "Pending" },
-    { id: 2, from: "Dean Lee",   type: "Swap Reports",  status: "Pending" }
-  ]);
+function Modal({ title, children, onClose }) {
+  return (
+    <div className="modal-backdrop">
+      <div className="modal-dialog">
+        <div className="modal-content p-4">
+          <div className="modal-header">
+            <h5>{title}</h5>
+            <button className="btn-close" onClick={onClose} />
+          </div>
+          <div className="modal-body">{children}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
-  const handleDecision = (id, decision) => {
-    setRequests(reqs =>
-      reqs.map(r =>
-        r.id === id ? { ...r, status: decision } : r
-      )
-    );
+const ReviewReportRequestsAdmin = () => {
+  const [requests, setRequests] = useState([]);
+  const [modalReq, setModalReq] = useState(null);
+  const [pdfFile, setPdfFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+
+  const token = localStorage.getItem("authToken");
+  const BASE = "http://localhost:8080/api/admin";
+  const hdrs = { "Authorization": `Bearer ${token}` };
+
+  // load pending report‐requests on mount
+  useEffect(() => {
+    fetch(`${BASE}/report-requests`, {
+      headers: { ...hdrs, "Accept": "application/json" }
+    })
+      .then(res => {
+        if (!res.ok) throw new Error(res.statusText);
+        return res.json();
+      })
+      .then(data => setRequests(data))
+      .catch(err => {
+        console.error("Failed to fetch report requests:", err);
+        alert("Unable to load report requests");
+      });
+  }, []);
+
+  // open modal to attach PDF and accept
+  const openAcceptModal = req => {
+    setModalReq(req);
+    setPdfFile(null);
+  };
+  const closeModal = () => setModalReq(null);
+
+  // upload PDF & accept
+  const handleUploadAndAccept = () => {
+    if (!pdfFile) {
+      return alert("Please select a PDF to upload");
+    }
+    setUploading(true);
+    const form = new FormData();
+    form.append("file", pdfFile);
+
+    fetch(`${BASE}/report-requests/${modalReq.id}/accept`, {
+      method: "POST",
+      headers: hdrs, // browser sets Content-Type for multipart
+      body: form
+    })
+      .then(res => {
+        if (!res.ok) throw new Error(res.statusText);
+        // update UI
+        setRequests(reqs =>
+          reqs.map(r =>
+            r.id === modalReq.id ? { ...r, status: "ACCEPTED" } : r
+          )
+        );
+        closeModal();
+      })
+      .catch(err => {
+        console.error("Upload + accept failed:", err);
+        alert("Could not accept request");
+      })
+      .finally(() => setUploading(false));
+  };
+
+  // reject inline
+  const handleReject = id => {
+    fetch(`${BASE}/report-requests/${id}/reject`, {
+      method: "POST",
+      headers: hdrs
+    })
+      .then(res => {
+        if (!res.ok) throw new Error(res.statusText);
+        setRequests(reqs =>
+          reqs.map(r =>
+            r.id === id ? { ...r, status: "REJECTED" } : r
+          )
+        );
+      })
+      .catch(err => {
+        console.error("Reject failed:", err);
+        alert("Could not reject request");
+      });
   };
 
   return (
@@ -31,44 +117,47 @@ const ReviewReportRequestsAdmin = () => {
               </tr>
             </thead>
             <tbody>
-              {requests.map(r => (
-                <tr key={r.id}>
-                  <td>{r.from}</td>
-                  <td>{r.type}</td>
-                  <td>
-                    <span
-                      className={
-                        r.status === "Pending"
-                          ? "badge bg-warning text-dark"
-                          : r.status === "Accepted"
-                          ? "badge bg-success"
-                          : "badge bg-danger"
-                      }
-                    >
-                      {r.status}
-                    </span>
-                  </td>
-                  <td>
-                    {r.status === "Pending" && (
-                      <>
-                        <button
-                          className="btn btn-sm btn-success me-2"
-                          onClick={() => handleDecision(r.id, "Accepted")}
-                        >
-                          Accept
-                        </button>
-                        <button
-                          className="btn btn-sm btn-danger"
-                          onClick={() => handleDecision(r.id, "Rejected")}
-                        >
-                          Reject
-                        </button>
-                      </>
-                    )}
-                  </td>
-                </tr>
-              ))}
-              {requests.length === 0 && (
+              {requests.length > 0 ? (
+                requests.map(r => (
+                  <tr key={r.id}>
+                    <td>
+                      {r.requesterFirstName} {r.requesterLastName}
+                    </td>
+                    <td>{r.reportType}</td>
+                    <td>
+                      <span
+                        className={
+                          r.status === "PENDING"
+                            ? "badge bg-warning text-dark"
+                            : r.status === "ACCEPTED"
+                            ? "badge bg-success"
+                            : "badge bg-danger"
+                        }
+                      >
+                        {r.status}
+                      </span>
+                    </td>
+                    <td>
+                      {r.status === "PENDING" && (
+                        <>
+                          <button
+                            className="btn btn-sm btn-success me-2"
+                            onClick={() => openAcceptModal(r)}
+                          >
+                            Accept
+                          </button>
+                          <button
+                            className="btn btn-sm btn-danger"
+                            onClick={() => handleReject(r.id)}
+                          >
+                            Reject
+                          </button>
+                        </>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              ) : (
                 <tr>
                   <td colSpan="4" className="text-center">
                     No report requests
@@ -79,6 +168,33 @@ const ReviewReportRequestsAdmin = () => {
           </table>
         </div>
       </div>
+
+      {/* Accept + PDF Upload Modal */}
+      {modalReq && (
+        <Modal
+          title={`Send PDF to ${modalReq.requesterFirstName} ${modalReq.requesterLastName}`}
+          onClose={closeModal}
+        >
+          <div className="mb-3">
+            <label className="form-label">Upload PDF</label>
+            <input
+              type="file"
+              accept="application/pdf"
+              className="form-control"
+              onChange={e => setPdfFile(e.target.files[0])}
+            />
+          </div>
+          <div className="text-end">
+            <button
+              className="btn btn-primary"
+              onClick={handleUploadAndAccept}
+              disabled={uploading}
+            >
+              {uploading ? "Uploading…" : "Send PDF & Accept"}
+            </button>
+          </div>
+        </Modal>
+      )}
     </LayoutAdmin>
   );
 };
