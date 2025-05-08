@@ -1,6 +1,8 @@
 // src/main/java/edu/bilkent/cs319/team9/ta_management_system/service/impl/AdminServiceImpl.java
 package edu.bilkent.cs319.team9.ta_management_system.service.impl;
 
+import com.itextpdf.text.log.Logger;
+import com.itextpdf.text.log.LoggerFactory;
 import edu.bilkent.cs319.team9.ta_management_system.dto.*;
 import edu.bilkent.cs319.team9.ta_management_system.exception.NotFoundException;
 import edu.bilkent.cs319.team9.ta_management_system.model.*;
@@ -35,6 +37,8 @@ public class AdminServiceImpl implements AdminService {
 
 
     private final AdminRepository repo;
+
+    private static final Logger log = LoggerFactory.getLogger(AdminServiceImpl.class);
 
     //test
     @Override
@@ -138,11 +142,14 @@ public class AdminServiceImpl implements AdminService {
     @Override
     @Transactional(readOnly = true)
     public List<ProctorReportDto> generateProctorReports(LocalDateTime from, LocalDateTime to) {
-        return proctorRepo.findByExam_DateTimeBetween(from, to)
-                .stream()
+        List<ProctorAssignment> list = proctorRepo.findByExam_DateTimeBetween(from, to);
+        System.out.println(">> generateProctorReports called with from=" + from
+                + ", to=" + to + "; found " + list.size() + " assignments");
+        return list.stream()
                 .map(ProctorReportDto::fromEntity)
                 .toList();
     }
+
 
     @Override
     @Transactional
@@ -211,5 +218,5 @@ public class AdminServiceImpl implements AdminService {
         return pdfGeneratorService.generateProctorReportPdf(generateProctorReports(from, to));
     }
 
-    
+
 }

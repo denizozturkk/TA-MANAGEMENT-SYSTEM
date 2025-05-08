@@ -383,6 +383,16 @@ public class ExcelImportServiceImpl implements ExcelImportService {
                         .orElseThrow(() -> new BadRequestException(
                                 "Row " + rowNum + ": No faculty member with email '" + email + "'"));
 
+
+                Optional<Offering> existingOffering = offeringRepository.findByCourseAndInstructorAndYearAndSemester(
+                        course, instr, year, semester
+                );
+
+                if (existingOffering.isPresent()) {
+                    throw new BadRequestException("Row " + rowNum + ": Offering already exists for course " +
+                            courseCode + ", instructor " + email + ", year " + year + ", semester " + semester);
+                }
+
                 Offering o = new Offering();      // id == null → new INSERT
                 o.setCourse(course);
                 o.setInstructor(instr);

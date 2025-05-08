@@ -203,6 +203,7 @@ public class PdfGeneratorService {
                                 d.getTimestamp().toString()))
                         .toList());
 
+
         doc.close(); return baos.toByteArray();
     }
 }

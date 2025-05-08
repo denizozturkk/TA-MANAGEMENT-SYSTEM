@@ -1,5 +1,6 @@
 package edu.bilkent.cs319.team9.ta_management_system.repository;
 
+import edu.bilkent.cs319.team9.ta_management_system.model.Course;
 import edu.bilkent.cs319.team9.ta_management_system.model.FacultyMember;
 import edu.bilkent.cs319.team9.ta_management_system.model.Offering;
 import jakarta.transaction.Transactional;
@@ -34,4 +35,11 @@ public interface OfferingRepository extends JpaRepository<Offering, Long> {
 
     Optional<Offering> findById(Long id);
     List<Offering> findByInstructor(FacultyMember instructor);
+
+    Optional<Offering> findByCourseAndInstructorAndYearAndSemester(
+            Course course,
+            FacultyMember instructor,
+            int year,
+            String semester
+    );
 }
