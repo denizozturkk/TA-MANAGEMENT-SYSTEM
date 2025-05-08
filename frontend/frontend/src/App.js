@@ -56,6 +56,7 @@ import DefineExam              from "./people/FacultyMember/DefinesExam.jsx";
 import TAList                  from "./people/FacultyMember/CreateTaListTa.jsx";
 import AssignAssignment        from "./people/FacultyMember/AssignAssignment.jsx";
 import DutyExtensionRequest    from "./people/FacultyMember/ReviewDutyExtension.jsx";
+import UploadDutyLog           from "./people/FacultyMember/UploadDuty.jsx";
 
 // TA
 import ViewWorkloadTA        from "./people/Ta/ViewWorkload-TA.jsx";
@@ -160,6 +161,7 @@ function App() {
           <Route path="/talist" element={<TAList />} />
           <Route path="/assignassignment" element={<AssignAssignment />} />
           <Route path="/dutyextension" element={<DutyExtensionRequest />} />
+          <Route path="/uploaddutylog" element={<UploadDutyLog />} />
         </Route>
 
         {/* TA */}

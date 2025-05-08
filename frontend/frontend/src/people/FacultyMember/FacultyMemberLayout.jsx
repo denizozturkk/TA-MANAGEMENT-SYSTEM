@@ -55,6 +55,8 @@ const Sidebar = () => (
               <li><Link className="ms-link text-light d-block py-2" to="/reviewworkload">Review TA Workload</Link></li>
               <li><Link className="ms-link text-light d-block py-2" to="/defineexam">Define Exam</Link></li>
               <li><Link className="ms-link text-light d-block py-2" to="/assignassignment">Assign Assignment</Link></li>
+              <li><Link className="ms-link text-light d-block py-2" to="/uploaddutylog">Upload Duty Log</Link></li>
+
             </ul>
           </li>
           <li className="border-bottom">
@@ -123,6 +125,8 @@ const Sidebar = () => (
             <li><Link className="ms-link text-light d-block py-1 px-2" to="/reviewworkload">Review TA Workload</Link></li>
             <li><Link className="ms-link text-light d-block py-1 px-2" to="/defineexam">Define Exam</Link></li>
             <li><Link className="ms-link text-light d-block py-1 px-2" to="/assignassignment">Assign Assignment</Link></li>
+            <li><Link className="ms-link text-light d-block py-1 px-2" to="/uploaddutylog">Upload Duty Log</Link></li>
+
           </ul>
         </li>
         <li className="collapsed mt-3">
