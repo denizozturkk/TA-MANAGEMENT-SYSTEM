@@ -12,6 +12,8 @@ import java.util.Set;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
 @SuperBuilder
+@Getter
+@Setter
 public class TA extends User {
     private Float totalWorkload;
     private String department;

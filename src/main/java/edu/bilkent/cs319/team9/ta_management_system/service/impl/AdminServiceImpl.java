@@ -16,6 +16,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -30,6 +31,7 @@ public class AdminServiceImpl implements AdminService {
     private final DeanRepository deanRepository;
     private final NotificationService notificationService;
     private final PdfGeneratorService pdfGeneratorService;
+    private final OfferingRepository offeringRepo;
 
 
     private final AdminRepository repo;
@@ -165,10 +167,32 @@ public class AdminServiceImpl implements AdminService {
     @Override
     @Transactional
     public void deleteUserById(Long userId) {
-        var user = userRepo.findById(userId)
+        User user = userRepo.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
+
+        // if it’s a TA, remove it from every Offering first
+        if (user instanceof TA) {
+            TA ta = (TA) user;
+            // detach from each Offering
+            for (Offering o : new ArrayList<>(ta.getOfferings())) {
+                o.getTas().remove(ta);
+                offeringRepo.save(o);
+            }
+        }
+        else if (user instanceof FacultyMember) {
+            FacultyMember fm = (FacultyMember) user;
+            // find all offerings taught by this faculty
+            List<Offering> list = offeringRepo.findByInstructor(fm);
+            for (Offering o : list) {
+                o.setInstructor(null);
+                offeringRepo.save(o);
+            }
+        }
+
+        // now it’s safe to delete the user row (and its subclass TA row)
         userRepo.delete(user);
     }
+
 
     @Override public byte[] logReportPdf(LocalDateTime from, LocalDateTime to)
             throws com.itextpdf.text.DocumentException {

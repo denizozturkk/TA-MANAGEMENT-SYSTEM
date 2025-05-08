@@ -102,21 +102,19 @@ public class ExcelImportServiceImpl implements ExcelImportService {
                     header = false;
                     continue;
                 }
-                // stop on completely blank ID cell
-                String maybeId = fmt.formatCellValue(row.getCell(0)).trim();
-                if (maybeId.isEmpty()) break;
+                // 3) stop on completely blank bilkentId cell
+                String bilkentId = fmt.formatCellValue(row.getCell(0)).trim();
+                if (bilkentId.isEmpty()) break;
 
                 int excelRow = row.getRowNum() + 1;
-                // read all needed columns
-                String idText = maybeId;
-                String first    = fmt.formatCellValue(row.getCell(1)).trim();
-                String last     = fmt.formatCellValue(row.getCell(2)).trim();
-                String mail     = fmt.formatCellValue(row.getCell(3)).trim();
-                String ph       = fmt.formatCellValue(row.getCell(4)).trim();
-                String dept     = fmt.formatCellValue(row.getCell(5)).trim();
-                String degree   = fmt.formatCellValue(row.getCell(6)).trim().toUpperCase();
+                String first  = fmt.formatCellValue(row.getCell(1)).trim();
+                String last   = fmt.formatCellValue(row.getCell(2)).trim();
+                String mail   = fmt.formatCellValue(row.getCell(3)).trim();
+                String ph     = fmt.formatCellValue(row.getCell(4)).trim();
+                String dept   = fmt.formatCellValue(row.getCell(5)).trim();
+                String degree = fmt.formatCellValue(row.getCell(6)).trim().toUpperCase();
 
-                // basic validations
+                // 4) basic validations
                 if (first.isBlank() || last.isBlank() || mail.isBlank()) {
                     throw new BadRequestException(
                             "Row " + excelRow + ": first name, last name & email are required.");
@@ -126,67 +124,51 @@ public class ExcelImportServiceImpl implements ExcelImportService {
                             "Row " + excelRow + ": Invalid degree status '" + degree + "'. Must be MSC or PHD.");
                 }
 
-                // look up or create
+                // 5) lookup by bilkentId instead of PK
                 TA ta;
                 boolean isNew;
-                if (!idText.isEmpty()) {
-                    long id;
-                    try {
-                        id = Long.parseLong(idText);
-                    } catch (NumberFormatException ex) {
-                        throw new BadRequestException(
-                                "Row " + excelRow + ": invalid TA ID '" + idText + "'.");
-                    }
-                    Optional<TA> opt = taRepository.findById(id);
-                    if (opt.isPresent()) {
-                        ta = opt.get();
-                        isNew = false;
-                    } else {
-                        ta = new TA();
-                        isNew = true;
-                    }
+                Optional<TA> opt = taRepository.findByBilkentTaId(bilkentId);
+                if (opt.isPresent()) {
+                    ta = opt.get();
+                    isNew = false;
                 } else {
                     ta = new TA();
+                    ta.setBilkentTaId(bilkentId);
                     isNew = true;
                 }
 
-                // set/update fields
+                // 6) set/update fields
                 ta.setFirstName(first);
                 ta.setLastName(last);
                 ta.setEmail(mail);
                 ta.setPhoneNumber(ph);
                 ta.setDepartment(dept);
                 ta.setRole(Role.ROLE_TA);
-
-                // set degree status
-                ta.setMsPhdStatus(
-                        degree.equals("PHD")
-                                ? DegreeStatus.PHD
-                                : DegreeStatus.MSC
-                );
+                ta.setMsPhdStatus(degree.equals("PHD")
+                        ? DegreeStatus.PHD
+                        : DegreeStatus.MSC);
 
                 if (isNew) {
                     // initialize workload
                     ta.setTotalWorkload(0.0f);
-
                     // generate & persist a password
                     String plain = "1234";
                     ta.setPassword(passwordEncoder.encode(plain));
-                    ta = taRepository.save(ta);      // now `ta.getId()` is set
-
+                    ta = taRepository.save(ta);  // now `ta.getId()` is set
                     // notify
                     sendPasswordEmail(ta.getEmail(), ta.getFirstName(), plain);
                 }
-                // existing TAs will be updated by dirty-checking on commit
+                // existing TAs are auto‐updated by dirty‐checking
 
-                // link into offering
+                // 7) link into offering
                 offering.getTas().add(ta);
             }
         }
 
-        // 3) flush the new join-rows
+        // 8) flush the new join‐rows
         offeringRepository.save(offering);
     }
+
 
 
 
