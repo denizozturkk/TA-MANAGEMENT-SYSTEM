@@ -583,6 +583,13 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
                 );
             }
         }
+        if (result.isEmpty()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "All proctor slots are already filled for exam " + examId
+            );
+        }
+
         return result;
     }
 
