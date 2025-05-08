@@ -59,7 +59,7 @@ const LayoutAdmin = ({ children }) => {
                 <div className="d-flex justify-content-between align-items-center">
                   <NavLink to="/viewfeedback" className={linkClass}>
                     <i className="icofont-ui-user fs-5 me-2" />
-                    Authorize Actors
+                    View Feedback
                   </NavLink>
                   <button
                     className="btn btn-link text-light p-0"

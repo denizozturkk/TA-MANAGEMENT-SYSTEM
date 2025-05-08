@@ -6,6 +6,7 @@ import TALayout from "../Ta/Layout-TA.jsx";
 import DeanLayout from "../Dean/Layout-Dean.jsx";
 import AdminLayout from "../Admin/Layout-Admin.jsx";
 
+
 // Simple JWT parser to extract user role
 function parseJwt(token) {
   try {
@@ -47,11 +48,7 @@ const RoleBasedLayout = ({ children }) => {
 
   return (
     <div className="d-flex">
-      {Sidebar && (
-        <div style={{ width: "300px" }}>
-          <Sidebar />
-        </div>
-      )}
+      {Sidebar && <div style={{ width: "300px" }}><Sidebar /></div>}
       <div className="flex-grow-1">{children}</div>
     </div>
   );
@@ -59,68 +56,90 @@ const RoleBasedLayout = ({ children }) => {
 
 const SubmitFeedback = () => {
   const [message, setMessage] = useState("");
-  const [rating, setRating] = useState(0);
+  const [submitting, setSubmitting] = useState(false);
+  const [toast, setToast] = useState({ show: false, type: "", text: "" });
+  const token = localStorage.getItem("authToken");
+  const BASE  = "http://localhost:8080/api/feedback";
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async e => {
     e.preventDefault();
-    fetch("/api/feedback", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message, rating }),
-    })
-      .then((res) => res.json())
-      .then(() => {
-        alert("Feedback submitted!");
-        setMessage("");
-        setRating(0);
+    if (!message.trim()) {
+      setToast({ show: true, type: "danger", text: "Feedback cannot be empty." });
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const res = await fetch(BASE, {
+        method: "POST",
+        headers: {
+          "Content-Type":  "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({ message }),
       });
+      if (res.status === 201) {
+        setToast({ show: true, type: "success", text: "Thank you for your feedback!" });
+        setMessage("");
+      } else if (res.status === 403) {
+        setToast({ show: true, type: "warning", text: "You must be logged in to send feedback." });
+      } else {
+        throw new Error(`Server responded ${res.status}`);
+      }
+    } catch (err) {
+      console.error("Feedback error:", err);
+      setToast({ show: true, type: "danger", text: "Failed to submit feedback." });
+    } finally {
+      setSubmitting(false);
+      setTimeout(() => setToast(t => ({ ...t, show: false })), 3000);
+    }
   };
 
   return (
     <RoleBasedLayout>
-      <div className="container mt-5">
-        <h4 className="fw-bold mb-4">Submit Feedback</h4>
-        <form onSubmit={handleSubmit}>
-          {/* Rating input */}
-          <div className="mb-3">
-            <label className="form-label fw-semibold">
-              Rate your experience (1-5):
-            </label>
-            <select
-              className="form-select"
-              value={rating}
-              onChange={(e) => setRating(Number(e.target.value))}
-              required
-            >
-              <option value="">-- Select Rating --</option>
-              {[1, 2, 3, 4, 5].map((num) => (
-                <option key={num} value={num}>
-                  {num}
-                </option>
-              ))}
-            </select>
+      <div className="container py-5">
+        {toast.show && (
+          <div className={`alert alert-${toast.type} position-fixed top-0 end-0 m-3`}>
+            {toast.text}
+            <button type="button" className="btn-close float-end"
+              onClick={() => setToast(t => ({ ...t, show: false }))} />
           </div>
-
-          {/* Feedback textarea */}
-          <div className="mb-3">
-            <label className="form-label fw-semibold">Your Feedback</label>
-            <textarea
-              className="form-control"
-              rows="5"
-              placeholder="Write your feedback..."
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              required
-            />
+        )}
+        <div className="card mx-auto" style={{ maxWidth: 600 }}>
+          <div className="card-body">
+            <h4 className="card-title mb-4">Submit Feedback</h4>
+            <form onSubmit={handleSubmit}>
+              <div className="mb-3">
+                <label htmlFor="feedbackMessage" className="form-label">
+                  Your Feedback
+                </label>
+                <textarea
+                  id="feedbackMessage"
+                  className="form-control"
+                  rows="5"
+                  maxLength={2000}
+                  placeholder="Let us know what you think…"
+                  value={message}
+                  onChange={e => setMessage(e.target.value)}
+                  required
+                  disabled={submitting}
+                />
+                <div className="form-text">
+                  {message.length} / 2000 characters
+                </div>
+              </div>
+              <button
+                type="submit"
+                className="btn btn-primary w-100"
+                disabled={submitting}
+              >
+                {submitting
+                  ? <span className="spinner-border spinner-border-sm me-2" />
+                  : <i className="bi bi-envelope-fill me-2" />}
+                Send Feedback
+              </button>
+            </form>
           </div>
-
-          <button
-            type="submit"
-            className="btn btn-lg btn-block btn-light lift text-uppercase"
-          >
-            Send
-          </button>
-        </form>
+        </div>
       </div>
     </RoleBasedLayout>
   );
