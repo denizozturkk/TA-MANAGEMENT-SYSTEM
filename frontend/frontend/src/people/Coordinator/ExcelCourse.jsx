@@ -1,149 +1,146 @@
-import React, { useEffect, useState } from "react";
-import CoordinatorLayout from "./CoordinatorLayout"; // adjust path as needed
+// src/people/Coordinator/ImportCourses.jsx
+import React, { useState } from "react";
+import * as XLSX from "xlsx";
+import CoordinatorLayout from "../Coordinator/CoordinatorLayout";
 
-const ViewDutySwap = () => {
-  const [dutyLogs, setDutyLogs] = useState([]);
-  const [allTAs, setAllTAs] = useState([]);
-  const [selectedLog, setSelectedLog] = useState(null);
-  const [replacementTaId, setReplacementTaId] = useState("");
-  const [showModal, setShowModal] = useState(false);
+const ImportCourses = () => {
+  const [fileName,  setFileName]  = useState("");
+  const [excelData, setExcelData] = useState([]);
+  const [file,      setFile]      = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [toast,     setToast]     = useState({ show: false, message: "", isError: false });
 
   const token = localStorage.getItem("authToken");
-  const headers = {
-    Authorization: `Bearer ${token}`,
-    "Content-Type": "application/json",
+  const BASE  = "http://localhost:8080/api/coordinators";
+  const hdrs  = { Authorization: `Bearer ${token}` };
+
+  const handleFileUpload = e => {
+    const f = e.target.files[0];
+    if (!f) return;
+    setFile(f);
+    setFileName(f.name);
+    const reader = new FileReader();
+    reader.onload = evt => {
+      const data      = new Uint8Array(evt.target.result);
+      const wb        = XLSX.read(data, { type: "array" });
+      const ws        = wb.Sheets[wb.SheetNames[0]];
+      setExcelData(XLSX.utils.sheet_to_json(ws, { header: 1 }));
+    };
+    reader.readAsArrayBuffer(f);
   };
 
-  useEffect(() => {
-    fetch("http://localhost:8080/api/duty-logs", { headers })
-      .then(res => res.json())
-      .then(data => setDutyLogs(Array.isArray(data) ? data : []));
-    fetch("http://localhost:8080/api/ta", { headers })
-      .then(res => res.json())
-      .then(data => setAllTAs(Array.isArray(data) ? data : []));
-  }, []);
-
-  const getTAName = (id) => {
-    const ta = allTAs.find(t => t.id === id);
-    return ta ? `${ta.firstName} ${ta.lastName}` : `TA #${id}`;
+  const showToast = (message, isError = false, timeout = 5000) => {
+    setToast({ show: true, message, isError });
+    setTimeout(() => setToast(t => ({ ...t, show: false })), timeout);
   };
 
-  const openModal = (log) => {
-    setSelectedLog(log);
-    setReplacementTaId("");
-    setShowModal(true);
-  };
-
-  const handleConfirm = () => {
-    if (!replacementTaId) return;
-    fetch(`http://localhost:8080/api/duty-logs/${selectedLog.id}`, {
-      method: "PUT",
-      headers,
-      body: JSON.stringify({ ...selectedLog, taId: parseInt(replacementTaId) }),
-    })
-      .then(() => fetch("http://localhost:8080/api/duty-logs", { headers }))
-      .then(res => res.json())
-      .then(data => {
-        setDutyLogs(Array.isArray(data) ? data : []);
-        setShowModal(false);
+  const handleUploadClick = async () => {
+    if (!file) return showToast("Please select a file first.", true);
+    setUploading(true);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const res = await fetch(`${BASE}/imp-courses`, {
+        method:  "POST",
+        headers: hdrs,
+        body:    form
       });
+      if (!res.ok) {
+        const text = await res.text();
+        let msg = text;
+        try {
+          msg = JSON.parse(text).message || text;
+        } catch {}
+        throw new Error(msg);
+      }
+      showToast("Courses imported successfully!", false);
+      setFile(null);
+      setFileName("");
+      setExcelData([]);
+    } catch (err) {
+      showToast(err.message, true);
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
-    <div className="d-flex flex-column flex-md-row">
-      {/* Sidebar */}
-      <div className="w-100 w-md-auto" style={{ maxWidth: "300px" }}>
-        <CoordinatorLayout />
-      </div>
-
-      {/* Main Content */}
-      <div className="container py-4 px-3 px-md-5 flex-grow-1">
-        <h4 className="mb-4 text-center text-md-start">Duty Log Reassignment</h4>
-
-        <div className="d-flex flex-column gap-3">
-          {dutyLogs.map(dl => (
-            <div key={dl.id} className="card shadow-sm">
-              <div className="card-body d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center">
-                <div className="mb-2 mb-md-0">
-                  <strong>{dl.taskType}</strong> @ {new Date(dl.startTime).toLocaleString()}
-                  <br />
-                  <small className="text-muted">Current TA: {getTAName(dl.taId)}</small>
+    <div className="d-flex flex-column flex-lg-row">
+      <div style={{ width: 300 }}><CoordinatorLayout /></div>
+      <div className="container-fluid py-4">
+        <div className="card shadow-sm border-0">
+          <div className="card-body">
+            <h4 className="fw-bold mb-4 text-primary">Import Courses via Excel</h4>
+            <div className="mb-3">
+              <label className="form-label">Select Excel File</label>
+              <input
+                type="file"
+                accept=".xls,.xlsx"
+                className="form-control"
+                onChange={handleFileUpload}
+              />
+            </div>
+            {fileName && (
+              <div className="alert alert-info">
+                <strong>Selected File:</strong> {fileName}
+              </div>
+            )}
+            {excelData.length > 0 && (
+              <>
+                <div className="d-flex justify-content-end mb-3">
+                  <button
+                    className="btn btn-primary"
+                    onClick={handleUploadClick}
+                    disabled={uploading}
+                  >
+                    {uploading ? "Importing…" : "Import Courses"}
+                  </button>
                 </div>
-                <button
-                  className="btn btn-outline-primary mt-2 mt-md-0"
-                  onClick={() => openModal(dl)}
-                >
-                  Assign to Another TA
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Modal */}
-        {showModal && selectedLog && (
-          <div
-            className="modal-backdrop"
-            style={{
-              position: "fixed",
-              inset: 0,
-              backgroundColor: "rgba(0,0,0,0.5)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              zIndex: 1050
-            }}
-          >
-            <div
-              className="bg-white p-4 rounded shadow"
-              style={{
-                width: "90%",
-                maxWidth: "400px",
-                boxSizing: "border-box"
-              }}
-            >
-              <h5 className="mb-3">Reassign TA</h5>
-              <p>
-                <strong>
-                  {selectedLog.taskType} @ {new Date(selectedLog.startTime).toLocaleString()}
-                </strong>
-              </p>
-
-              <label className="form-label">Select New TA</label>
-              <select
-                className="form-select mb-4"
-                value={replacementTaId}
-                onChange={e => setReplacementTaId(e.target.value)}
-              >
-                <option value="">-- choose TA --</option>
-                {allTAs.map(ta => (
-                  <option key={ta.id} value={ta.id}>
-                    {ta.firstName} {ta.lastName}
-                  </option>
-                ))}
-              </select>
-
-              <div className="d-flex justify-content-end gap-2">
-                <button
-                  className="btn btn-secondary"
-                  onClick={() => setShowModal(false)}
-                >
-                  Cancel
-                </button>
-                <button
-                  className="btn btn-primary"
-                  disabled={!replacementTaId}
-                  onClick={handleConfirm}
-                >
-                  Confirm
-                </button>
-              </div>
-            </div>
+                <div className="table-responsive" style={{ maxHeight: 400, overflowY: "auto" }}>
+                  <table className="table table-striped table-bordered">
+                    <thead className="table-light sticky-top">
+                      <tr>{excelData[0].map((h,i) => <th key={i}>{h}</th>)}</tr>
+                    </thead>
+                    <tbody>
+                      {excelData.slice(1).map((row,r) => (
+                        <tr key={r}>{row.map((c,cidx)=><td key={cidx}>{c}</td>)}</tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
           </div>
-        )}
+        </div>
       </div>
+
+      {/* Toast */}
+      {toast.show && (
+        <div
+          className={`toast position-fixed bottom-0 end-0 m-4 show ${
+            toast.isError ? "bg-danger text-white" : "bg-light text-dark"
+          }`}
+          style={{ minWidth: 250 }}
+          role="alert"
+          aria-live="assertive"
+          aria-atomic="true"
+        >
+          <div className="d-flex">
+            <div className="toast-body">
+              <strong>Bilkent TA Management System</strong>
+              <div>{toast.message}</div>
+            </div>
+            <button
+              type="button"
+              className="btn-close btn-close-white me-2 m-auto"
+              aria-label="Close"
+              onClick={() => setToast(t=>({ ...t, show:false }))}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
-export default ViewDutySwap;
+export default ImportCourses;
