@@ -11,36 +11,36 @@ import java.io.IOException;
 @RestController
 @RequestMapping("/api/excel-import")
 public class ExcelImportController {
-    @Autowired
-    private ExcelImportService excelImportService;
-
-    @PostMapping("/imp-ta")
-    public ResponseEntity<Void> importTas(@RequestParam("file") MultipartFile file) throws IOException {
-        excelImportService.importTaSheet(file);
-        return ResponseEntity.ok().build();
-    }
-
-    @PostMapping("/imp-students")
-    public ResponseEntity<Void> importStudents(@RequestParam("file") MultipartFile file) throws IOException {
-        excelImportService.importStudentSheet(file);
-        return ResponseEntity.ok().build();
-    }
-
-    @PostMapping("/imp-faculty")
-    public ResponseEntity<Void> importFaculty(@RequestParam("file") MultipartFile file) throws IOException {
-        excelImportService.importFacultySheet(file);
-        return ResponseEntity.ok().build();
-    }
-
-    @PostMapping("/imp-offerings")
-    public ResponseEntity<Void> importOfferings(@RequestParam("file") MultipartFile file) throws IOException {
-        excelImportService.importOfferingSheet(file);
-        return ResponseEntity.ok().build();
-    }
-
-    @PostMapping("/imp-enrollments")
-    public ResponseEntity<Void> importEnrollments(@RequestParam("file") MultipartFile file) throws IOException {
-        excelImportService.importEnrollmentSheet(file);
-        return ResponseEntity.ok().build();
-    }
+//    @Autowired
+//    private ExcelImportService excelImportService;
+//
+//    @PostMapping("/imp-ta")
+//    public ResponseEntity<Void> importTas(@RequestParam("file") MultipartFile file) throws IOException {
+//        excelImportService.importTaSheet(file);
+//        return ResponseEntity.ok().build();
+//    }
+//
+//    @PostMapping("/imp-students")
+//    public ResponseEntity<Void> importStudents(@RequestParam("file") MultipartFile file) throws IOException {
+//        excelImportService.importStudentSheet(file);
+//        return ResponseEntity.ok().build();
+//    }
+//
+//    @PostMapping("/imp-faculty")
+//    public ResponseEntity<Void> importFaculty(@RequestParam("file") MultipartFile file) throws IOException {
+//        excelImportService.importFacultySheet(file);
+//        return ResponseEntity.ok().build();
+//    }
+//
+//    @PostMapping("/imp-offerings")
+//    public ResponseEntity<Void> importOfferings(@RequestParam("file") MultipartFile file) throws IOException {
+//        excelImportService.importOfferingSheet(file);
+//        return ResponseEntity.ok().build();
+//    }
+//
+//    @PostMapping("/imp-enrollments")
+//    public ResponseEntity<Void> importEnrollments(@RequestParam("file") MultipartFile file) throws IOException {
+//        excelImportService.importEnrollmentSheet(file);
+//        return ResponseEntity.ok().build();
+//    }
 }

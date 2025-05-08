@@ -29,4 +29,7 @@ public interface OfferingRepository extends JpaRepository<Offering, Long> {
             String semester,
             Integer year
     );
+
+    Optional<Offering> findById(Long id);
+
 }
