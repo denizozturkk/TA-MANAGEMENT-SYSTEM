@@ -140,7 +140,9 @@ const ExamSchedulingDean = () => {
       classrooms: []
     });
   };
-
+  /* TODO:
+  * Proctor assignment when creating exam
+  */
   const handleChange = e => {
     const { name, value, type, checked } = e.target;
     if (type === "checkbox" && name === "classrooms") {

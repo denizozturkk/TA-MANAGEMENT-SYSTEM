@@ -64,6 +64,7 @@ import AssignProctoringDean from "./people/Dean/AssignProctoring-Dean.jsx";
 import MakeReportDean from "./people/Dean/MakeReport-Dean.jsx";
 import RescheduleExamDean from "./people/Dean/RescheduleExam-Dean.jsx";
 import ManageClassroomsDean from "./people/Dean/ManageClassrooms-Dean.jsx";
+import UpdateProctorCountDean from "./people/Dean/UpdateProctorCount-Dean.jsx";
 
 // Admin
 import AuthActorsAdmin from "./people/Admin/AuthActors-Admin.jsx";
@@ -219,6 +220,10 @@ function App() {
           <Route
             path="manage-classrooms"
             element={<ManageClassroomsDean />}
+          />
+          <Route
+            path="update-proctor-count"
+            element={<UpdateProctorCountDean />}
           />
         </Route>
 

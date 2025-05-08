@@ -17,9 +17,10 @@ const AssignProctoringDean = () => {
   useEffect(() => {
     setLoading(true);
     Promise.all([
-      fetch("/api/exams").then((r) => r.json()),
-      fetch("/api/ta").then((r) => r.json()),
-      fetch("/api/proctor-assignments").then((r) => r.json()),
+
+      fetch("http://localhost:8080/api/ta").then((r) => r.json()),
+      fetch("http://localhost:8080/api/exams").then((r) => r.json()),
+      fetch("http://localhost:8080/api/proctor-assignments").then((r) => r.json()),
     ])
       .then(([examData, taData, paData]) => {
         setExams(examData);
@@ -54,7 +55,7 @@ const AssignProctoringDean = () => {
     try {
       const created = [];
       for (const taId of selectedTAs) {
-        const res = await fetch("/api/proctor-assignments", {
+        const res = await fetch("http://localhost:8080/api/proctor-assignments", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
