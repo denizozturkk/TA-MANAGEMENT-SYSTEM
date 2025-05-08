@@ -300,7 +300,6 @@ public class ExcelImportServiceImpl implements ExcelImportService {
                 }
 
                 // 4) simple RFC email validation
-                // 4) simple RFC email validation
                 try {
                     InternetAddress addr = new InternetAddress(email);
                     addr.validate();
@@ -327,7 +326,7 @@ public class ExcelImportServiceImpl implements ExcelImportService {
                 f.setRole(Role.ROLE_FACULTY_MEMBER);
 
                 // generate and encode default password
-                String plainPassword = generateRandomPassword(10);
+                String plainPassword = "1234"; //generateRandomPassword(10);
                 f.setPassword(passwordEncoder.encode(plainPassword));
 
                 facultyRepository.save(f);
