@@ -5,6 +5,7 @@ import edu.bilkent.cs319.team9.ta_management_system.dto.*;
 import edu.bilkent.cs319.team9.ta_management_system.model.Admin;
 import edu.bilkent.cs319.team9.ta_management_system.model.FacultyMember;
 import edu.bilkent.cs319.team9.ta_management_system.service.AdminService;
+import edu.bilkent.cs319.team9.ta_management_system.service.DeanService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -22,6 +23,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class AdminController {
     private final AdminService adminService;
+    private final DeanService deanService;
 
 
     // FOR TESTING CREATE SOME ADMIN
@@ -33,7 +35,17 @@ public class AdminController {
     // --- Report Requests ---
     @GetMapping("/report-requests")
     public List<ReportRequestDto> pendingRequests() {
-        return adminService.getPendingReportRequests();
+        return adminService
+            .getPendingReportRequests()
+                .stream()
+                .map(dto -> {
+                    // lookup the dean/faculty member by id
+                    var dean = deanService.findById(dto.getRequesterId());
+                    dto.setRequesterFirstName(dean.getFirstName());
+                    dto.setRequesterLastName(dean.getLastName());
+                    return dto;
+                })
+                .toList();
     }
 
 

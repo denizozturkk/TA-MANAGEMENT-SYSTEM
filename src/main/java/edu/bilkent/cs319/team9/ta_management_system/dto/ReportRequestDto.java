@@ -18,7 +18,8 @@ public class ReportRequestDto {
     private Long requesterId;
     private ReportRequestStatus status;
     private LocalDateTime createdAt;
-
+    private String requesterFirstName;
+    private String requesterLastName;
     // ← new!
     private LocalDateTime fromTime;
     private LocalDateTime toTime;
