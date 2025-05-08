@@ -4,6 +4,7 @@ package edu.bilkent.cs319.team9.ta_management_system.service.impl;
 import edu.bilkent.cs319.team9.ta_management_system.model.Classroom;
 import edu.bilkent.cs319.team9.ta_management_system.repository.ClassroomRepository;
 import edu.bilkent.cs319.team9.ta_management_system.service.ClassroomService;
+import edu.bilkent.cs319.team9.ta_management_system.service.ExamRoomService;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,9 +16,11 @@ import java.util.List;
 public class ClassroomServiceImpl implements ClassroomService {
 
     private final ClassroomRepository classroomRepository;
+    private final ExamRoomService examRoomService;
 
-    public ClassroomServiceImpl(ClassroomRepository classroomRepository) {
+    public ClassroomServiceImpl(ClassroomRepository classroomRepository, ExamRoomService examRoomService) {
         this.classroomRepository = classroomRepository;
+        this.examRoomService = examRoomService;
     }
 
     @Override
@@ -51,5 +54,22 @@ public class ClassroomServiceImpl implements ClassroomService {
     public void deleteClassroom(Long id) {
         Classroom classroom = getClassroom(id);
         classroomRepository.delete(classroom);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Classroom> findUnassignedForExam(Long examId) {
+        // 1) get the rooms already assigned for this exam
+        List<Long> assigned = examRoomService
+                .findByExamId(examId)
+                .stream()
+                .map(er -> er.getClassroom().getId())
+                .toList();
+
+        // 2) if none assigned, return all; else return those not in the list
+        if (assigned.isEmpty()) {
+            return classroomRepository.findAll();
+        }
+        return classroomRepository.findByIdNotIn(assigned);
     }
 }

@@ -1,7 +1,9 @@
 package edu.bilkent.cs319.team9.ta_management_system.controller;
 
+import edu.bilkent.cs319.team9.ta_management_system.model.Classroom;
 import edu.bilkent.cs319.team9.ta_management_system.model.ExamRoom;
 import edu.bilkent.cs319.team9.ta_management_system.model.ExamRoomId;
+import edu.bilkent.cs319.team9.ta_management_system.service.ClassroomService;
 import edu.bilkent.cs319.team9.ta_management_system.service.ExamRoomService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -16,6 +18,7 @@ import java.util.List;
 public class ExamRoomController {
 
     private final ExamRoomService examRoomService;
+    private final ClassroomService classroomService;
 
     @PostMapping
     public ResponseEntity<ExamRoom> create(@RequestBody ExamRoom examRoom) {
@@ -40,6 +43,14 @@ public class ExamRoomController {
     @GetMapping("/exam/{examId}")
     public ResponseEntity<List<ExamRoom>> getByExam(@PathVariable Long examId) {
         return ResponseEntity.ok(examRoomService.findByExamId(examId));
+    }
+
+    @GetMapping("/exam/{examId}/unassigned-classrooms")
+    public ResponseEntity<List<Classroom>> getUnassignedForExam(
+            @PathVariable Long examId
+    ) {
+        List<Classroom> free = classroomService.findUnassignedForExam(examId);
+        return ResponseEntity.ok(free);
     }
 
     @GetMapping("/classroom/{classroomId}")

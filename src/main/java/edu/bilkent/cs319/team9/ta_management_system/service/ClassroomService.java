@@ -10,4 +10,5 @@ public interface ClassroomService {
     List<Classroom> getAllClassrooms();
     Classroom updateClassroom(Long id, Classroom classroom);
     void deleteClassroom(Long id);
+    List<Classroom> findUnassignedForExam(Long examId);
 }
