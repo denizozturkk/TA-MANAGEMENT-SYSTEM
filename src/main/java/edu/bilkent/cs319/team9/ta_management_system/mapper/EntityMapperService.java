@@ -492,6 +492,7 @@ public class EntityMapperService {
                 .email(c.getEmail())
                 .phoneNumber(c.getPhoneNumber())
                 .photoURL(c.getPhotoURL())
+                .password(c.getPassword())
                 // omit password here too if you don't want to send it back
                 .role(c.getRole())
                 .department(c.getDepartment())
@@ -506,6 +507,7 @@ public class EntityMapperService {
         c.setEmail(dto.getEmail());
         c.setPhoneNumber(dto.getPhoneNumber());
         c.setPhotoURL(dto.getPhotoURL());
+        c.setPassword(dto.getPassword());
         // password handling / encoding in service layer
         c.setRole(dto.getRole());
         c.setDepartment(dto.getDepartment());
