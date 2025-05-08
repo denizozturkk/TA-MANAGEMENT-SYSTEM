@@ -2,23 +2,12 @@
 import React, { useState, useEffect, useCallback } from "react";
 import FacultyMemberLayout from "../FacultyMember/FacultyMemberLayout";
 
-// Simple JWT parser
-function parseJwt(token) {
-  try {
-    return JSON.parse(window.atob(token.split(".")[1]));
-  } catch {
-    return {};
-  }
-}
-
 const AssignDutyPage = () => {
   const [exams, setExams] = useState([]);
   const [tas, setTAs] = useState([]);
   const [assignments, setAssignments] = useState([]);
-  const [classrooms, setClassrooms] = useState([]);
   const [selectedExamId, setSelectedExamId] = useState("");
   const [selectedTA, setSelectedTA] = useState("");
-  const [selectedClassroom, setSelectedClassroom] = useState("");
   const [facultyId, setFacultyId] = useState(null);
 
   const BASE = "http://localhost:8080/api";
@@ -55,15 +44,6 @@ const AssignDutyPage = () => {
       .catch(console.error);
   }, [token]);
 
-  // 4) load all classrooms
-  useEffect(() => {
-    if (!token) return;
-    fetch(`${BASE}/classrooms`, { headers })
-      .then(r => r.json())
-      .then(data => setClassrooms(Array.isArray(data) ? data : []))
-      .catch(console.error);
-  }, [token]);
-
   // helper to load assignments for the selected exam
   const loadAssignments = useCallback(() => {
     if (!selectedExamId) {
@@ -83,82 +63,42 @@ const AssignDutyPage = () => {
   useEffect(() => {
     loadAssignments();
     setSelectedTA("");
-    setSelectedClassroom("");
   }, [selectedExamId, loadAssignments]);
 
-  const handleExamChange = e => {
-    setSelectedExamId(e.target.value);
-  };
+  const handleExamChange = e => setSelectedExamId(e.target.value);
 
-  // manual assignment now includes status: "ASSIGNED"
+  // Manual Assignment
   const handleManualAssign = () => {
-    if (!selectedExamId || !selectedTA || !selectedClassroom) {
-      return alert("Please select exam, TA and classroom.");
+    if (!facultyId || !selectedExamId || !selectedTA) {
+      return alert("Please select exam and TA.");
     }
-    fetch(`${BASE}/proctor-assignments`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        examId: +selectedExamId,
-        taId: +selectedTA,
-        classroomId: +selectedClassroom,
-        status: "ASSIGNED"
-      }),
-    })
+    const url =
+      `${BASE}/faculty-members/${facultyId}/exams/${selectedExamId}/proctor` +
+      `?mode=MANUAL_ASSIGNMENT&taId=${selectedTA}`;
+
+    fetch(url, { method: "POST", headers })
       .then(r => {
         if (!r.ok) throw new Error();
-        return r.json();
-      })
-      .then(newA => {
-        setAssignments(a => [newA, ...a]);
         alert("Assigned successfully");
+        loadAssignments();
       })
       .catch(() => alert("Failed to assign TA."));
   };
 
-  const handleAutoAssign = async () => {
-    if (!selectedExamId) return;
-    const exam = exams.find(ex => String(ex.id) === selectedExamId);
-    if (!exam) return;
+  // Automatic Assignment
+  const handleAutoAssign = () => {
+    if (!facultyId || !selectedExamId) return;
+    const url =
+      `${BASE}/faculty-members/${facultyId}/exams/${selectedExamId}/proctor` +
+      `?mode=AUTOMATIC_ASSIGNMENT`;
 
-    // compute ISO start/end
-    const start = exam.dateTime.slice(0, 19);
-    const dt = new Date(exam.dateTime);
-    dt.setMinutes(dt.getMinutes() + exam.duration);
-    const end = dt.toISOString().slice(0, 19);
-
-    // filter TAs by department
-    const candidates = tas.filter(t => t.department === exam.department);
-    for (let ta of candidates) {
-      const res = await fetch(
-        `${BASE}/ta/${ta.id}/busy-hours/check-availability?start=${encodeURIComponent(
-          start
-        )}&end=${encodeURIComponent(end)}`,
-        { headers }
-      ).catch(() => null);
-      if (!res || !res.ok) continue;
-      const ok = await res.json();
-      if (!ok) continue;
-
-      const room = exam.examRooms?.[0];
-      if (!room) return alert("No classrooms to assign");
-
-      const assignRes = await fetch(`${BASE}/proctor-assignments`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          examId: exam.id,
-          taId: ta.id,
-          classroomId: room.classroomId,
-        }),
-      });
-      if (!assignRes.ok) throw new Error();
-      const newA = await assignRes.json();
-      setAssignments(a => [newA, ...a]);
-      return alert(`Auto-assigned ${ta.firstName} ${ta.lastName}`);
-    }
-
-    alert("No available TA in exam department.");
+    fetch(url, { method: "POST", headers })
+      .then(r => {
+        if (!r.ok) throw new Error();
+        alert("Auto-assignment complete");
+        loadAssignments();
+      })
+      .catch(() => alert("No available TA or assignment failed."));
   };
 
   const getTaName = taId => {
@@ -198,7 +138,7 @@ const AssignDutyPage = () => {
             <div className="card mb-4 p-3">
               <h5 className="mb-3">Manual Assignment</h5>
               <div className="row g-3 align-items-end">
-                <div className="col-md-4">
+                <div className="col-md-6">
                   <label className="form-label">TA</label>
                   <select
                     className="form-select"
@@ -215,22 +155,7 @@ const AssignDutyPage = () => {
                       ))}
                   </select>
                 </div>
-                <div className="col-md-4">
-                  <label className="form-label">Classroom</label>
-                  <select
-                    className="form-select"
-                    value={selectedClassroom}
-                    onChange={e => setSelectedClassroom(e.target.value)}
-                  >
-                    <option value="">-- select classroom --</option>
-                    {classrooms.map(c => (
-                      <option key={c.id} value={c.id}>
-                        {c.building} {c.roomNumber}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="col-md-4">
+                <div className="col-md-6">
                   <button
                     className="btn btn-primary w-100"
                     onClick={handleManualAssign}
@@ -248,7 +173,7 @@ const AssignDutyPage = () => {
                 className="btn btn-outline-primary"
                 onClick={handleAutoAssign}
               >
-                Auto Assign Best TA
+                Assign a TA Automatically
               </button>
             </div>
 
@@ -261,7 +186,6 @@ const AssignDutyPage = () => {
                     <tr>
                       <th>Exam</th>
                       <th>TA</th>
-                      <th>Classroom</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -269,14 +193,6 @@ const AssignDutyPage = () => {
                       <tr key={a.id}>
                         <td>{selectedExam?.examName}</td>
                         <td>{getTaName(a.taId)}</td>
-                        <td>
-                          {classrooms.find(c => c.id === a.classroomId)
-                            ?.building}{" "}
-                          {
-                            classrooms.find(c => c.id === a.classroomId)
-                              ?.roomNumber
-                          }
-                        </td>
                       </tr>
                     ))}
                   </tbody>
