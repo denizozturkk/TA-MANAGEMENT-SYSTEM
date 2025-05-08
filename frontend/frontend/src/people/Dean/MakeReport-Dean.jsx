@@ -7,16 +7,18 @@ const reportOptions = [
   { key: "DUTY",    label: "Duty Reports",    icon: "check-alt"    },
   { key: "PROCTOR", label: "Proctor Reports", icon: "user-safety"  },
 ];
-
+const baseUrl = "http://localhost:8080/api/admin";
 const MakeReportDean = () => {
   const deanId = localStorage.getItem("userId");
   const token  = localStorage.getItem("authToken");
+  const headers = { Authorization: `Bearer ${token}` };
 
   const [dateRange,    setDateRange]    = useState({ startDate: "", endDate: "" });
   const [today,        setToday]        = useState("");
   const [requests,     setRequests]     = useState([]);
   const [loadingReqs,  setLoadingReqs]  = useState(true);
   const [actionKey,    setActionKey]    = useState(null);
+  const [toast,       setToast]       = useState({ show:false, message:"", type:"" });
 
   useEffect(() => {
     if (!deanId) return alert("No deanId found—please log in again.");
@@ -96,58 +98,78 @@ const requestReport = async (key) => {
     setActionKey(null);
   }
 };
-
 // ─── Download a completed report with your existing API ───
-const downloadReport = async (reportType, fromDate, toDate) => {
-  setActionKey(reportType);
+const downloadReport = async (reportType, fromTime, toTime) => {
+  if (!reportType) {
+    console.error("downloadReport called with undefined reportType");
+    return setToast({
+      show: true,
+      type: "danger",
+      message: "Invalid report type"
+    });
+  }
 
   try {
-    // 1) Build the URL exactly as your server expects:
-    const url =
-      `http://localhost:8080/api/dean/${deanId}/reports/${reportType}` +
-      `?from=${encodeURIComponent(fromDate + "T00:00:00")}` +
-      `&to=${encodeURIComponent(toDate   + "T23:59:59")}`;
+    // Spring mappings are /reports/log/pdf, /reports/swap/pdf, etc.
+    const pdfType = reportType.toLowerCase();
 
-    // 2) Fetch the PDF
+    // Build the URL exactly as your AdminController expects
+    const url = `${baseUrl}/reports/${pdfType}/pdf` +
+                `?from=${encodeURIComponent(fromTime)}` +
+                `&to=${encodeURIComponent(toTime)}`;
+
     const res = await fetch(url, {
-      method: "GET",
       headers: {
-        "Accept":        "application/pdf",
-        "Authorization": `Bearer ${token}`,
-      },
+        Authorization: `Bearer ${token}`,
+        Accept:        "application/pdf"
+      }
     });
-
-    // 3) Surface any server‐side error
     if (!res.ok) {
-      const errText = await res.text();
-      throw new Error(`HTTP ${res.status}: ${errText}`);
+      throw new Error(`Failed to download PDF: ${res.status}`);
     }
 
-    // 4) Turn the response into a Blob and download it
+    // Turn the response into a blob & create a download link
     const blob        = await res.blob();
     const downloadUrl = URL.createObjectURL(blob);
-    const a           = document.createElement("a");
 
+    // Extract just the date portion for a friendly filename
+    const start = fromTime.split("T")[0];
+    const end   = toTime.split("T")[0];
+
+    const a = document.createElement("a");
     a.href     = downloadUrl;
-    a.download = `${reportType}-${fromDate}-to-${toDate}.pdf`;
+    a.download = `${pdfType}-report-${start}-to-${end}.pdf`;
     document.body.appendChild(a);
     a.click();
     a.remove();
 
-    // 5) Clean up
+    // Clean up
     URL.revokeObjectURL(downloadUrl);
-  }
-  catch (err) {
+
+    setToast({ show: true, type: "success", message: "PDF downloaded" });
+  } catch (err) {
     console.error("Download failed:", err);
-    alert("Failed to download report. See console for details.");
-  }
-  finally {
-    setActionKey(null);
+    setToast({ show: true, type: "danger", message: err.message });
   }
 };
 
+
+
   return (
     <LayoutDean>
+      {toast.show && (
+        <div className="position-fixed top-0 end-0 p-3" style={{ zIndex:11 }}>
+          <div className={`toast show bg-${toast.type} text-white`}>
+            <div className="d-flex">
+              <div className="toast-body">{toast.message}</div>
+              <button
+                className="btn-close btn-close-white me-2 m-auto"
+                onClick={() => setToast(t=>({ ...t, show:false }))}
+              />
+            </div>
+          </div>
+        </div>
+      )}
       <div className="card shadow-sm border-0">
         <div className="card-body">
           <h4 className="fw-bold mb-4">Generate Dean’s Report</h4>
@@ -206,28 +228,40 @@ const downloadReport = async (reportType, fromDate, toDate) => {
                   {requests.length === 0 ? (
                     <tr key="no-requests"><td colSpan="5" className="text-center">No requests yet</td></tr>
                   ) : (
-                    requests.map((r) => (
-                      <tr key={r.id}>
-                        <td>{reportOptions.find(o => o.key === r.type)?.label}</td>
-                        <td>{r.from}</td>
-                        <td>{r.to}</td>
-                        <td className={
-                          r.status === "APPROVED" ? "text-success" :
-                          r.status === "REJECTED" ? "text-danger" : ""
-                        }>{r.status}</td>
-                        <td>
-                          {r.status === "APPROVED" && (
-                            <button
-                              className="btn btn-sm btn-primary"
-                              disabled={actionKey === r.type}
-                              onClick={() => downloadReport(r.type, r.from, r.to)}
-                            >
-                              {actionKey === r.type ? "Downloading…" : "Download"}
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    ))
+                    requests.map((r) => {
+                      const { id, reportType, fromTime, toTime, status } = r;
+                      const label = reportOptions.find(o => o.key === reportType)?.label || reportType;
+                      const start = fromTime.split("T")[0];
+                      const end   = toTime.split("T")[0];
+                    
+                      return (
+                        <tr key={id}>
+                          <td>{label}</td>
+                          <td>{start}</td>
+                          <td>{end}</td>
+                          <td
+                            className={
+                              status === "APPROVED" ? "text-success" :
+                              status === "REJECTED"  ? "text-danger"  : ""
+                            }
+                          >
+                            {status}
+                          </td>
+                          <td>
+                            {status === "APPROVED" && (
+                              <button
+                                className="btn btn-sm btn-primary"
+                                disabled={actionKey === reportType}
+                                onClick={() => downloadReport(reportType, fromTime, toTime)}
+                              >
+                                {actionKey === reportType ? "Downloading…" : "Download"}
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })
+                    
                   )}
                 </tbody>
               </table>
