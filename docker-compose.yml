@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  backend:
+    build: .
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/tams_db?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: abcde
+      SPRING_DATASOURCE_PASSWORD: pass1234
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+    networks:
+      - tams-net
+
+  db:
+    image: mysql:8
+    restart: always
+    environment:
+      MYSQL_DATABASE: tams_db
+      MYSQL_USER: abcde
+      MYSQL_PASSWORD: pass1234
+      MYSQL_ROOT_PASSWORD: rootpass
+    networks:
+      - tams-net
+
+networks:
+  tams-net:

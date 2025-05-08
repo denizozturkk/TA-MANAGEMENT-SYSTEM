@@ -12,11 +12,4 @@ import java.util.List;
 public interface BusyHourRepository extends JpaRepository<BusyHour, Long> {
     /** fetch all busy slots for a given TA */
     List<BusyHour> findByTa_Id(Long taId);
-    @Query("SELECT b FROM BusyHour b WHERE b.ta.id = :taId AND b.dayOfWeek = :dayOfWeek " +
-            "AND b.startTime < :endTime AND b.endTime > :startTime")
-    List<BusyHour> findOverlappingBusyHours(
-            @Param("taId") Long taId,
-            @Param("dayOfWeek") DayOfWeek dayOfWeek,
-            @Param("startTime") LocalTime startTime,
-            @Param("endTime") LocalTime endTime);
 }
