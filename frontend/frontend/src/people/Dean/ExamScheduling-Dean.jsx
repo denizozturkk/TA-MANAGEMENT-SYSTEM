@@ -2,381 +2,435 @@ import React, { useState, useEffect } from "react";
 import LayoutDean from "./Layout-Dean";
 
 const ExamSchedulingDean = () => {
-  // form state for scheduling popup
-  const [form, setForm] = useState({
-    offeringId:   "",
-    classroomId:  "",
-    date:         "",
-    time:         "",
-    numProctors:  1,
-    examType:     "MIDTERM",
-    examName:     "",
-  });
+  const [currentUserId, setCurrentUserId] = useState(null);
+    const [exams, setExams] = useState([]);
+    const [allAssignments, setAllAssignments] = useState([]);
+    const [allTAs, setAllTAs] = useState([]);
+    const [allClassrooms, setAllClassrooms] = useState([]);
+    const [allOfferings, setAllOfferings] = useState([]);
+    const [allCourses, setAllCourses] = useState([]);
+    const [allFaculty, setAllFaculty] = useState([]);
+  
+    const [showModal, setShowModal] = useState(false);
+    const [modalType, setModalType] = useState("create");
+    const [selectedExam, setSelectedExam] = useState(null);
+  
+    const [formData, setFormData] = useState({
+      examName: "",
+      department: "",
+      examType: "Written",
+      dateTime: "",
+      duration: "",
+      numProctors: "",
+      offeringId: "",
+      facultyId: "",
+      classrooms: []
+    });
+  
+    const BASE = "http://localhost:8080/api";
+  
+    useEffect(() => {
+      const token = localStorage.getItem("authToken");
+      if (!token) return;
+      const headers = {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json"
+      };
+  
+      // 1) fetch your profile
+      fetch(`${BASE}/users/me`, { headers })
+        .then(res => res.json())
+        .then(user => {
+          setCurrentUserId(user.id);
+          // 2) fetch only your exams
+          return fetch(`${BASE}/exams`, { headers });
+        })
+        .then(res => res.json())
+        .then(data => {
+          const arr = Array.isArray(data) ? data : [];
+          setExams(arr.filter(ex => ex.facultyId === currentUserId));
+        })
+        .catch(() => setExams([]));
+    // fetch proctor assignments
+    fetch(`${BASE}/proctor-assignments`, { headers })
+      .then(res => res.json())
+      .then(data => setAllAssignments(Array.isArray(data) ? data : []))
+      .catch(() => setAllAssignments([]));
 
-  // data state
-  const [offerings, setOfferings]   = useState([]);
-  const [classrooms, setClassrooms] = useState([]);
-  const [schedules, setSchedules]   = useState([]);
-  const [courses, setCourses]       = useState([]);
-  const [courseMap, setCourseMap]   = useState({});
-  const [loading, setLoading]       = useState(true);
-  const [saving, setSaving]         = useState(false);
+    // fetch TAs
+    fetch(`${BASE}/ta`, { headers })
+      .then(res => res.json())
+      .then(data => setAllTAs(Array.isArray(data) ? data : []))
+      .catch(() => setAllTAs([]));
 
-  // popup visibility flags
-  const [showSchedulePopup, setShowSchedulePopup] = useState(false);
-  const [showAssignModal, setShowAssignModal]     = useState(false);
+    // fetch classrooms
+    fetch(`${BASE}/classrooms`, { headers })
+      .then(res => res.json())
+      .then(data => setAllClassrooms(Array.isArray(data) ? data : []))
+      .catch(() => setAllClassrooms([]));
 
-  // assign proctors state
-  const [modalExam, setModalExam]       = useState(null);
-  const [availableTas, setAvailableTas] = useState([]);
-  const [selectedTas, setSelectedTas]   = useState([]);
+    // fetch offerings
+    fetch(`${BASE}/offerings`, { headers })
+      .then(res => res.json())
+      .then(data => setAllOfferings(Array.isArray(data) ? data : []))
+      .catch(() => setAllOfferings([]));
 
-  const token  = localStorage.getItem("authToken");
-  const deanId = localStorage.getItem("userId");
+    // fetch courses
+    fetch(`${BASE}/courses`, { headers })
+      .then(res => res.json())
+      .then(data => setAllCourses(Array.isArray(data) ? data : []))
+      .catch(() => setAllCourses([]));
 
-  // fetch initial data
-  useEffect(() => {
-    if (!token) return;
-    Promise.all([
-      fetch("http://localhost:8080/api/offerings",  { headers: { Authorization: `Bearer ${token}` } }),
-      fetch("http://localhost:8080/api/classrooms", { headers: { Authorization: `Bearer ${token}` } }),
-      fetch("http://localhost:8080/api/exams",      { headers: { Authorization: `Bearer ${token}` } }),
-      fetch("http://localhost:8080/api/courses",    { headers: { Authorization: `Bearer ${token}` } }),
-    ])
-      .then(async ([oRes, cRes, eRes, crRes]) => {
-        if (!oRes.ok)   throw new Error("Offerings failed");
-        if (!cRes.ok)   throw new Error("Classrooms failed");
-        if (!eRes.ok)   throw new Error("Exams failed");
-        if (!crRes.ok)  throw new Error("Courses failed");
+    // fetch faculty
+    fetch(`${BASE}/faculty-members`, { headers })
+      .then(res => res.json())
+      .then(data => setAllFaculty(Array.isArray(data) ? data : []))
+      .catch(() => setAllFaculty([]));
+  }, [BASE, currentUserId]);
+  const token = localStorage.getItem("authToken");
+  const deanId = allFaculty.find(f => f.userId === currentUserId)?.id;
 
-        const [off, cls, exs, crs] = await Promise.all([
-          oRes.json(), cRes.json(), eRes.json(), crRes.json()
-        ]);
+  const openModal = (type, exam = null) => {
+    setModalType(type);
+    setSelectedExam(exam);
 
-        setOfferings(off);
-        setClassrooms(cls);
-        setSchedules(exs);
-        setCourses(crs);
-        setCourseMap(Object.fromEntries(crs.map(c => [c.id, c.courseCode])));
-      })
-      .catch(err => { console.error(err); alert("Error loading data"); })
-      .finally(() => setLoading(false));
-  }, [token]);
-
-  const handleChange = e =>
-    setForm(f => ({ ...f, [e.target.name]: e.target.value }));
-
-  const openSchedule = () => setShowSchedulePopup(true);
-
-  const handleSchedule = async e => {
-    e.preventDefault();
-    setSaving(true);
-    const payload = {
-      offeringId:      Number(form.offeringId),
-      dateTime:        `${form.date}T${form.time}`,
-      duration:        120,
-      department:      "Computer Engineering",
-      definedById:     Number(deanId),
-      facultyMemberId: Number(deanId),
-      examName:        form.examName,
-      examType:        form.examType,
-      numProctors:     Number(form.numProctors),
-      examRooms:       [{ roomId: Number(form.classroomId), numProctors: Number(form.numProctors) }]
-    };
-
-    try {
-      const res = await fetch("http://localhost:8080/api/exams", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify(payload)
+    if (exam) {
+      setFormData({
+        examName: exam.examName || "",
+        department: exam.department || "",
+        examType: exam.examType || "Written",
+        dateTime: exam.dateTime?.slice(0, 16) || "",
+        duration: exam.duration?.toString() || "",
+        numProctors: exam.numProctors?.toString() || "",
+        offeringId: exam.offeringId?.toString() || "",
+        facultyId: exam.facultyId?.toString() || "",
+        classrooms: Array.isArray(exam.examRooms)
+          ? exam.examRooms.map(r => r.classroomId.toString())
+          : []
       });
-      if (!res.ok) throw new Error(await res.text());
-      const newExam = await res.json();
-      setSchedules(prev => [newExam, ...prev]);
-      setShowSchedulePopup(false);
-      setForm({ offeringId: "", classroomId: "", date: "", time: "", numProctors: 1, examType: "MIDTERM", examName: "" });
-    } catch (err) {
-      console.error(err);
-      alert("Failed to schedule exam: " + err.message);
-    } finally { setSaving(false); }
-  };
-
-// Opens the “Assign Proctors” modal by fetching available TAs for the given exam
-const openAssign = async (exam) => {
-  // Store the exam we’re assigning to
-  setModalExam(exam);
-
-  // Convert the exam’s dateTime into an ISO string for the query
-  const startTime = encodeURIComponent(new Date(exam.dateTime).toISOString());
-  // Use the exam’s duration (in minutes) for the request
-  const duration = exam.duration;
-
-  try {
-    // Fetch from the TA availability endpoint
-    const res = await fetch(
-      `http://localhost:8080/api/ta/available?startTime=${startTime}&duration=${duration}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      }
-    );
-
-    if (!res.ok) {
-      // Handle HTTP errors
-      const errText = await res.text();
-      throw new Error(`Failed to load TAs: ${res.status} ${errText}`);
+    } else {
+      setFormData({
+        examName: "",
+        department: "",
+        examType: "Written",
+        dateTime: "",
+        duration: "",
+        numProctors: "",
+        offeringId: "",
+        facultyId: "",
+        classrooms: []
+      });
     }
 
-    // Parse the TA list from JSON
-    const tas = await res.json();
+    setShowModal(true);
+  };
 
-    // Populate state and open the modal
-    setAvailableTas(tas);
-    setSelectedTas([]);
-    setShowAssignModal(true);
-
-  } catch (err) {
-    console.error("Error fetching available TAs:", err);
-    alert(err.message || "Unexpected error loading TAs");
-  }
-};
-  // How many more TAs can still be assigned to this exam
-  const remaining = modalExam
-    ? modalExam.numProctors - modalExam.assignedCount
-    : 0;
-
-  // Toggle a TA’s selection in the modal
-  const toggleTa = (taId) => {
-    setSelectedTas((prev) => {
-      if (prev.includes(taId)) {
-        return prev.filter((x) => x !== taId);
-      }
-      if (prev.length < remaining) {
-        return [...prev, taId];
-      }
-      return prev;
+  const closeModal = () => {
+    setShowModal(false);
+    setSelectedExam(null);
+    setFormData({
+      examName: "",
+      department: "",
+      examType: "Written",
+      dateTime: "",
+      duration: "",
+      numProctors: "",
+      offeringId: "",
+      facultyId: "",
+      classrooms: []
     });
   };
-
-  // Send the selected TA IDs back to the server and update the schedule
-  const confirmAssign = async () => {
-    try {
-      const res = await fetch(
-        `http://localhost:8080/api/dean/${deanId}/assign-proctors` +
-        `?examId=${modalExam.id}&taIds=${selectedTas.join(",")}`,
-        { method: "POST", headers: { Authorization: `Bearer ${token}` } }
-      );
-      if (!res.ok) throw new Error("Assignment failed: " + res.statusText);
-      const assignedList = await res.json();
-      setSchedules((prev) =>
-        prev.map((e) =>
-          e.id === modalExam.id
-            ? { ...e, assignedCount: assignedList.length }
-            : e
-        )
-      );
-    } catch (err) {
-      console.error(err);
-      alert(err.message);
-    } finally {
-      setShowAssignModal(false);
+  /* TODO:
+  * Proctor assignment when creating exam
+  */
+  const handleChange = e => {
+    const { name, value, type, checked } = e.target;
+    if (type === "checkbox" && name === "classrooms") {
+      setFormData(f => {
+        const set = new Set(f.classrooms);
+        if (checked) set.add(value);
+        else set.delete(value);
+        return { ...f, classrooms: Array.from(set) };
+      });
+    } else {
+      setFormData(f => ({ ...f, [name]: value }));
     }
   };
 
-  
+  const handleSave = () => {
+    const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
+    const payload = {
+      examName: formData.examName,
+      department: formData.department,
+      examType: formData.examType,
+      dateTime: formData.dateTime,
+      duration: parseFloat(formData.duration),
+      numProctors: parseInt(formData.numProctors, 10),
+      offeringId: formData.offeringId ? parseInt(formData.offeringId, 10) : null,
+      facultyId: modalType === "create" ? deanId : (formData.facultyId ? parseInt(formData.facultyId, 10) : null),
+      examRooms: formData.classrooms.map(id => ({ classroomId: parseInt(id, 10), numProctors: parseInt(formData.numProctors, 10) }))
+    };
+    const method = modalType === "create" ? "POST" : "PUT";
+    const url =
+      modalType === "create"
+        ? `${BASE}/exams`
+        : `${BASE}/exams/${selectedExam.id}`;
 
-  if (loading) return <LayoutDean><div className="card"><div className="card-body">Loading data…</div></div></LayoutDean>;
+    fetch(url, { method, headers, body: JSON.stringify(payload) })
+      .then(res => { if (!res.ok) throw new Error(); return res.json(); })
+      .then(data => {
+        setExams(es =>
+          modalType === "create"
+            ? [data, ...es]
+            : es.map(ex => (ex.id === data.id ? data : ex))
+        );
+        closeModal();
+      })
+      .catch(() => alert("Error saving exam"));
+  };
+
+  const handleDelete = () => {
+    const headers = { Authorization: `Bearer ${token}` };
+    fetch(`${BASE}/dean/${deanId}/exams/${selectedExam.id}`, { method: "DELETE", headers })
+      .then(res => { if (!res.ok) throw new Error(); })
+      .then(() => {
+        setExams(es => es.filter(ex => ex.id !== selectedExam.id));
+        closeModal();
+      })
+      .catch(() => alert("Error deleting exam"));
+  };
 
   return (
     <LayoutDean>
-      <button onClick={openSchedule} className="btn btn-success mb-3">Add Exam</button>
-
-      {/* Schedule Popup */}
-      {showSchedulePopup && (
-        <div style={{ position: 'fixed', top:0, left:0, width:'100%', height:'100%', backgroundColor:'rgba(0,0,0,0.3)', display:'flex', justifyContent:'center', alignItems:'center', padding:'2rem' }}>
-          <div style={{ backgroundColor:'rgba(255,255,255,1)', borderRadius:'8px', padding:'1.5rem', minWidth:'600px' }}>
-            <h5 className="mb-4">Schedule Exam</h5>
-            <form onSubmit={handleSchedule} className="row g-3">
-              <div className="col-md-6">
-                <label className="form-label">Course Offering</label>
-                <select name="offeringId" value={form.offeringId} onChange={handleChange} className="form-select" required>
-                  <option value="">Select Course</option>
-                  {offerings.map(o => <option key={o.id} value={o.id}>{courseMap[o.courseId]} – {o.section}</option>)}
-                </select>
-              </div>
-              <div className="col-md-6">
-                <label className="form-label">Exam Name</label>
-                <input name="examName" value={form.examName} onChange={handleChange} className="form-control" placeholder="e.g. CENG101 Final" required />
-              </div>
-              <div className="col-md-4">
-                <label className="form-label">Exam Type</label>
-                <select name="examType" value={form.examType} onChange={handleChange} className="form-select">
-                  <option value="MIDTERM">Midterm</option>
-                  <option value="FINAL">Final</option>
-                </select>
-              </div>
-              <div className="col-md-4">
-                <label className="form-label">Date</label>
-                <input type="date" name="date" value={form.date} onChange={handleChange} className="form-control" required />
-              </div>
-              <div className="col-md-4">
-                <label className="form-label">Time</label>
-                <input type="time" name="time" value={form.time} onChange={handleChange} className="form-control" required />
-              </div>
-              <div className="col-md-6">
-                <label className="form-label">Classroom</label>
-                <select
-                  name="classroomId"
-                  value={form.classroomId}
-                  onChange={handleChange}
-                  className="form-select"
-                  required
-                >
-                  <option value="">Select Room</option>
-                  {classrooms.map(r => (
-                    <option
-                      key={r.id}
-                      value={r.id}            // keep the id as the form value
-                    >
-                      {r.roomNumber}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="col-md-6">
-                <label className="form-label">Proctors</label>
-                <input type="number" name="numProctors" min={1} max={5} value={form.numProctors} onChange={handleChange} className="form-control" required />
-              </div>
-              <div className="col-12 text-end">
-                <button type="submit" className="btn btn-success mb-3" disabled={saving}>{saving ? "Scheduling…" : "Schedule"}</button>
-                <button type="button" className="btn btn-secondary" onClick={() => setShowSchedulePopup(false)}>Cancel</button>
-              </div>
-            </form>
-          </div>
+      <div className="container py-4 flex-grow-1">
+        <div className="d-flex justify-content-between mb-4">
+          <h3>Defines Exam</h3>
+          <button
+            className="btn btn-secondary"
+            onClick={() => openModal("create")}
+          >
+            + Create Exam
+          </button>
         </div>
-      )}
 
-      {/* Schedules Table */}
-      <table className="table table-hover">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Date & Time</th>
-            <th>Proctors</th>
-            <th>Rooms</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {schedules.map(s => {
-            const full = s.assignedCount >= s.numProctors;
+        <div className="row g-4">
+          {exams.map(ex => {
+            const proctors = allAssignments.filter(
+              a => a.examId === ex.id
+            );
             return (
-              <tr key={s.id}>
-                <td>{s.id}</td>
-                <td>{s.examName}</td>
-                <td>{s.examType}</td>
-                <td>{new Date(s.dateTime).toLocaleString()}</td>
-                <td>{s.assignedCount}/{s.numProctors}</td>
-                <td>
-                  {s.examRooms && s.examRooms.length > 0
-                    ? s.examRooms
-                        .map(er =>
-                          // First try a flat roomNumber
-                          er.roomNumber
-                          // Then try roomName
-                          || er.roomName
-                          // Then nested classroom.roomNumber
-                          || er.classroom?.roomNumber
-                          // Then nested classroom.name
-                          || er.classroom?.name
-                          // Finally nothing
-                          || "—"
-                        )
-                        .join(", ")
-                    : "—"
-                  }
-                </td>
-                <td>
-                  {!full
-                    ? <button className="btn btn-sm btn-outline-primary" onClick={() => openAssign(s)}>Assign Proctors</button>
-                    : <span className="badge bg-success">Full</span>}
-                </td>
-              </tr>
+              <div className="col-md-6 col-lg-4" key={ex.id}>
+                <div className="card shadow-sm mb-3">
+                  <div className="card-body">
+                    <h5>{ex.examName}</h5>
+                    <p>
+                      <strong>Type:</strong> {ex.examType}
+                    </p>
+                    <p>
+                      <strong>Date:</strong>{" "}
+                      {new Date(ex.dateTime).toLocaleString()}
+                    </p>
+                    <div className="mt-3">
+                      <strong>Proctors:</strong>
+                      <ul className="ps-3 mb-0">
+                        {proctors.length > 0 ? (
+                          proctors.map(a => {
+                            const ta = allTAs.find(
+                              t => t.id === a.taId
+                            );
+                            const taName = ta
+                              ? `${ta.firstName} ${ta.lastName}`
+                              : `TA #${a.taId}`;
+                            const cls = allClassrooms.find(
+                              c => c.id === a.classroomId
+                            );
+                            const roomName = cls
+                              ? `${cls.building} ${cls.roomNumber}`
+                              : `Room #${a.classroomId}`;
+                            return (
+                              <li key={a.id}>
+                                {taName} – {roomName} <em>({a.status})</em>
+                              </li>
+                            );
+                          })
+                        ) : (
+                          <li className="text-muted">
+                            No proctors assigned
+                          </li>
+                        )}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
             );
           })}
-        </tbody>
-      </table>
+        </div>
+        </div>
+      {showModal && (
+        <div className="modal d-block" tabIndex={-1}>
+          <div className="modal-dialog modal-lg">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">
+                  {modalType === "create"
+                    ? "Create Exam"
+                    : modalType === "edit"
+                    ? "Edit Exam"
+                    : "Confirm Delete"}
+                </h5>
+                <button className="btn-close" onClick={closeModal} />
+              </div>
 
-      {/* Assign Proctors Modal */}
-      {showAssignModal && modalExam && (
-        <div
-          className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
-          style={{ backgroundColor: 'rgba(0, 0, 0, 0.3)', zIndex: 1050 }}
-        >
-          <div
-            className="modal-dialog modal-dialog-centered"
-            style={{ maxWidth: '400px', width: '100%', margin: '0 1rem' }}
-          >
-            <div
-              className="modal-content p-4"
-              style={{ backgroundColor: 'rgba(255, 255, 255, 0.95)', borderRadius: '8px' }}
-            >
-              {/* Header */}
-              <h5 className="mb-3 text-center">
-                Select Proctors
-              </h5>
-
-              {/* Summary */}
-              <p className="text-center mb-4">
-                Assigned: {modalExam.assignedCount} / {modalExam.numProctors} | 
-                Remaining: {modalExam.numProctors - modalExam.assignedCount}
-              </p>
-
-              {/* List of available TAs */}
-              <ul
-                className="list-group mb-4"
-                style={{ maxHeight: '250px', overflowY: 'auto' }}
-              >
-                {availableTas.map(ta => {
-                  const isSelected = selectedTas.includes(ta.id);
-                  return (
-                    <li
-                      key={ta.id}
-                      className={`list-group-item d-flex justify-content-between align-items-center ${
-                        isSelected ? 'active' : ''
-                      }`}
-                      style={{ cursor: 'pointer' }}
-                      onClick={() => toggleTa(ta.id)}
+              {modalType === "delete" ? (
+                <div className="modal-body">
+                  <p>Are you sure you want to delete this exam?</p>
+                </div>
+              ) : (
+                <div className="modal-body">
+                  <div className="mb-3">
+                    <label className="form-label">Exam Name</label>
+                    <input
+                      name="examName"
+                      className="form-control"
+                      value={formData.examName}
+                      onChange={handleChange}
+                    />
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">Department</label>
+                    <select
+                      name="department"
+                      className="form-select"
+                      value={formData.department}
+                      onChange={handleChange}
                     >
-                      <span>{ta.name}</span>
-                      {isSelected && <span className="badge bg-light text-dark">✓</span>}
-                    </li>
-                  );
-                })}
-                {availableTas.length === 0 && (
-                  <li className="list-group-item text-center text-muted">
-                    No available TAs
-                  </li>
-                )}
-              </ul>
+                      <option value="">-- select dept --</option>
+                      <option value="CS">CS</option>
+                      <option value="EE">EE</option>
+                      <option value="IE">IE</option>
+                      <option value="ME">ME</option>
+                    </select>
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">Type</label>
+                    <select
+                      name="examType"
+                      className="form-select"
+                      value={formData.examType}
+                      onChange={handleChange}
+                    >
+                      <option>Midterm</option>
+                      <option>Final</option>
+                    </select>
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">
+                      Date &amp; Time
+                    </label>
+                    <input
+                      type="datetime-local"
+                      name="dateTime"
+                      className="form-control"
+                      value={formData.dateTime}
+                      onChange={handleChange}
+                    />
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">
+                      Duration (mins)
+                    </label>
+                    <input
+                      type="number"
+                      name="duration"
+                      className="form-control"
+                      value={formData.duration}
+                      onChange={handleChange}
+                    />
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">
+                      Number of Proctors
+                    </label>
+                    <input
+                      type="number"
+                      name="numProctors"
+                      className="form-control"
+                      value={formData.numProctors}
+                      onChange={handleChange}
+                    />
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">Offering</label>
+                    <select
+                      name="offeringId"
+                      className="form-select"
+                      value={formData.offeringId}
+                      onChange={handleChange}
+                    >
+                      <option value="">
+                        -- select offering --
+                      </option>
+                      {allOfferings.map(o => {
+                        const course = allCourses.find(
+                          c => c.id === o.courseId
+                        );
+                        return (
+                          <option key={o.id} value={o.id}>
+                              ({o.semester} {o.year}) –{" "}
+                            {course
+                              ? course.courseCode
+                              : `Course #${o.courseId}`}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">
+                      Select Classrooms
+                    </label>
+                    <div className="d-flex flex-wrap gap-2">
+                      {allClassrooms.map((cls, i) => (
+                        <div className="form-check me-3" key={i}>
+                          <input
+                            type="checkbox"
+                            name="classrooms"
+                            value={cls.id}
+                            checked={formData.classrooms.includes(
+                              cls.id.toString()
+                            )}
+                            onChange={handleChange}
+                            className="form-check-input"
+                            id={`cls-${i}`}
+                          />
+                          <label
+                            className="form-check-label"
+                            htmlFor={`cls-${i}`}
+                          >
+                            {cls.building} {cls.roomNumber}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
 
-              {/* Action buttons */}
-              <div className="d-flex justify-content-end">
+              <div className="modal-footer">
                 <button
-                  className="btn btn-primary me-2"
-                  disabled={selectedTas.length === 0}
-                  onClick={confirmAssign}
-                >
-                  Confirm
-                </button>
-                <button
-                  className="btn btn-outline-secondary"
-                  onClick={() => setShowAssignModal(false)}
+                  className="btn btn-secondary me-2"
+                  onClick={closeModal}
                 >
                   Cancel
+                </button>
+                <button
+                  className="btn btn-primary"
+                  onClick={
+                    modalType === "delete" ? handleDelete : handleSave
+                  }
+                >
+                  {modalType === "delete" ? "Delete" : "Save"}
                 </button>
               </div>
             </div>

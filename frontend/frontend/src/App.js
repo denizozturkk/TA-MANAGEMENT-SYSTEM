@@ -58,11 +58,21 @@ import ViewPastTasksTA       from "./people/Ta/ViewPastTasks-TA.jsx";
 import CalendarTA            from "./people/Ta/Calendar-TA.jsx";
 
 // Dean
+<<<<<<< HEAD
 import ManageCourseDataDean  from "./people/Dean/ManageCourseData-Dean.jsx";
 import ExamSchedulingDean    from "./people/Dean/ExamScheduling-Dean.jsx";
 import AssignProctoringDean  from "./people/Dean/AssignProctoring-Dean.jsx";
 import MakeReportDean        from "./people/Dean/MakeReport-Dean.jsx";
 import RescheduleExamDean    from "./people/Dean/RescheduleExam-Dean.jsx";
+=======
+import ManageCourseDataDean from "./people/Dean/ManageCourseData-Dean.jsx";
+import ExamSchedulingDean from "./people/Dean/ExamScheduling-Dean.jsx";
+import AssignProctoringDean from "./people/Dean/AssignProctoring-Dean.jsx";
+import MakeReportDean from "./people/Dean/MakeReport-Dean.jsx";
+import RescheduleExamDean from "./people/Dean/RescheduleExam-Dean.jsx";
+import ManageClassroomsDean from "./people/Dean/ManageClassrooms-Dean.jsx";
+import UpdateProctorCountDean from "./people/Dean/UpdateProctorCount-Dean.jsx";
+>>>>>>> 15863c96553d4459a8192f54e56e604e7d8b436c
 
 // Admin
 import AuthActorsAdmin           from "./people/Admin/AuthActors-Admin.jsx";
@@ -159,11 +169,39 @@ function App() {
 
         {/* Dean */}
         <Route element={<ProtectedRoute allowedRoles={["ROLE_DEAN"]} />}>
+<<<<<<< HEAD
           <Route path="/manage-course-data" element={<ManageCourseDataDean />} />
           <Route path="/exam-scheduling" element={<ExamSchedulingDean />} />
           <Route path="/assign-proctoring" element={<AssignProctoringDean />} />
           <Route path="/make-report" element={<MakeReportDean />} />
           <Route path="/reschedule-exam" element={<RescheduleExamDean />} />
+=======
+          <Route
+            path="manage-course-data"
+            element={<ManageCourseDataDean />}
+          />
+          <Route
+            path="exam-scheduling"
+            element={<ExamSchedulingDean />}
+          />
+          <Route
+            path="assign-proctoring"
+            element={<AssignProctoringDean />}
+          />
+          <Route path="make-report" element={<MakeReportDean />} />
+          <Route
+            path="reschedule-exam"
+            element={<RescheduleExamDean />}
+          />
+          <Route
+            path="manage-classrooms"
+            element={<ManageClassroomsDean />}
+          />
+          <Route
+            path="update-proctor-count"
+            element={<UpdateProctorCountDean />}
+          />
+>>>>>>> 15863c96553d4459a8192f54e56e604e7d8b436c
         </Route>
 
         {/* Admin */}

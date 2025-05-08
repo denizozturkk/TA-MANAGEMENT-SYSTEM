@@ -10,12 +10,29 @@ const UpdateProctorCountDean = () => {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    fetch("/api/exams")
-      .then((r) => r.json())
-      .then(setExams)
-      .catch(() => alert("Error"))
+    fetch("http://localhost:8080/api/exams")
+      .then(res => {
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+        return res.json();
+      })
+      .then(data => {
+        // Eğer gelen veri doğrudan bir array ise, yoksa .content içindekini al:
+        const examsArray = Array.isArray(data)
+          ? data
+          : Array.isArray(data.content)
+          ? data.content
+          : [];
+        setExams(examsArray);
+      })
+      .catch(err => {
+        console.error("Fetch exams failed:", err);
+        alert("Error fetching exams");
+      })
       .finally(() => setLoading(false));
   }, []);
+  
 
   const openModal = (ex) => {
     setSelected(ex);
@@ -25,9 +42,10 @@ const UpdateProctorCountDean = () => {
   const submit = async (e) => {
     e.preventDefault();
     setSaving(true);
+    const deanId = localStorage.getItem("userId");
     try {
       const params = new URLSearchParams({ examId: selected.id, newProctorCount: newCount });
-      const res = await fetch(`/api/dean/1/update-proctor-count?${params}`, {
+      const res = await fetch(`http://localhost:8080/api/dean/${deanId}/update-proctor-count?${params}`, {
         method: "PUT",
       });
       if (!res.ok) throw new Error();

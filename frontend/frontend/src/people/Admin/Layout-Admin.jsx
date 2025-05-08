@@ -101,24 +101,8 @@ const LayoutAdmin = ({ children }) => {
                   </button>
                 </div>
               </li>
-
-              {/* Pending Reports */}
-              <li className="mb-3">
-                <div className="d-flex justify-content-between align-items-center">
-                  <NavLink to="/pending-reports" className={linkClass}>
-                    <i className="icofont-hour-glass fs-5 me-2" />
-                    Pending Reports
-                  </NavLink>
-                  <button
-                    className="btn btn-link text-light p-0"
-                    onClick={() => toggle("pending")}
-                  >
-                    <i className={`icofont-rounded-${open.pending ? "up" : "down"}`} />
-                  </button>
-                </div>
-              </li>
             </ul>
-
+       
             <button className="btn btn-link sidebar-mini-btn text-light mt-auto">
               <i className="icofont-bubble-right" />
             </button>
