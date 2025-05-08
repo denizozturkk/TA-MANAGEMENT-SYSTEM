@@ -101,23 +101,35 @@ const ViewNotificationPage = () => {
               <p className="text-center text-muted">No notifications to show.</p>
             ) : (
               <ul className="list-unstyled mb-0">
-                {currentNotifications.map(notif => (
-                  <li
-                    key={notif.id}
-                    onClick={() => goToDetail(notif.id)}
-                    style={{ cursor: "pointer" }}
-                    className="d-flex align-items-start mb-3 border-bottom pb-3"
-                  >
-                    <i className="icofont-bell me-3 fs-3 text-primary"></i>
-                    <div className="w-100">
-                      <p className="mb-1">{notif.message}</p>
-                      <small className="text-muted">
-                        {new Date(notif.timestamp).toLocaleString()}
-                      </small>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+  {currentNotifications.map(notif => {
+    const isUnread = notif.read === false;
+    return (
+      <li
+        key={notif.id}
+        onClick={() => goToDetail(notif.id)}
+        style={{ cursor: "pointer" }}
+        className={`d-flex align-items-start mb-3 border-bottom pb-3 rounded px-2 ${
+          isUnread ? "bg-light border-start border-3 border-primary" : ""
+        }`}
+      >
+        {/* Icon */}
+        <i className="icofont-alarm text-primary fs-4 me-3 mt-1"></i>
+
+        {/* Message + Time */}
+        <div className="w-100">
+          <div className="d-flex justify-content-between align-items-start">
+            <p className="mb-1 fw-semibold">{notif.message}</p>
+            {isUnread && <span className="badge bg-primary rounded-circle" style={{ width: 10, height: 10 }}></span>}
+          </div>
+          <small className="text-muted">
+            {new Date(notif.timestamp).toLocaleString()}
+          </small>
+        </div>
+      </li>
+    );
+  })}
+</ul>
+
             )}
 
             {totalPages > 1 && (

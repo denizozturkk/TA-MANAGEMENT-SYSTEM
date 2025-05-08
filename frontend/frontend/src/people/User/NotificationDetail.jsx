@@ -131,7 +131,7 @@ const NotificationDetail = () => {
           <div className="card shadow-sm">
             <div className="card-body">
               <div className="d-flex align-items-center mb-4">
-                <i className="icofont-bell fs-1 text-primary me-3"></i>
+                <i className="icofont-alarm text-primary fs-3 me-3"></i>
                 <div>
                   <h5 className="mb-0">Notification #{notif.id}</h5>
                   <small className="text-muted">
@@ -140,11 +140,10 @@ const NotificationDetail = () => {
                 </div>
               </div>
 
+
               <h6 className="fw-bold">Message</h6>
               <p>{notif.message}</p>
 
-              <h6 className="fw-bold mt-4">Read Status</h6>
-              <p>{notif.read ? "Read" : "Unread"}</p>
 
               <button className="btn btn-dark mt-4" onClick={() => navigate(-1)}>
                 ← Back to Notifications
