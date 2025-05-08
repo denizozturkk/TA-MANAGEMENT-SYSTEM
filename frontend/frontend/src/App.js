@@ -63,6 +63,7 @@ import ExamSchedulingDean from "./people/Dean/ExamScheduling-Dean.jsx";
 import AssignProctoringDean from "./people/Dean/AssignProctoring-Dean.jsx";
 import MakeReportDean from "./people/Dean/MakeReport-Dean.jsx";
 import RescheduleExamDean from "./people/Dean/RescheduleExam-Dean.jsx";
+import ManageClassroomsDean from "./people/Dean/ManageClassrooms-Dean.jsx";
 
 // Admin
 import AuthActorsAdmin from "./people/Admin/AuthActors-Admin.jsx";
@@ -215,7 +216,10 @@ function App() {
             path="reschedule-exam"
             element={<RescheduleExamDean />}
           />
-
+          <Route
+            path="manage-classrooms"
+            element={<ManageClassroomsDean />}
+          />
         </Route>
 
         {/* Admin */}
