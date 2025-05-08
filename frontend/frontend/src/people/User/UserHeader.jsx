@@ -45,9 +45,9 @@ const UserHeader = () => {
         <div className="container-xxl d-flex justify-content-between align-items-center">
 
           {/* Solda logo/ana sayfa */}
-          <Link to="/" className="navbar-brand text-dark">
+          <div className="navbar-brand text-dark">
             Bilkent TA Management System
-          </Link>
+          </div>
 
           {/* Sağ: bildirim + kullanıcı */}
           <div className="d-flex align-items-center">

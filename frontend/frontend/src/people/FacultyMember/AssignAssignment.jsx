@@ -1,8 +1,8 @@
 // src/people/TA/AssignDutyPage.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import FacultyMemberLayout from "../FacultyMember/FacultyMemberLayout";
 
-// Parses JWT to extract payload
+// Simple JWT parser
 function parseJwt(token) {
   try {
     return JSON.parse(window.atob(token.split(".")[1]));
@@ -19,202 +19,263 @@ const AssignDutyPage = () => {
   const [selectedExamId, setSelectedExamId] = useState("");
   const [selectedTA, setSelectedTA] = useState("");
   const [selectedClassroom, setSelectedClassroom] = useState("");
+  const [facultyId, setFacultyId] = useState(null);
 
   const BASE = "http://localhost:8080/api";
   const token = localStorage.getItem("authToken");
-  const payload = token ? parseJwt(token) : {};
-  const facultyId = payload.id;
+  const headers = {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`,
+  };
 
-  const headers = { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
-
-  // load initial data
+  // 1) get facultyId
   useEffect(() => {
     if (!token) return;
-    fetch(`${BASE}/exams`, { headers })
-      .then(res => res.json())
+    fetch(`${BASE}/users/me`, { headers })
+      .then(r => r.json())
+      .then(u => setFacultyId(u.id))
+      .catch(console.error);
+  }, [token]);
+
+  // 2) load this faculty’s exams
+  useEffect(() => {
+    if (!facultyId) return;
+    fetch(`${BASE}/faculty-members/${facultyId}/exams`, { headers })
+      .then(r => r.json())
       .then(data => setExams(Array.isArray(data) ? data : []))
       .catch(console.error);
+  }, [facultyId]);
 
+  // 3) load all TAs
+  useEffect(() => {
+    if (!token) return;
     fetch(`${BASE}/ta`, { headers })
-      .then(res => res.json())
+      .then(r => r.json())
       .then(data => setTAs(Array.isArray(data) ? data : []))
       .catch(console.error);
+  }, [token]);
 
+  // 4) load all classrooms
+  useEffect(() => {
+    if (!token) return;
     fetch(`${BASE}/classrooms`, { headers })
-      .then(res => res.json())
+      .then(r => r.json())
       .then(data => setClassrooms(Array.isArray(data) ? data : []))
       .catch(console.error);
   }, [token]);
 
-  // fetch assignments whenever selectedExamId changes
-  useEffect(() => {
-    if (!selectedExamId) return;
-    fetch(`${BASE}/proctor-assignments?examId=${selectedExamId}`, { headers })
-      .then(res => res.json())
+  // helper to load assignments for the selected exam
+  const loadAssignments = useCallback(() => {
+    if (!selectedExamId) {
+      setAssignments([]);
+      return;
+    }
+    fetch(
+      `${BASE}/proctor-assignments/exam/${selectedExamId}`,
+      { headers }
+    )
+      .then(r => r.json())
       .then(data => setAssignments(Array.isArray(data) ? data : []))
       .catch(console.error);
   }, [selectedExamId]);
 
-  const handleExamChange = e => {
-    setSelectedExamId(e.target.value);
+  // whenever exam changes, reload assignments & reset selects
+  useEffect(() => {
+    loadAssignments();
     setSelectedTA("");
     setSelectedClassroom("");
+  }, [selectedExamId, loadAssignments]);
+
+  const handleExamChange = e => {
+    setSelectedExamId(e.target.value);
   };
 
+  // manual assignment now includes status: "ASSIGNED"
   const handleManualAssign = () => {
     if (!selectedExamId || !selectedTA || !selectedClassroom) {
-      alert("Please select exam, TA and classroom.");
-      return;
+      return alert("Please select exam, TA and classroom.");
     }
     fetch(`${BASE}/proctor-assignments`, {
       method: "POST",
       headers,
       body: JSON.stringify({
-        examId: parseInt(selectedExamId, 10),
-        taId: parseInt(selectedTA, 10),
-        classroomId: parseInt(selectedClassroom, 10)
-      })
+        examId: +selectedExamId,
+        taId: +selectedTA,
+        classroomId: +selectedClassroom,
+        status: "ASSIGNED"
+      }),
     })
-      .then(res => {
-        if (!res.ok) throw new Error();
-        return res.json();
+      .then(r => {
+        if (!r.ok) throw new Error();
+        return r.json();
       })
-      .then(newAssgn => {
-        setAssignments(a => [newAssgn, ...a]);
+      .then(newA => {
+        setAssignments(a => [newA, ...a]);
         alert("Assigned successfully");
       })
       .catch(() => alert("Failed to assign TA."));
   };
 
-  const handleAutoAssign = () => {
+  const handleAutoAssign = async () => {
     if (!selectedExamId) return;
     const exam = exams.find(ex => String(ex.id) === selectedExamId);
     if (!exam) return;
-    const start = encodeURIComponent(exam.dateTime);
-    const dur = exam.duration;
-    fetch(`${BASE}/ta/available?startTime=${start}&duration=${dur}`, { headers })
-      .then(res => res.json())
-      .then(cands => {
-        if (!Array.isArray(cands) || cands.length === 0) {
-          alert("No available TA");
-          return;
-        }
-        const ta = cands[0];
-        const room = exam.examRooms && exam.examRooms[0];
-        if (!room) {
-          alert("No classrooms to assign");
-          return;
-        }
-        fetch(`${BASE}/proctor-assignments`, {
-          method: "POST",
-          headers,
-          body: JSON.stringify({ examId: exam.id, taId: ta.id, classroomId: room.classroomId })
-        })
-          .then(r => {
-            if (!r.ok) throw new Error();
-            return r.json();
-          })
-          .then(newAssgn => {
-            setAssignments(a => [newAssgn, ...a]);
-            alert(`Auto-assigned ${ta.firstName} ${ta.lastName}`);
-          })
-          .catch(() => alert("Auto-assign failed."));
-      })
-      .catch(console.error);
+
+    // compute ISO start/end
+    const start = exam.dateTime.slice(0, 19);
+    const dt = new Date(exam.dateTime);
+    dt.setMinutes(dt.getMinutes() + exam.duration);
+    const end = dt.toISOString().slice(0, 19);
+
+    // filter TAs by department
+    const candidates = tas.filter(t => t.department === exam.department);
+    for (let ta of candidates) {
+      const res = await fetch(
+        `${BASE}/ta/${ta.id}/busy-hours/check-availability?start=${encodeURIComponent(
+          start
+        )}&end=${encodeURIComponent(end)}`,
+        { headers }
+      ).catch(() => null);
+      if (!res || !res.ok) continue;
+      const ok = await res.json();
+      if (!ok) continue;
+
+      const room = exam.examRooms?.[0];
+      if (!room) return alert("No classrooms to assign");
+
+      const assignRes = await fetch(`${BASE}/proctor-assignments`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          examId: exam.id,
+          taId: ta.id,
+          classroomId: room.classroomId,
+        }),
+      });
+      if (!assignRes.ok) throw new Error();
+      const newA = await assignRes.json();
+      setAssignments(a => [newA, ...a]);
+      return alert(`Auto-assigned ${ta.firstName} ${ta.lastName}`);
+    }
+
+    alert("No available TA in exam department.");
   };
 
-  const handleApprove = id => {
-    const assgn = assignments.find(a => a.id === id);
-    if (!assgn) return;
-    fetch(`${BASE}/proctor-assignments/${id}`, {
-      method: "PUT",
-      headers,
-      body: JSON.stringify({ ...assgn, status: "APPROVED" })
-    })
-      .then(res => {
-        if (!res.ok) throw new Error();
-        return res.json();
-      })
-      .then(updated => {
-        setAssignments(a => a.map(x => (x.id === id ? updated : x)));
-      })
-      .catch(() => alert("Approve failed."));
+  const getTaName = taId => {
+    const ta = tas.find(t => t.id === taId);
+    return ta ? `${ta.firstName} ${ta.lastName}` : `TA #${taId}`;
   };
+
+  const selectedExam = exams.find(ex => String(ex.id) === selectedExamId);
 
   return (
     <div className="d-flex">
-      <div style={{ width: 300 }}><FacultyMemberLayout/></div>
+      <div style={{ width: 300 }}>
+        <FacultyMemberLayout />
+      </div>
       <div className="container py-4 flex-grow-1">
         <h3 className="mb-4">Assign Proctors</h3>
 
         <div className="mb-3">
           <label className="form-label">Select Exam</label>
-          <select className="form-select" value={selectedExamId} onChange={handleExamChange}>
+          <select
+            className="form-select"
+            value={selectedExamId}
+            onChange={handleExamChange}
+          >
             <option value="">-- choose exam --</option>
             {exams.map(ex => (
-              <option key={ex.id} value={ex.id}>{ex.examName}</option>
+              <option key={ex.id} value={ex.id}>
+                {ex.examName} ({ex.department})
+              </option>
             ))}
           </select>
         </div>
 
         {selectedExamId && (
           <>
+            {/* Manual Assignment */}
             <div className="card mb-4 p-3">
               <h5 className="mb-3">Manual Assignment</h5>
               <div className="row g-3 align-items-end">
                 <div className="col-md-4">
                   <label className="form-label">TA</label>
-                  <select className="form-select" value={selectedTA} onChange={e => setSelectedTA(e.target.value)}>
+                  <select
+                    className="form-select"
+                    value={selectedTA}
+                    onChange={e => setSelectedTA(e.target.value)}
+                  >
                     <option value="">-- select TA --</option>
-                    {tas.map(t => (
-                      <option key={t.id} value={t.id}>{t.firstName} {t.lastName}</option>
-                    ))}
+                    {tas
+                      .filter(t => t.department === selectedExam.department)
+                      .map(t => (
+                        <option key={t.id} value={t.id}>
+                          {t.firstName} {t.lastName}
+                        </option>
+                      ))}
                   </select>
                 </div>
                 <div className="col-md-4">
                   <label className="form-label">Classroom</label>
-                  <select className="form-select" value={selectedClassroom} onChange={e => setSelectedClassroom(e.target.value)}>
+                  <select
+                    className="form-select"
+                    value={selectedClassroom}
+                    onChange={e => setSelectedClassroom(e.target.value)}
+                  >
                     <option value="">-- select classroom --</option>
                     {classrooms.map(c => (
-                      <option key={c.id} value={c.id}>{c.building} {c.roomNumber}</option>
+                      <option key={c.id} value={c.id}>
+                        {c.building} {c.roomNumber}
+                      </option>
                     ))}
                   </select>
                 </div>
                 <div className="col-md-4">
-                  <button className="btn btn-primary w-100" onClick={handleManualAssign}>Assign Manually</button>
+                  <button
+                    className="btn btn-primary w-100"
+                    onClick={handleManualAssign}
+                  >
+                    Assign Manually
+                  </button>
                 </div>
               </div>
             </div>
 
+            {/* Automatic Assignment */}
             <div className="card mb-4 p-3">
               <h5 className="mb-3">Automatic Assignment</h5>
-              <button className="btn btn-outline-primary" onClick={handleAutoAssign}>Auto Assign Best TA</button>
+              <button
+                className="btn btn-outline-primary"
+                onClick={handleAutoAssign}
+              >
+                Auto Assign Best TA
+              </button>
             </div>
 
+            {/* Current Assignments */}
             <div className="card">
               <div className="card-body">
                 <h5 className="mb-3">Current Assignments</h5>
                 <table className="table">
                   <thead>
                     <tr>
+                      <th>Exam</th>
                       <th>TA</th>
                       <th>Classroom</th>
-                      <th>Status</th>
-                      <th>Action</th>
                     </tr>
                   </thead>
                   <tbody>
                     {assignments.map(a => (
                       <tr key={a.id}>
-                        <td>{a.assignedTA?.firstName} {a.assignedTA?.lastName}</td>
-                        <td>{classrooms.find(c => c.id === a.classroom?.id)?.building} {classrooms.find(c => c.id === a.classroom?.id)?.roomNumber}</td>
-                        <td>{a.status}</td>
+                        <td>{selectedExam?.examName}</td>
+                        <td>{getTaName(a.taId)}</td>
                         <td>
-                          {a.status === "PENDING" && (
-                            <button className="btn btn-sm btn-success" onClick={() => handleApprove(a.id)}>
-                              Approve
-                            </button>
-                          )}
+                          {classrooms.find(c => c.id === a.classroomId)
+                            ?.building}{" "}
+                          {
+                            classrooms.find(c => c.id === a.classroomId)
+                              ?.roomNumber
+                          }
                         </td>
                       </tr>
                     ))}

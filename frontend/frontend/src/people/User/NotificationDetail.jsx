@@ -18,7 +18,7 @@ function parseJwt(token) {
   }
 }
 
-// Role-based sidebar wrapper (unchanged)
+// Role-based sidebar wrapper
 const RoleBasedLayout = ({ children }) => {
   const token = localStorage.getItem("authToken");
   const payload = token ? parseJwt(token) : {};
@@ -52,37 +52,58 @@ const NotificationDetail = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
+  const BASE = "http://localhost:8080/api";
+  const token = localStorage.getItem("authToken");
+  const headers = { 
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}` 
+  };
+
   useEffect(() => {
-    const token = localStorage.getItem("authToken");
     if (!token) {
       setError("Not authenticated");
       setLoading(false);
       return;
     }
 
-    fetch("http://localhost:8080/api/notifications/myBox", {
-      headers: { Authorization: `Bearer ${token}` }
-    })
+    // 1) load all my notifications
+    fetch(`${BASE}/notifications/myBox`, { headers })
       .then(res => {
         if (!res.ok) throw new Error("Failed to load notifications");
         return res.json();
       })
       .then(data => {
-        // find the single one matching :id
         const found = data.find(n => String(n.id) === id);
         if (!found) {
           setError(`Notification #${id} not found`);
-        } else {
-          setNotif(found);
+          setLoading(false);
+          return;
         }
-        setLoading(false);
+        setNotif(found);
+
+        // 2) immediately mark read if it was unread
+        if (!found.read) {
+          fetch(`${BASE}/notifications/${id}/read`, {
+            method: "PUT",
+            headers
+          })
+            .then(r => {
+              if (!r.ok) throw new Error("Mark-read failed");
+              // we don't need the response body; just update local state
+              setNotif(n => ({ ...n, read: true }));
+            })
+            .catch(console.error)
+            .finally(() => setLoading(false));
+        } else {
+          setLoading(false);
+        }
       })
       .catch(err => {
         console.error(err);
         setError(err.message);
         setLoading(false);
       });
-  }, [id]);
+  }, [id, token]);
 
   if (loading) {
     return (

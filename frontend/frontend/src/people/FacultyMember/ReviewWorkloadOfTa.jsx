@@ -1,176 +1,213 @@
-import React from "react";
-import FacultyMemberLayout from "./FacultyMemberLayout";
+// src/people/TA/DutiesByDepartmentPage.jsx
+import React, { useState, useEffect } from "react";
+import FacultyMemberLayout from "../FacultyMember/FacultyMemberLayout";
 
-const workloadData = [
-  {
-    id: "EMP-00001",
-    name: "Joan Dyer",
-    avatar: "assets/images/xs/avatar1.jpg",
-    task: "Lecture Planning",
-    from: "12/03/2024",
-    to: "14/03/2024",
-    reason: "Content Revision for Midterm"
-  },
-  {
-    id: "EMP-00038",
-    name: "Ryan Randall",
-    avatar: "assets/images/xs/avatar2.jpg",
-    task: "Grading",
-    from: "11/04/2024",
-    to: "12/04/2024",
-    reason: "Quiz 3 Assessment"
-  },
-  {
-    id: "EMP-00007",
-    name: "Phil Glover",
-    avatar: "assets/images/xs/avatar3.jpg",
-    task: "Project Review",
-    from: "11/04/2024",
-    to: "12/04/2024",
-    reason: "Final Project Evaluations"
-  },
-  {
-    id: "EMP-00010",
-    name: "Victor Rampling",
-    avatar: "assets/images/xs/avatar4.jpg",
-    task: "Research",
-    from: "28/04/2024",
-    to: "30/04/2024",
-    reason: "Conference Paper Preparation"
-  },
-  {
-    id: "EMP-00002",
-    name: "Sally Graham",
-    avatar: "assets/images/xs/avatar5.jpg",
-    task: "Mentorship",
-    from: "01/05/2024",
-    to: "06/05/2024",
-    reason: "Student Thesis Mentoring"
+// Simple JWT parser
+function parseJwt(token) {
+  try {
+    return JSON.parse(window.atob(token.split(".")[1]));
+  } catch {
+    return {};
   }
-];
+}
 
-const ReviewWorkload = () => {
+const Departments = ["CS", "EE", "IE", "ME"];
+
+const DutiesByDepartmentPage = () => {
+  const [tas, setTAs] = useState([]);
+  const [exams, setExams] = useState([]);
+  const [classrooms, setClassrooms] = useState([]);
+  const [selectedDept, setSelectedDept] = useState("");
+  const [filteredTAs, setFilteredTAs] = useState([]);
+  const [selectedTA, setSelectedTA] = useState("");
+  const [dutyLogs, setDutyLogs] = useState([]);
+  const [proctors, setProctors] = useState([]);
+
+  const BASE = "http://localhost:8080/api";
+  const token = localStorage.getItem("authToken");
+  const headers = {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`,
+  };
+
+  // Load all TAs, Exams, Classrooms on mount
+  useEffect(() => {
+    if (!token) return;
+    fetch(`${BASE}/ta`, { headers })
+      .then(r => r.json())
+      .then(data => setTAs(Array.isArray(data) ? data : []))
+      .catch(console.error);
+
+    fetch(`${BASE}/exams`, { headers })
+      .then(r => r.json())
+      .then(data => setExams(Array.isArray(data) ? data : []))
+      .catch(console.error);
+
+    fetch(`${BASE}/classrooms`, { headers })
+      .then(r => r.json())
+      .then(data => setClassrooms(Array.isArray(data) ? data : []))
+      .catch(console.error);
+  }, [token]);
+
+  // Filter TAs when dept changes
+  useEffect(() => {
+    setSelectedTA("");
+    setDutyLogs([]);
+    setProctors([]);
+    if (!selectedDept) {
+      setFilteredTAs([]);
+    } else {
+      setFilteredTAs(tas.filter(t => t.department === selectedDept));
+    }
+  }, [selectedDept, tas]);
+
+  // Fetch duty-logs and proctor-assignments when TA changes
+  useEffect(() => {
+    if (!selectedTA) {
+      setDutyLogs([]);
+      setProctors([]);
+      return;
+    }
+
+    // Duty logs
+    fetch(`${BASE}/duty-logs/ta/${selectedTA}`, { headers })
+      .then(r => r.json())
+      .then(data => setDutyLogs(Array.isArray(data) ? data : []))
+      .catch(console.error);
+
+    // Proctor assignments
+    fetch(`${BASE}/proctor-assignments/ta/${selectedTA}`, { headers })
+      .then(r => r.json())
+      .then(data => setProctors(Array.isArray(data) ? data : []))
+      .catch(console.error);
+  }, [selectedTA]);
+
+  // look up names / labels
+  const getTaName = id => {
+    const t = tas.find(x => x.id === id);
+    return t ? `${t.firstName} ${t.lastName}` : `TA #${id}`;
+  };
+  const getExamName = id => {
+    const e = exams.find(x => x.id === id);
+    return e ? e.examName : `Exam #${id}`;
+  };
+  const getRoomName = id => {
+    const c = classrooms.find(x => x.id === id);
+    return c ? `${c.building} ${c.roomNumber}` : `Room #${id}`;
+  };
+
   return (
     <div className="d-flex">
-      <div style={{ width: "300px" }}>
+      <div style={{ width: 300 }}>
         <FacultyMemberLayout />
       </div>
+      <div className="container py-4 flex-grow-1">
+        <h3 className="mb-4">View TA Duty-Logs & Proctors</h3>
 
-      <div className="container-xxl py-4 flex-grow-1">
-        <div className="card-header py-3 no-bg bg-transparent d-flex align-items-center px-0 justify-content-between border-bottom flex-wrap">
-          <h3 className="fw-bold mb-0">Review Workload</h3>
-          <div className="col-auto d-flex w-sm-100">
-            <button type="button" className="btn btn-dark w-sm-100" data-bs-toggle="modal" data-bs-target="#addTaskModal">
-              <i className="icofont-plus-circle me-2 fs-6"></i>Add Workload
-            </button>
-          </div>
+        {/* Department */}
+        <div className="mb-3">
+          <label className="form-label">Department</label>
+          <select
+            className="form-select"
+            value={selectedDept}
+            onChange={e => setSelectedDept(e.target.value)}
+          >
+            <option value="">-- choose department --</option>
+            {Departments.map(d => (
+              <option key={d} value={d}>{d}</option>
+            ))}
+          </select>
         </div>
 
-        <div className="card mt-3">
-          <div className="card-body">
-            <table className="table table-hover align-middle mb-0" style={{ width: "100%" }}>
-              <thead>
-                <tr>
-                  <th>Employee ID</th>
-                  <th>Employee Name</th>
-                  <th>Task</th>
-                  <th>From</th>
-                  <th>To</th>
-                  <th>Description</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {workloadData.map((item, index) => (
-                  <tr key={index}>
-                    <td>
-                      <a href="#" className="fw-bold text-secondary">
-                        #{item.id}
-                      </a>
-                    </td>
-                    <td>
-                      <img className="avatar rounded-circle" src={item.avatar} alt="" />
-                      <span className="fw-bold ms-1">{item.name}</span>
-                    </td>
-                    <td>{item.task}</td>
-                    <td>{item.from}</td>
-                    <td>{item.to}</td>
-                    <td>{item.reason}</td>
-                    <td>
-                      <div className="btn-group" role="group">
-                        <button
-                          type="button"
-                          className="btn btn-outline-success"
-                          data-bs-toggle="modal"
-                          data-bs-target="#approveModal"
-                        >
-                          <i className="icofont-check-circled"></i>
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-outline-danger"
-                          data-bs-toggle="modal"
-                          data-bs-target="#rejectModal"
-                        >
-                          <i className="icofont-close-circled"></i>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-
-            {/* Approve Modal */}
-            <div className="modal fade" id="approveModal" tabIndex="-1">
-              <div className="modal-dialog">
-                <div className="modal-content">
-                  <div className="modal-header">
-                    <h5 className="modal-title">Approve Workload</h5>
-                    <button type="button" className="btn-close" data-bs-dismiss="modal"></button>
-                  </div>
-                  <div className="modal-body">Are you sure you want to approve this workload?</div>
-                  <div className="modal-footer">
-                    <button className="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button className="btn btn-success">Approve</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Reject Modal */}
-            <div className="modal fade" id="rejectModal" tabIndex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true">
-              <div className="modal-dialog">
-                <div className="modal-content">
-                  <div className="modal-header">
-                    <h5 className="modal-title" id="rejectModalLabel">Reject Workload</h5>
-                    <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                  </div>
-                  <div className="modal-body">
-                    <p>Are you sure you want to reject this workload?</p>
-                    <div className="mb-3">
-                      <label htmlFor="rejectionReason" className="form-label">Please provide a reason:</label>
-                      <textarea
-                        className="form-control"
-                        id="rejectionReason"
-                        rows="3"
-                        placeholder="e.g. Task timing conflict, insufficient justification, etc."
-                      ></textarea>
-                    </div>
-                  </div>
-                  <div className="modal-footer">
-                    <button className="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button className="btn btn-danger">Reject</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
+        {/* TA */}
+        {selectedDept && (
+          <div className="mb-3">
+            <label className="form-label">TA</label>
+            <select
+              className="form-select"
+              value={selectedTA}
+              onChange={e => setSelectedTA(e.target.value)}
+            >
+              <option value="">-- choose TA --</option>
+              {filteredTAs.map(t => (
+                <option key={t.id} value={t.id}>
+                  {t.firstName} {t.lastName}
+                </option>
+              ))}
+            </select>
           </div>
-        </div>
+        )}
+
+        {/* Duty Logs */}
+        {selectedTA && (
+          <div className="card mb-4">
+            <div className="card-body">
+              <h5 className="mb-3">Duty Logs</h5>
+              {dutyLogs.length === 0 ? (
+                <p className="text-muted">No duty-logs found.</p>
+              ) : (
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Task Type</th>
+                      <th>Workload</th>
+                      <th>Start Time</th>
+                      <th>Duration</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {dutyLogs.map(dl => (
+                      <tr key={dl.id}>
+                        <td>{dl.id}</td>
+                        <td>{dl.taskType}</td>
+                        <td>{dl.workload}</td>
+                        <td>{new Date(dl.startTime).toLocaleString()}</td>
+                        <td>{dl.duration} mins</td>
+                        <td>{dl.status}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Proctor Assignments */}
+        {selectedTA && (
+          <div className="card">
+            <div className="card-body">
+              <h5 className="mb-3">Proctor Assignments</h5>
+              {proctors.length === 0 ? (
+                <p className="text-muted">No proctor-assignments found.</p>
+              ) : (
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Exam</th>
+                      <th>Classroom</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {proctors.map(pa => (
+                      <tr key={pa.id}>
+                        <td>{getExamName(pa.examId)}</td>
+                        <td>{getRoomName(pa.classroomId)}</td>
+                        <td>{pa.status}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
-export default ReviewWorkload;
+export default DutiesByDepartmentPage;

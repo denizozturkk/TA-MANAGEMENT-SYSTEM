@@ -34,7 +34,7 @@ const SignInPage = () => {
         case "ROLE_ADMIN":             target = "/authorize-actors";        break;
         case "ROLE_TA":                target = "/leave";                   break;
         case "ROLE_COORDINATOR":       target = "/manageexamclassroom";     break;
-        case "ROLE_FACULTY_MEMBER":    target = "/classroomlist";           break;
+        case "ROLE_FACULTY_MEMBER":    target = "/defineexam";           break;
         case "ROLE_DEAN":              target = "/make-report";             break;
         case "ROLE_DEPARTMENT_STAFF":  target = "/tutorgraderformview";     break;
         default:                       target = "/";
