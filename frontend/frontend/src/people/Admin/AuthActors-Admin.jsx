@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from "react";
 import LayoutAdmin from "./Layout-Admin";
 
-// Rol seçenekleri enum’dan birebir çekilebilir; burada örnek olarak sabit liste kullandım.
 const ROLE_OPTIONS = [
   "ROLE_TA",
   "ROLE_FACULTY_MEMBER",
@@ -13,20 +12,23 @@ const ROLE_OPTIONS = [
 ];
 
 const AuthActorsAdmin = () => {
-  const [actorId,   setActorId]   = useState("");
-  const [newRole,   setNewRole]   = useState(ROLE_OPTIONS[0]);
-  const [deleteId,  setDeleteId]  = useState("");
-  const [loading,   setLoading]   = useState({ auth: false, del: false });
+  const [actorId, setActorId] = useState("");
+  const [newRole, setNewRole] = useState(ROLE_OPTIONS[0]);
+  const [deleteId, setDeleteId] = useState("");
+  const [loading, setLoading] = useState({ auth: false, del: false });
   const token = localStorage.getItem("authToken");
-  const base  = "http://localhost:8080/api/admin";
+  const base = "http://localhost:8080/api/admin";
 
   if (!token) {
     return (
-      <LayoutAdmin>
-        <p className="text-danger">
-          ⚠️ Admin olarak giriş yapmalısınız.
-        </p>
-      </LayoutAdmin>
+      <div className="d-flex flex-column flex-lg-row">
+        <div className="w-100 w-lg-auto" style={{ maxWidth: "300px" }}>
+          <LayoutAdmin />
+        </div>
+        <div className="container-fluid py-4">
+          <p className="text-danger">⚠️ Admin olarak giriş yapmalısınız.</p>
+        </div>
+      </div>
     );
   }
 
@@ -50,10 +52,10 @@ const AuthActorsAdmin = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization:  `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          userId:  Number(actorId),
+          userId: Number(actorId),
           newRole: newRole
         }),
       });
@@ -100,76 +102,89 @@ const AuthActorsAdmin = () => {
   };
 
   return (
-    <LayoutAdmin>
-      {/* Yetkilendirme */}
-      <div className="card shadow-sm mb-4">
-        <div className="card-body">
-          <h4 className="fw-bold mb-3 text-primary">Actor Yetkilendir / Rol Değiştir</h4>
-          <div className="row g-2 align-items-end">
-            <div className="col-md-4">
-              <label className="form-label">Actor ID</label>
-              <input
-                type="number"
-                className="form-control"
-                value={actorId}
-                onChange={e => setActorId(e.target.value)}
-                disabled={loading.auth}
-              />
-            </div>
-            <div className="col-md-4">
-              <label className="form-label">Yeni Rol</label>
-              <select
-                className="form-select"
-                value={newRole}
-                onChange={e => setNewRole(e.target.value)}
-                disabled={loading.auth}
-              >
-                {ROLE_OPTIONS.map(r => (
-                  <option key={r} value={r}>{r.replace("ROLE_", "")}</option>
-                ))}
-              </select>
-            </div>
-            <div className="col-md-4">
-              <button
-                className="btn btn-outline-primary w-100"
-                onClick={handleAuthorize}
-                disabled={loading.auth}
-              >
-                {loading.auth ? "İşleniyor…" : "Gönder"}
-              </button>
-            </div>
-          </div>
-        </div>
+    <div className="d-flex flex-column flex-lg-row">
+      {/* Sidebar */}
+      <div className="w-100 w-lg-auto" style={{ maxWidth: "300px" }}>
+        <LayoutAdmin />
       </div>
 
-      {/* Kullanıcı Silme */}
-      <div className="card shadow-sm">
-        <div className="card-body">
-          <h4 className="fw-bold mb-3 text-primary">User Sil</h4>
-          <div className="row g-2 align-items-end">
-            <div className="col-md-8">
-              <label className="form-label">User ID</label>
-              <input
-                type="number"
-                className="form-control"
-                value={deleteId}
-                onChange={e => setDeleteId(e.target.value)}
-                disabled={loading.del}
-              />
+      {/* İçerik */}
+      <div className="container-fluid py-4">
+        <div className="row justify-content-center">
+          <div className="col-12 col-md-10 col-lg-8">
+            {/* Yetkilendirme Kartı */}
+            <div className="card shadow-sm mb-4">
+              <div className="card-body">
+                <h4 className="fw-bold mb-3 text-primary">Actor Yetkilendir / Rol Değiştir</h4>
+                <div className="row g-2 align-items-end">
+                  <div className="col-md-4">
+                    <label className="form-label">Actor ID</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={actorId}
+                      onChange={e => setActorId(e.target.value)}
+                      disabled={loading.auth}
+                    />
+                  </div>
+                  <div className="col-md-4">
+                    <label className="form-label">Yeni Rol</label>
+                    <select
+                      className="form-select"
+                      value={newRole}
+                      onChange={e => setNewRole(e.target.value)}
+                      disabled={loading.auth}
+                    >
+                      {ROLE_OPTIONS.map(r => (
+                        <option key={r} value={r}>{r.replace("ROLE_", "")}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="col-md-4">
+                    <button
+                      className="btn btn-outline-primary w-100"
+                      onClick={handleAuthorize}
+                      disabled={loading.auth}
+                    >
+                      {loading.auth ? "İşleniyor…" : "Gönder"}
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="col-md-4">
-              <button
-                className="btn btn-outline-danger w-100"
-                onClick={handleDelete}
-                disabled={loading.del}
-              >
-                {loading.del ? "Siliniyor…" : "Sil"}
-              </button>
+
+            {/* Silme Kartı */}
+            <div className="card shadow-sm">
+              <div className="card-body">
+                <h4 className="fw-bold mb-3 text-primary">User Sil</h4>
+                <div className="row g-2 align-items-end">
+                  <div className="col-md-8">
+                    <label className="form-label">User ID</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={deleteId}
+                      onChange={e => setDeleteId(e.target.value)}
+                      disabled={loading.del}
+                    />
+                  </div>
+                  <div className="col-md-4">
+                    <button
+                      className="btn btn-outline-danger w-100"
+                      onClick={handleDelete}
+                      disabled={loading.del}
+                    >
+                      {loading.del ? "Siliniyor…" : "Sil"}
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
+
           </div>
         </div>
       </div>
-    </LayoutAdmin>
+    </div>
   );
 };
 

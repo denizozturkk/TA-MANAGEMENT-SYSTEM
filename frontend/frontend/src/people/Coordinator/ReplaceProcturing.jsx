@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from "react";
-import CoordinatorLayout from "./CoordinatorLayout"; // adjust path if needed
+import CoordinatorLayout from "./CoordinatorLayout";
 
 const ViewAssignedTAs = () => {
   const [exams, setExams] = useState([]);
   const [proctorAssignments, setProctorAssignments] = useState([]);
   const [allTAs, setAllTAs] = useState([]);
   const [allClassrooms, setAllClassrooms] = useState([]);
-
   const [selectedExamId, setSelectedExamId] = useState("");
   const [selectedExam, setSelectedExam] = useState(null);
   const [selectedAssignment, setSelectedAssignment] = useState(null);
@@ -19,20 +18,16 @@ const ViewAssignedTAs = () => {
     "Content-Type": "application/json",
   };
 
-  // load all data
   useEffect(() => {
     fetch("http://localhost:8080/api/exams", { headers })
       .then(res => res.json())
       .then(data => setExams(Array.isArray(data) ? data : []));
-
     fetch("http://localhost:8080/api/proctor-assignments", { headers })
       .then(res => res.json())
       .then(data => setProctorAssignments(Array.isArray(data) ? data : []));
-
     fetch("http://localhost:8080/api/ta", { headers })
       .then(res => res.json())
       .then(data => setAllTAs(Array.isArray(data) ? data : []));
-
     fetch("http://localhost:8080/api/classrooms", { headers })
       .then(res => res.json())
       .then(data => setAllClassrooms(Array.isArray(data) ? data : []));
@@ -45,9 +40,7 @@ const ViewAssignedTAs = () => {
     setSelectedAssignment(null);
   };
 
-  const filteredProctors = proctorAssignments.filter(
-    pa => String(pa.examId) === selectedExamId
-  );
+  const filteredProctors = proctorAssignments.filter(pa => String(pa.examId) === selectedExamId);
 
   const getProctorName = taId => {
     const ta = allTAs.find(t => t.id === taId);
@@ -67,15 +60,11 @@ const ViewAssignedTAs = () => {
 
   const handleConfirm = () => {
     if (!selectedAssignment || !replacementTaId) return;
-
-    fetch(
-      `http://localhost:8080/api/proctor-assignments/${selectedAssignment.id}`,
-      {
-        method: "PUT",
-        headers,
-        body: JSON.stringify({ ...selectedAssignment, taId: parseInt(replacementTaId, 10) }),
-      }
-    )
+    fetch(`http://localhost:8080/api/proctor-assignments/${selectedAssignment.id}`, {
+      method: "PUT",
+      headers,
+      body: JSON.stringify({ ...selectedAssignment, taId: parseInt(replacementTaId, 10) }),
+    })
       .then(() => fetch("http://localhost:8080/api/proctor-assignments", { headers }))
       .then(res => res.json())
       .then(data => {
@@ -85,17 +74,14 @@ const ViewAssignedTAs = () => {
   };
 
   return (
-    <div className="d-flex">
-      {/* Sidebar */}
-      <div style={{ width: "300px" }}>
+    <div className="d-flex flex-column flex-md-row">
+      <div className="flex-shrink-0" style={{ width: "100%", maxWidth: "300px" }}>
         <CoordinatorLayout />
       </div>
 
-      {/* Main Content */}
       <div className="container mt-4 flex-grow-1">
-        <h4 className="mb-3">Exam Proctor Reassignment</h4>
+        <h4 className="mb-3 text-center text-md-start">Exam Proctor Reassignment</h4>
 
-        {/* Select Exam */}
         <div className="mb-3">
           <label className="form-label">Select Exam</label>
           <select
@@ -105,25 +91,22 @@ const ViewAssignedTAs = () => {
           >
             <option value="">-- Choose Exam --</option>
             {exams.map(ex => (
-              <option key={ex.id} value={ex.id}>
-                {ex.examName}
-              </option>
+              <option key={ex.id} value={ex.id}>{ex.examName}</option>
             ))}
           </select>
         </div>
 
-        {/* List proctors for chosen exam */}
         {selectedExam && (
           <div className="card mt-3">
             <div className="card-body">
-              <h5>{selectedExam.examName}</h5>
+              <h5 className="text-center text-md-start">{selectedExam.examName}</h5>
               <ul className="list-group">
                 {filteredProctors.map(pa => (
                   <li
                     key={pa.id}
-                    className="list-group-item d-flex justify-content-between align-items-center"
+                    className="list-group-item d-flex flex-column flex-md-row justify-content-between align-items-md-center"
                   >
-                    <div>
+                    <div className="mb-2 mb-md-0">
                       {getProctorName(pa.taId)} – {getRoomInfo(pa.classroomId)}
                     </div>
                     <button
@@ -139,7 +122,6 @@ const ViewAssignedTAs = () => {
           </div>
         )}
 
-        {/* Modal: pick new TA */}
         {showModal && (
           <div
             style={{
@@ -152,9 +134,8 @@ const ViewAssignedTAs = () => {
               zIndex: 1050,
             }}
           >
-            <div className="bg-white p-4 rounded" style={{ width: 320 }}>
+            <div className="bg-white p-4 rounded" style={{ width: "90%", maxWidth: 360 }}>
               <h5 className="mb-3">Reassign TA</h5>
-
               <label className="form-label">Select New TA</label>
               <select
                 className="form-select mb-4"
@@ -170,17 +151,8 @@ const ViewAssignedTAs = () => {
               </select>
 
               <div className="d-flex justify-content-end gap-2">
-                <button
-                  className="btn btn-secondary"
-                  onClick={() => setShowModal(false)}
-                >
-                  Cancel
-                </button>
-                <button
-                  className="btn btn-primary"
-                  disabled={!replacementTaId}
-                  onClick={handleConfirm}
-                >
+                <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
+                <button className="btn btn-primary" disabled={!replacementTaId} onClick={handleConfirm}>
                   Confirm
                 </button>
               </div>

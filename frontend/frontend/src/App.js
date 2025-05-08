@@ -78,7 +78,6 @@ import UpdateProctorCountDean from "./people/Dean/UpdateProctorCount-Dean.jsx";
 import AuthActorsAdmin           from "./people/Admin/AuthActors-Admin.jsx";
 import ReviewReportRequestsAdmin from "./people/Admin/ReviewReportRequests-Admin.jsx";
 import MakeReportsAdmin          from "./people/Admin/MakeReports-Admin.jsx";
-import PendingReportsAdmin       from "./people/Admin/PendingReports-Admin.jsx";
 import ViewFeedback              from "./people/Admin/ViewFeedback.jsx";
 
 function App() {
@@ -187,7 +186,6 @@ function App() {
           <Route path="/authorize-actors" element={<AuthActorsAdmin />} />
           <Route path="/review-requests" element={<ReviewReportRequestsAdmin />} />
           <Route path="/make-reports" element={<MakeReportsAdmin />} />
-          <Route path="/pending-reports" element={<PendingReportsAdmin />} />
           <Route path="/viewfeedback" element={<ViewFeedback />} />
         </Route>
 

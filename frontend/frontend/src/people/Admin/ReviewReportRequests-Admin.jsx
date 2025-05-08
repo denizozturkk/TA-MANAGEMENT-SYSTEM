@@ -28,7 +28,6 @@ const ReviewReportRequestsAdmin = () => {
   const BASE = "http://localhost:8080/api/admin";
   const hdrs = { "Authorization": `Bearer ${token}` };
 
-  // load pending report‐requests on mount
   useEffect(() => {
     fetch(`${BASE}/report-requests`, {
       headers: { ...hdrs, "Accept": "application/json" }
@@ -44,14 +43,13 @@ const ReviewReportRequestsAdmin = () => {
       });
   }, []);
 
-  // open modal to attach PDF and accept
   const openAcceptModal = req => {
     setModalReq(req);
     setPdfFile(null);
   };
+
   const closeModal = () => setModalReq(null);
 
-  // upload PDF & accept
   const handleUploadAndAccept = () => {
     if (!pdfFile) {
       return alert("Please select a PDF to upload");
@@ -62,12 +60,11 @@ const ReviewReportRequestsAdmin = () => {
 
     fetch(`${BASE}/report-requests/${modalReq.id}/accept`, {
       method: "POST",
-      headers: hdrs, // browser sets Content-Type for multipart
+      headers: hdrs,
       body: form
     })
       .then(res => {
         if (!res.ok) throw new Error(res.statusText);
-        // update UI
         setRequests(reqs =>
           reqs.map(r =>
             r.id === modalReq.id ? { ...r, status: "ACCEPTED" } : r
@@ -82,7 +79,6 @@ const ReviewReportRequestsAdmin = () => {
       .finally(() => setUploading(false));
   };
 
-  // reject inline
   const handleReject = id => {
     fetch(`${BASE}/report-requests/${id}/reject`, {
       method: "POST",
@@ -103,73 +99,81 @@ const ReviewReportRequestsAdmin = () => {
   };
 
   return (
-    <LayoutAdmin>
-      <div className="card shadow-sm border-0 mb-4">
-        <div className="card-body">
-          <h4 className="fw-bold mb-4 text-primary">Review Report Requests</h4>
-          <table className="table table-hover align-middle w-100">
-            <thead>
-              <tr>
-                <th>From</th>
-                <th>Report Type</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {requests.length > 0 ? (
-                requests.map(r => (
-                  <tr key={r.id}>
-                    <td>
-                      {r.requesterFirstName} {r.requesterLastName}
-                    </td>
-                    <td>{r.reportType}</td>
-                    <td>
-                      <span
-                        className={
-                          r.status === "PENDING"
-                            ? "badge bg-warning text-dark"
-                            : r.status === "ACCEPTED"
-                            ? "badge bg-success"
-                            : "badge bg-danger"
-                        }
-                      >
-                        {r.status}
-                      </span>
-                    </td>
-                    <td>
-                      {r.status === "PENDING" && (
-                        <>
-                          <button
-                            className="btn btn-sm btn-success me-2"
-                            onClick={() => openAcceptModal(r)}
-                          >
-                            Accept
-                          </button>
-                          <button
-                            className="btn btn-sm btn-danger"
-                            onClick={() => handleReject(r.id)}
-                          >
-                            Reject
-                          </button>
-                        </>
-                      )}
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="4" className="text-center">
-                    No report requests
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+    <div className="d-flex flex-column flex-lg-row">
+      {/* Sol Sidebar */}
+      <div className="w-100 w-lg-auto" style={{ maxWidth: "300px" }}>
+        <LayoutAdmin />
+      </div>
+
+      {/* Sağ Ana İçerik */}
+      <div className="container-fluid py-4">
+        <div className="row justify-content-center">
+          <div className="col-12 col-md-10 col-lg-8">
+            <div className="card shadow-sm border-0 mb-4">
+              <div className="card-body">
+                <h4 className="fw-bold mb-4 text-primary">Review Report Requests</h4>
+                <table className="table table-hover align-middle w-100">
+                  <thead>
+                    <tr>
+                      <th>From</th>
+                      <th>Report Type</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {requests.length > 0 ? (
+                      requests.map(r => (
+                        <tr key={r.id}>
+                          <td>{r.requesterFirstName} {r.requesterLastName}</td>
+                          <td>{r.reportType}</td>
+                          <td>
+                            <span className={
+                              r.status === "PENDING"
+                                ? "badge bg-warning text-dark"
+                                : r.status === "ACCEPTED"
+                                  ? "badge bg-success"
+                                  : "badge bg-danger"
+                            }>
+                              {r.status}
+                            </span>
+                          </td>
+                          <td>
+                            {r.status === "PENDING" && (
+                              <>
+                                <button
+                                  className="btn btn-sm btn-success me-2"
+                                  onClick={() => openAcceptModal(r)}
+                                >
+                                  Accept
+                                </button>
+                                <button
+                                  className="btn btn-sm btn-danger"
+                                  onClick={() => handleReject(r.id)}
+                                >
+                                  Reject
+                                </button>
+                              </>
+                            )}
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="4" className="text-center">
+                          No report requests
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Accept + PDF Upload Modal */}
+      {/* Modal */}
       {modalReq && (
         <Modal
           title={`Send PDF to ${modalReq.requesterFirstName} ${modalReq.requesterLastName}`}
@@ -195,7 +199,7 @@ const ReviewReportRequestsAdmin = () => {
           </div>
         </Modal>
       )}
-    </LayoutAdmin>
+    </div>
   );
 };
 

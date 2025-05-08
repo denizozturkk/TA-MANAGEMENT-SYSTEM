@@ -36,42 +36,60 @@ const ViewFeedbackAdmin = () => {
   const formatDate = (ts) => (ts ? new Date(ts).toLocaleString() : "—");
 
   return (
-    <LayoutAdmin>
-      <div className="card shadow-sm border-0">
-        <div className="card-body">
-          <h4 className="fw-bold mb-4 text-primary">User Feedback</h4>
+    <div className="d-flex flex-column flex-lg-row">
+      {/* Sol Sidebar */}
+      <div className="w-100 w-lg-auto" style={{ maxWidth: "300px" }}>
+        <LayoutAdmin />
+      </div>
 
-          {loading ? (
-            <p>Loading…</p>
-          ) : feedback.length === 0 ? (
-            <p className="text-muted">No feedback submitted yet.</p>
-          ) : (
-            <div className="table-responsive">
-              <table className="table table-hover align-middle">
-                <thead className="table-light">
-                  <tr>
-                    <th>Sender Email</th>
-                    <th>Message</th>
-                    <th>Submitted At</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {feedback.map((fb) => (
-                    <tr key={fb.id}>
-                      <td>{fb.senderEmail}</td>
-                      <td style={{ maxWidth: 400, whiteSpace: "pre-wrap", overflowWrap: "break-word" }}>
-                        {fb.message}
-                      </td>
-                      <td>{formatDate(fb.createdAt)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+      {/* Sağ İçerik */}
+      <div className="container-fluid py-4">
+        <div className="row justify-content-center">
+          <div className="col-12 col-md-10 col-lg-9">
+            <div className="card shadow-sm border-0">
+              <div className="card-body">
+                <h4 className="fw-bold mb-4 text-primary">User Feedback</h4>
+
+                {loading ? (
+                  <p>Loading…</p>
+                ) : feedback.length === 0 ? (
+                  <p className="text-muted">No feedback submitted yet.</p>
+                ) : (
+                  <div className="table-responsive">
+                    <table className="table table-hover align-middle">
+                      <thead className="table-light">
+                        <tr>
+                          <th>Sender Email</th>
+                          <th>Message</th>
+                          <th>Submitted At</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {feedback.map((fb) => (
+                          <tr key={fb.id}>
+                            <td>{fb.senderEmail}</td>
+                            <td
+                              style={{
+                                maxWidth: 400,
+                                whiteSpace: "pre-wrap",
+                                overflowWrap: "break-word",
+                              }}
+                            >
+                              {fb.message}
+                            </td>
+                            <td>{formatDate(fb.createdAt)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
             </div>
-          )}
+          </div>
         </div>
       </div>
-    </LayoutAdmin>
+    </div>
   );
 };
 

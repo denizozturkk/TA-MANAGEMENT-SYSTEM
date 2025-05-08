@@ -1,123 +1,159 @@
-// src/people/Admin/Layout-Admin.jsx
-import React, { useState } from "react";
-import { NavLink } from "react-router-dom";
+// src/people/User/Sidebar.jsx
+import React from "react";
+import { Link } from "react-router-dom";
 
-const LayoutAdmin = ({ children }) => {
-  const [open, setOpen] = useState({
-    actors:   false,
-    requests: false,
-    reports:  false,
-    pending:  false,
-  });
-  const toggle = (key) =>
-    setOpen((prev) => ({ ...prev, [key]: !prev[key] }));
+const Sidebar = () => (
+  <>
+    {/* Mobile toggle button */}
+    <button
+      className="btn btn-link text-light d-md-none p-2 position-fixed"
+      style={{ top: '1rem', left: '1rem', zIndex: 1050 }}
+      type="button"
+      data-bs-toggle="offcanvas"
+      data-bs-target="#mobileSidebar"
+      aria-controls="mobileSidebar"
+      aria-label="Toggle sidebar"
+    >
+      <i className="icofont-navigation-menu fs-3"></i>
+    </button>
 
-  const linkClass = ({ isActive }) =>
-    isActive
-      ? "text-white fw-bold d-inline-block"
-      : "text-light d-inline-block";
-
-  return (
-    <div className="container-xxl">
-      <div className="row">
-        {/* Sidebar */}
-        <div className="col-lg-3">
-          <div
-            className="sidebar px-4 py-4 py-md-5 d-flex flex-column"
-            style={{ backgroundColor: "purple", minHeight: "100vh" }}
-          >
-            {/* Brand */}
-            <NavLink
-              to="/authorize-actors"
-              className="mb-4 brand-icon text-white d-flex align-items-center"
+    {/* Mobile Sidebar */}
+    <div
+      className="offcanvas offcanvas-start d-md-none text-light"
+      tabIndex="-1"
+      id="mobileSidebar"
+      aria-labelledby="mobileSidebarLabel"
+      style={{ backgroundColor: '#2D2A62', width: '240px' }}
+    >
+      <div className="offcanvas-header">
+        <h5 className="offcanvas-title text-light" id="mobileSidebarLabel">Admin Panel</h5>
+        <button
+          type="button"
+          className="btn-close btn-close-white"
+          data-bs-dismiss="offcanvas"
+          aria-label="Close"
+        />
+      </div>
+      <div className="offcanvas-body p-0">
+        <ul className="menu-list list-unstyled mb-0">
+          <li className="border-bottom">
+            <button
+              className="m-link text-light d-flex align-items-center p-3 w-100 bg-transparent border-0 text-start"
+              data-bs-toggle="collapse"
+              data-bs-target="#adminMenuMobile"
+              aria-expanded="false"
+              aria-controls="adminMenuMobile"
+              type="button"
             >
-              <svg width="35" height="35" fill="currentColor" className="me-2">
-                {/* … your SVG paths … */}
-              </svg>
-              <span className="h5 mb-0">My-Task Admin</span>
-            </NavLink>
-
-            <ul className="menu-list flex-grow-1">
-              {/* Authorize Actors */}
-              <li className="mb-3">
-                <div className="d-flex justify-content-between align-items-center">
-                  <NavLink to="/authorize-actors" className={linkClass}>
-                    <i className="icofont-ui-user fs-5 me-2" />
-                    Authorize Actors
-                  </NavLink>
-                  <button
-                    className="btn btn-link text-light p-0"
-                    onClick={() => toggle("actors")}
-                  >
-                    <i className={`icofont-rounded-${open.actors ? "up" : "down"}`} />
-                  </button>
-                </div>
-              </li>
-
-              {/* View viewfeedback */}
-              <li className="mb-3">
-                <div className="d-flex justify-content-between align-items-center">
-                  <NavLink to="/viewfeedback" className={linkClass}>
-                    <i className="icofont-ui-user fs-5 me-2" />
-                    View Feedback
-                  </NavLink>
-                  <button
-                    className="btn btn-link text-light p-0"
-                    onClick={() => toggle("actors")}
-                  >
-                    <i className={`icofont-rounded-${open.actors ? "up" : "down"}`} />
-                  </button>
-                </div>
-              </li>
-
-              {/* Review Requests */}
-              <li className="mb-3">
-                <div className="d-flex justify-content-between align-items-center">
-                  <NavLink to="/review-requests" className={linkClass}>
-                    <i className="icofont-file-text fs-5 me-2" />
-                    Review Requests
-                  </NavLink>
-                  <button
-                    className="btn btn-link text-light p-0"
-                    onClick={() => toggle("requests")}
-                  >
-                    <i className={`icofont-rounded-${open.requests ? "up" : "down"}`} />
-                  </button>
-                </div>
-              </li>
-
-              {/* Generate Reports */}
-              <li className="mb-3">
-                <div className="d-flex justify-content-between align-items-center">
-                  <NavLink to="/make-reports" className={linkClass}>
-                    <i className="icofont-chart-histogram fs-5 me-2" />
-                    Generate Reports
-                  </NavLink>
-                  <button
-                    className="btn btn-link text-light p-0"
-                    onClick={() => toggle("reports")}
-                  >
-                    <i className={`icofont-rounded-${open.reports ? "up" : "down"}`} />
-                  </button>
-                </div>
-              </li>
-            </ul>
-       
-            <button className="btn btn-link sidebar-mini-btn text-light mt-auto">
-              <i className="icofont-bubble-right" />
+              <i className="icofont-user-suited me-2"></i>Admin Tools
+              <i className="icofont-dotted-down ms-auto"></i>
             </button>
-          </div>
-        </div>
-
-        {/* Main content area */}
-        <div className="col-lg-9">
-          <div className="container-xxl py-5">
-            {children}
-          </div>
-        </div>
+            <ul className="collapse ms-4" id="adminMenuMobile">
+              <li><Link className="ms-link text-light d-block py-2" to="/authorize-actors">Authorize Actors</Link></li>
+              <li><Link className="ms-link text-light d-block py-2" to="/review-requests">Review Report Requests</Link></li>
+              <li><Link className="ms-link text-light d-block py-2" to="/make-reports">Make Reports</Link></li>
+              <li><Link className="ms-link text-light d-block py-2" to="/viewfeedback">View Feedback</Link></li>
+            </ul>
+          </li>
+          <li className="border-bottom">
+            <button
+              className="m-link text-light d-flex align-items-center p-3 w-100 bg-transparent border-0 text-start"
+              data-bs-toggle="collapse"
+              data-bs-target="#profileMenuMobile"
+              aria-expanded="false"
+              aria-controls="profileMenuMobile"
+              type="button"
+            >
+              <i className="icofont-user-alt-2 me-2"></i>My Profile
+              <i className="icofont-dotted-down ms-auto"></i>
+            </button>
+            <ul className="collapse ms-4" id="profileMenuMobile">
+              <li><Link className="ms-link text-light d-block py-2" to="/changecontactinformation">Change Contact Info</Link></li>
+              <li><Link className="ms-link text-light d-block py-2" to="/changepassword">Change Password</Link></li>
+              <li><Link className="ms-link text-light d-block py-2" to="/notification">Notifications</Link></li>
+              <li><Link className="ms-link text-light d-block py-2" to="/viewprofile">View Profile</Link></li>
+            </ul>
+          </li>
+        </ul>
       </div>
     </div>
-  );
-};
 
-export default LayoutAdmin;
+    {/* Desktop Sidebar */}
+    <aside
+      className="sidebar d-none d-md-flex flex-column px-4 py-4 py-md-5"
+      style={{ backgroundColor: '#2D2A62', width: '240px' }}
+    >
+      <style>{`
+        .sidebar .menu-list .ms-link:hover {
+          background-color: #E31B23 !important;
+          color: #FFFFFF !important;
+        }
+        .sidebar .m-link:hover {
+          color: #E31B23 !important;
+        }
+        .sidebar .ms-link,
+        .sidebar .m-link {
+          transition: background-color 0.2s, color 0.2s;
+        }
+      `}</style>
+
+      <Link to="/" className="mb-4 text-light d-flex align-items-center">
+        <span className="logo-icon me-2">
+          <svg width="35" height="35" fill="currentColor" viewBox="0 0 16 16">
+            <path fillRule="evenodd" d="M10.854 7.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 9.793l2.646-2.647a.5.5 0 0 1 .708 0z" />
+            <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z" />
+            <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z" />
+          </svg>
+        </span>
+        <span className="logo-text fs-5">Admin Panel</span>
+      </Link>
+
+      <ul className="menu-list flex-grow-1 list-unstyled">
+        <li className="collapsed">
+          <button
+            className="m-link text-light d-flex align-items-center mb-2 w-100 bg-transparent border-0 text-start"
+            data-bs-toggle="collapse"
+            data-bs-target="#adminMenuDesktop"
+            aria-expanded="false"
+            aria-controls="adminMenuDesktop"
+            type="button"
+          >
+            <i className="icofont-user-suited me-2"></i>Admin Tools
+            <span className="arrow icofont-dotted-down ms-auto fs-5"></span>
+          </button>
+          <ul className="collapse sub-menu" id="adminMenuDesktop">
+            <li><Link className="ms-link text-light d-block py-1 px-2" to="/authorize-actors">Authorize Actors</Link></li>
+            <li><Link className="ms-link text-light d-block py-1 px-2" to="/review-requests">Review Report Requests</Link></li>
+            <li><Link className="ms-link text-light d-block py-1 px-2" to="/make-reports">Make Reports</Link></li>
+            <li><Link className="ms-link text-light d-block py-1 px-2" to="/viewfeedback">View Feedback</Link></li>
+          </ul>
+        </li>
+        <li className="collapsed mt-3">
+          <button
+            className="m-link text-light d-flex align-items-center mb-2 w-100 bg-transparent border-0 text-start"
+            data-bs-toggle="collapse"
+            data-bs-target="#profileMenuDesktop"
+            aria-expanded="false"
+            aria-controls="profileMenuDesktop"
+            type="button"
+          >
+            <i className="icofont-user-alt-2 me-2"></i>My Profile
+            <span className="arrow icofont-dotted-down ms-auto fs-5"></span>
+          </button>
+          <ul className="collapse sub-menu" id="profileMenuDesktop">
+            <li><Link className="ms-link text-light d-block py-1 px-2" to="/changecontactinformation">Change Contact Info</Link></li>
+            <li><Link className="ms-link text-light d-block py-1 px-2" to="/changepassword">Change Password</Link></li>
+            <li><Link className="ms-link text-light d-block py-1 px-2" to="/notification">Notifications</Link></li>
+            <li><Link className="ms-link text-light d-block py-1 px-2" to="/viewprofile">View Profile</Link></li>
+          </ul>
+        </li>
+      </ul>
+
+      <button type="button" className="btn btn-link sidebar-mini-btn text-light mt-auto">
+        <i className="icofont-bubble-right"></i>
+      </button>
+    </aside>
+  </>
+);
+
+export default Sidebar;
