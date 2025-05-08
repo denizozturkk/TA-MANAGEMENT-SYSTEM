@@ -1,9 +1,8 @@
-// src/main/java/edu/bilkent/cs319/team9/ta_management_system/controller/BusyHourController.java
 package edu.bilkent.cs319.team9.ta_management_system.controller;
 
 import edu.bilkent.cs319.team9.ta_management_system.dto.BusyHourDto;
-import edu.bilkent.cs319.team9.ta_management_system.model.TA;
 import edu.bilkent.cs319.team9.ta_management_system.model.BusyHour;
+import edu.bilkent.cs319.team9.ta_management_system.model.TA;
 import edu.bilkent.cs319.team9.ta_management_system.service.BusyHourService;
 import edu.bilkent.cs319.team9.ta_management_system.service.TAService;
 import edu.bilkent.cs319.team9.ta_management_system.mapper.EntityMapperService;
@@ -11,9 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.DayOfWeek;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,7 +25,7 @@ public class BusyHourController {
 
     @GetMapping
     public ResponseEntity<List<BusyHourDto>> list(@PathVariable Long taId) {
-        taService.findById(taId);  // 404 if not exists
+        taService.findById(taId);
         List<BusyHourDto> dtos = busyHourService.findByTaId(taId).stream()
                 .map(mapper::toDto)
                 .collect(Collectors.toList());

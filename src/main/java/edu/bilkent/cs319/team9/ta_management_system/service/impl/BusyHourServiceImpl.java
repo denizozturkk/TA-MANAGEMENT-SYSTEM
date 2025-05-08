@@ -1,6 +1,5 @@
 package edu.bilkent.cs319.team9.ta_management_system.service.impl;
 
-
 import edu.bilkent.cs319.team9.ta_management_system.exception.NotFoundException;
 import edu.bilkent.cs319.team9.ta_management_system.model.BusyHour;
 import edu.bilkent.cs319.team9.ta_management_system.model.TA;
@@ -10,9 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.DayOfWeek;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.List;
 
 @Service
@@ -38,13 +35,12 @@ public class BusyHourServiceImpl implements BusyHourService {
     public BusyHour update(Long id, BusyHour busyHour) {
         BusyHour existing = repo.findById(id)
                 .orElseThrow(() -> new NotFoundException("BusyHour", id));
-        existing.setDayOfWeek(busyHour.getDayOfWeek());
-        existing.setStartTime(busyHour.getStartTime());
-        existing.setEndTime(busyHour.getEndTime());
-        // ensure the TA reference stays correct
+        existing.setStartDateTime(busyHour.getStartDateTime());
+        existing.setEndDateTime(busyHour.getEndDateTime());
         existing.setTa(busyHour.getTa());
         return repo.save(existing);
     }
+
     @Override
     @Transactional(readOnly = true)
     public BusyHour findById(Long id) {
@@ -56,24 +52,21 @@ public class BusyHourServiceImpl implements BusyHourService {
     public void delete(Long id) {
         repo.deleteById(id);
     }
+
     @Override
     public boolean isTAAvailable(Long taId, LocalDateTime start, LocalDateTime end) {
-        DayOfWeek day = start.getDayOfWeek();
-        LocalTime startTime = start.toLocalTime();
-        LocalTime endTime = end.toLocalTime();
-        List<BusyHour> overlaps = repo.findOverlappingBusyHours(taId, day, startTime, endTime);
+        List<BusyHour> overlaps = repo.findByTa_Id(taId).stream()
+                .filter(bh -> bh.overlaps(start, end))
+                .toList();
         return overlaps.isEmpty();
     }
-    @Override
-    public BusyHour makeBusyHour(TA ta,
-                                 LocalDateTime start,
-                                 LocalDateTime end) {
 
+    @Override
+    public BusyHour makeBusyHour(TA ta, LocalDateTime start, LocalDateTime end) {
         return BusyHour.builder()
                 .ta(ta)
-                .dayOfWeek(start.getDayOfWeek())
-                .startTime(start.minusHours(LOCAL_UTC_SHIFT_HOURS).toLocalTime())
-                .endTime(end.  minusHours(LOCAL_UTC_SHIFT_HOURS).toLocalTime())
+                .startDateTime(start.minusHours(LOCAL_UTC_SHIFT_HOURS))
+                .endDateTime(end.minusHours(LOCAL_UTC_SHIFT_HOURS))
                 .build();
     }
 }

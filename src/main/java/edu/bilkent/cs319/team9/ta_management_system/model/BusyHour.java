@@ -6,7 +6,6 @@ import lombok.experimental.SuperBuilder;
 
 import java.time.DayOfWeek;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 
 @Entity
 @Data
@@ -20,39 +19,21 @@ public class BusyHour {
     @EqualsAndHashCode.Include
     private Long id;
 
-    /**
-     * which TA this slot belongs to
-     */
     @ManyToOne(optional = false)
     @JoinColumn(name = "ta_id", nullable = false)
     private TA ta;
 
-    /**
-     * day of week, e.g. MONDAY, TUESDAY…
-     */
-    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private DayOfWeek dayOfWeek;
+    private LocalDateTime startDateTime;
 
-    /**
-     * start of busy period (e.g. 13:30)
-     */
     @Column(nullable = false)
-    private LocalTime startTime;
+    private LocalDateTime endDateTime;
 
-    /**
-     * end of busy period (e.g. 14:30)
-     */
-    @Column(nullable = false)
-    private LocalTime endTime;
+    public DayOfWeek getDayOfWeek() {
+        return startDateTime.getDayOfWeek();
+    }
 
     public boolean overlaps(LocalDateTime otherStart, LocalDateTime otherEnd) {
-        if (!otherStart.getDayOfWeek().equals(this.dayOfWeek)) {
-            return false;
-        }
-        LocalTime oStart = otherStart.toLocalTime();
-        LocalTime oEnd   = otherEnd.toLocalTime();
-        // overlap occurs if oStart < this.endTime && oEnd > this.startTime
-        return oStart.isBefore(this.endTime) && oEnd.isAfter(this.startTime);
+        return otherStart.isBefore(this.endDateTime) && otherEnd.isAfter(this.startDateTime);
     }
 }
