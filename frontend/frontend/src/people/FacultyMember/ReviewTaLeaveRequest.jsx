@@ -1,4 +1,3 @@
-// src/people/TA/LeaveRequest.jsx
 import React, { useEffect, useState } from "react";
 import FacultyMemberLayout from "../FacultyMember/FacultyMemberLayout";
 
@@ -62,22 +61,28 @@ const LeaveRequest = () => {
   }, [token]);
 
   const handleStatusUpdate = (id, newStatus) => {
-    const leave = leaveData.find(lr => lr.id === id);
-    if (!leave) return;
+    // Determine correct endpoint based on action
+    const endpoint = newStatus === "ACCEPTED" 
+      ? `/faculty-members/leave-requests/${id}/approve`
+      : `/faculty-members/leave-requests/${id}/reject`;
 
-    fetch(`${BASE}/leave-requests/${id}`, {
-      method: "PUT",
+    fetch(`${BASE}${endpoint}`, {
+      method: "POST",
       headers,
-      body: JSON.stringify({ ...leave, status: newStatus }),
     })
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) {
+          return res.json().then(err => Promise.reject(err));
+        }
+        return res.json();
+      })
       .then(updated => {
         setLeaveData(ld =>
           ld.map(lr => (lr.id === updated.id ? updated : lr))
         );
         setSelectedLeave(null);
       })
-      .catch(err => console.error("Update error:", err));
+      .catch(err => console.error("Leave update error:", err.message || err));
   };
 
   return (
@@ -128,8 +133,7 @@ const LeaveRequest = () => {
                           onClick={() => {
                             setSelectedLeave(item);
                             setActionType("ACCEPTED");
-                          }}
-                        >
+                          }}>
                           Approve
                         </button>
                         <button
@@ -138,8 +142,7 @@ const LeaveRequest = () => {
                           onClick={() => {
                             setSelectedLeave(item);
                             setActionType("REJECTED");
-                          }}
-                        >
+                          }}>
                           Reject
                         </button>
                       </div>
@@ -155,8 +158,7 @@ const LeaveRequest = () => {
           <div
             className="modal fade show d-block"
             tabIndex="-1"
-            style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
-          >
+            style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
             <div className="modal-dialog">
               <div className="modal-content">
                 <div className="modal-header">
@@ -170,23 +172,18 @@ const LeaveRequest = () => {
                 </div>
                 <div className="modal-body">
                   <p>
-                    Are you sure you want to{" "}
-                    <strong>{actionType === "ACCEPTED" ? "approve" : "reject"}</strong>{" "}
-                    leave request <strong>#{selectedLeave.id}</strong> for TA{" "}
-                    <strong>{tas[selectedLeave.taId] || selectedLeave.taId}</strong>?
+                    Are you sure you want to <strong>{actionType === "ACCEPTED" ? "approve" : "reject"}</strong> leave request <strong>#{selectedLeave.id}</strong> for TA <strong>{tas[selectedLeave.taId] || selectedLeave.taId}</strong>?
                   </p>
                 </div>
                 <div className="modal-footer">
                   <button
                     className="btn btn-secondary"
-                    onClick={() => setSelectedLeave(null)}
-                  >
+                    onClick={() => setSelectedLeave(null)}>
                     Cancel
                   </button>
                   <button
                     className={`btn ${actionType === "ACCEPTED" ? "btn-success" : "btn-danger"}`}
-                    onClick={() => handleStatusUpdate(selectedLeave.id, actionType)}
-                  >
+                    onClick={() => handleStatusUpdate(selectedLeave.id, actionType)}>
                     {actionType === "ACCEPTED" ? "Approve" : "Reject"}
                   </button>
                 </div>
