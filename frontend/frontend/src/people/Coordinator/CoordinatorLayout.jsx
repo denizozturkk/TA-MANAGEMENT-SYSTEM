@@ -17,7 +17,7 @@ const Sidebar = () => (
       <i className="icofont-navigation-menu fs-3"></i>
     </button>
 
-    {/* Mobile offcanvas sidebar */}
+    {/* Mobile Offcanvas Sidebar */}
     <div
       className="offcanvas offcanvas-start d-md-none text-light"
       tabIndex="-1"
@@ -36,7 +36,7 @@ const Sidebar = () => (
       </div>
       <div className="offcanvas-body p-0">
         <ul className="menu-list list-unstyled mb-0">
-          
+
           {/* Coordinator Panel - Mobile */}
           <li className="border-bottom">
             <a
@@ -49,16 +49,35 @@ const Sidebar = () => (
               <i className="icofont-dotted-down ms-auto"></i>
             </a>
             <ul className="collapse ms-4" id="coordinatorMenuMobile">
-              {/* <li><Link className="ms-link text-light d-block py-2" to="/replaceta">Replace TA</Link></li> */}
               <li><Link className="ms-link text-light d-block py-2" to="/manageexamclassroom">Manage Exam Classrooms</Link></li>
               <li><Link className="ms-link text-light d-block py-2" to="/swapduties">Swap Duties</Link></li>
               <li><Link className="ms-link text-light d-block py-2" to="/replaceduties">Replace Duties</Link></li>
               <li><Link className="ms-link text-light d-block py-2" to="/swapprocturing">Swap Proctor</Link></li>
               <li><Link className="ms-link text-light d-block py-2" to="/replaceprocturing">Replace Proctor</Link></li>
-              {/* <li><Link className="ms-link text-light d-block py-2" to="/assigntaanotherlesson">Assign TA to Another Lesson</Link></li> */}
             </ul>
           </li>
 
+          {/* Excel Upload Panel - Mobile */}
+          <li className="border-bottom">
+            <a
+              className="m-link text-light d-flex align-items-center p-3"
+              data-bs-toggle="collapse"
+              data-bs-target="#excelMenuMobile"
+              href="#"
+            >
+              <i className="icofont-upload me-2"></i>Upload Excel Files
+              <i className="icofont-dotted-down ms-auto"></i>
+            </a>
+            <ul className="collapse ms-4" id="excelMenuMobile">
+              <li><Link className="ms-link text-light d-block py-2" to="/excelta">TA Excel</Link></li>
+              <li><Link className="ms-link text-light d-block py-2" to="/excelfacultymember">Faculty Member Excel</Link></li>
+              <li><Link className="ms-link text-light d-block py-2" to="/excelstudent">Student Excel</Link></li>
+              <li><Link className="ms-link text-light d-block py-2" to="/excelofferings">Offerings Excel</Link></li>
+              <li><Link className="ms-link text-light d-block py-2" to="/excelcourse">Course Excel</Link></li>
+            </ul>
+          </li>
+
+          {/* My Profile - Mobile */}
           <li className="border-bottom">
             <a
               className="m-link text-light d-flex align-items-center p-3"
@@ -80,7 +99,7 @@ const Sidebar = () => (
       </div>
     </div>
 
-    {/* Desktop sidebar */}
+    {/* Desktop Sidebar */}
     <aside
       className="sidebar d-none d-md-flex flex-column px-4 py-4 py-md-5"
       style={{ backgroundColor: '#2D2A62', width: '240px' }}
@@ -111,24 +130,37 @@ const Sidebar = () => (
       </Link>
 
       <ul className="menu-list flex-grow-1 list-unstyled">
-        
-
+        {/* Coordinator Panel - Desktop */}
         <li className="collapsed mt-3">
           <a className="m-link text-light d-flex align-items-center mb-2" data-bs-toggle="collapse" data-bs-target="#coordinatorMenuDesktop" href="#">
             <i className="icofont-briefcase me-2"></i>Coordinator Panel
             <span className="arrow icofont-dotted-down ms-auto fs-5"></span>
           </a>
           <ul className="collapse sub-menu" id="coordinatorMenuDesktop">
-            {/* <li><Link className="ms-link text-light d-block py-1 px-2" to="/replaceta">Replace TA</Link></li> */}
-            <li><Link className="ms-link text-light d-block py-1 px-2" to="/manageexamclassroom">Manage Exam Classrooms</Link></li>
-            <li><Link className="ms-link text-light d-block py-1 px-2" to="/swapduties">Swap Duties</Link></li>
-            <li><Link className="ms-link text-light d-block py-1 px-2" to="/replaceduties">Replace Duties</Link></li>
-            <li><Link className="ms-link text-light d-block py-1 px-2" to="/swapprocturing">Swap Proctor</Link></li>
-            <li><Link className="ms-link text-light d-block py-1 px-2" to="/replaceprocturing">Replace Proctor</Link></li>
-            {/* <li><Link className="ms-link text-light d-block py-1 px-2" to="/assigntaanotherlesson">Assign TA to Another Lesson</Link></li> */}
+            <li><Link className="ms-link text-light d-block py-2" to="/manageexamclassroom">Manage Exam Classrooms</Link></li>
+            <li><Link className="ms-link text-light d-block py-2" to="/swapduties">Swap Duties</Link></li>
+            <li><Link className="ms-link text-light d-block py-2" to="/replaceduties">Replace Duties</Link></li>
+            <li><Link className="ms-link text-light d-block py-2" to="/swapprocturing">Swap Proctor</Link></li>
+            <li><Link className="ms-link text-light d-block py-2" to="/replaceprocturing">Replace Proctor</Link></li>
           </ul>
         </li>
 
+        {/* Upload Excel Panel - Desktop */}
+        <li className="collapsed mt-3">
+          <a className="m-link text-light d-flex align-items-center mb-2" data-bs-toggle="collapse" data-bs-target="#excelMenuDesktop" href="#">
+            <i className="icofont-upload me-2"></i>Upload Excel Files
+            <span className="arrow icofont-dotted-down ms-auto fs-5"></span>
+          </a>
+          <ul className="collapse sub-menu" id="excelMenuDesktop">
+            <li><Link className="ms-link text-light d-block py-1 px-3" to="/excelta">TA Excel</Link></li>
+            <li><Link className="ms-link text-light d-block py-1 px-3" to="/excelfacultymember">Faculty Member Excel</Link></li>
+            <li><Link className="ms-link text-light d-block py-1 px-3" to="/excelstudent">Student Excel</Link></li>
+            <li><Link className="ms-link text-light d-block py-1 px-3" to="/excelofferings">Offerings Excel</Link></li>
+            <li><Link className="ms-link text-light d-block py-1 px-3" to="/excelcourse">Course Excel</Link></li>
+          </ul>
+        </li>
+
+        {/* My Profile - Desktop */}
         <li className="collapsed mt-3">
           <a className="m-link text-light d-flex align-items-center mb-2" data-bs-toggle="collapse" data-bs-target="#profileMenuDesktop" href="#">
             <i className="icofont-user-alt-2 me-2"></i>My Profile
