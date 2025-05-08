@@ -1,8 +1,6 @@
-// src/people/TA/DutiesByDepartmentPage.jsx
 import React, { useState, useEffect } from "react";
 import FacultyMemberLayout from "../FacultyMember/FacultyMemberLayout";
 
-// Simple JWT parser
 function parseJwt(token) {
   try {
     return JSON.parse(window.atob(token.split(".")[1]));
@@ -30,7 +28,6 @@ const DutiesByDepartmentPage = () => {
     Authorization: `Bearer ${token}`,
   };
 
-  // Load all TAs, Exams, Classrooms on mount
   useEffect(() => {
     if (!token) return;
     fetch(`${BASE}/ta`, { headers })
@@ -49,7 +46,6 @@ const DutiesByDepartmentPage = () => {
       .catch(console.error);
   }, [token]);
 
-  // Filter TAs when dept changes
   useEffect(() => {
     setSelectedTA("");
     setDutyLogs([]);
@@ -61,7 +57,6 @@ const DutiesByDepartmentPage = () => {
     }
   }, [selectedDept, tas]);
 
-  // Fetch duty-logs and proctor-assignments when TA changes
   useEffect(() => {
     if (!selectedTA) {
       setDutyLogs([]);
@@ -69,142 +64,147 @@ const DutiesByDepartmentPage = () => {
       return;
     }
 
-    // Duty logs
     fetch(`${BASE}/duty-logs/ta/${selectedTA}`, { headers })
       .then(r => r.json())
       .then(data => setDutyLogs(Array.isArray(data) ? data : []))
       .catch(console.error);
 
-    // Proctor assignments
     fetch(`${BASE}/proctor-assignments/ta/${selectedTA}`, { headers })
       .then(r => r.json())
       .then(data => setProctors(Array.isArray(data) ? data : []))
       .catch(console.error);
   }, [selectedTA]);
 
-  // look up names / labels
-  const getTaName = id => {
-    const t = tas.find(x => x.id === id);
-    return t ? `${t.firstName} ${t.lastName}` : `TA #${id}`;
-  };
   const getExamName = id => {
     const e = exams.find(x => x.id === id);
     return e ? e.examName : `Exam #${id}`;
   };
+
   const getRoomName = id => {
     const c = classrooms.find(x => x.id === id);
     return c ? `${c.building} ${c.roomNumber}` : `Room #${id}`;
   };
 
   return (
-    <div className="d-flex">
-      <div style={{ width: 300 }}>
+    <div className="d-flex flex-column flex-lg-row">
+      <div className="w-100 w-lg-auto" style={{ maxWidth: 300 }}>
         <FacultyMemberLayout />
       </div>
-      <div className="container py-4 flex-grow-1">
-        <h3 className="mb-4">View TA Duty-Logs & Proctors</h3>
 
-        {/* Department */}
-        <div className="mb-3">
-          <label className="form-label">Department</label>
-          <select
-            className="form-select"
-            value={selectedDept}
-            onChange={e => setSelectedDept(e.target.value)}
-          >
-            <option value="">-- choose department --</option>
-            {Departments.map(d => (
-              <option key={d} value={d}>{d}</option>
-            ))}
-          </select>
+      <div className="container-fluid py-4">
+        <div className="row justify-content-center">
+          <div className="col-12 col-lg-10">
+            <h3 className="fw-bold mb-4 text-center text-lg-start">
+              View TA Duty Logs & Proctors
+            </h3>
+
+            {/* Department */}
+            <div className="mb-3">
+              <label className="form-label">Department</label>
+              <select
+                className="form-select"
+                value={selectedDept}
+                onChange={e => setSelectedDept(e.target.value)}
+              >
+                <option value="">-- choose department --</option>
+                {Departments.map(d => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* TA Selector */}
+            {selectedDept && (
+              <div className="mb-3">
+                <label className="form-label">Teaching Assistant</label>
+                <select
+                  className="form-select"
+                  value={selectedTA}
+                  onChange={e => setSelectedTA(e.target.value)}
+                >
+                  <option value="">-- choose TA --</option>
+                  {filteredTAs.map(t => (
+                    <option key={t.id} value={t.id}>
+                      {t.firstName} {t.lastName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Duty Logs */}
+            {selectedTA && (
+              <div className="card mb-4">
+                <div className="card-body">
+                  <h5 className="mb-3 border-bottom pb-2">Duty Logs</h5>
+                  {dutyLogs.length === 0 ? (
+                    <p className="text-muted">No duty logs found.</p>
+                  ) : (
+                    <div className="table-responsive">
+                      <table className="table table-bordered table-hover text-nowrap align-middle">
+                        <thead className="table-light">
+                          <tr>
+                            <th>ID</th>
+                            <th>Task Type</th>
+                            <th>Workload</th>
+                            <th>Start Time</th>
+                            <th>Duration</th>
+                            <th>Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {dutyLogs.map(dl => (
+                            <tr key={dl.id}>
+                              <td>{dl.id}</td>
+                              <td>{dl.taskType}</td>
+                              <td>{dl.workload}</td>
+                              <td>{new Date(dl.startTime).toLocaleString()}</td>
+                              <td>{dl.duration} mins</td>
+                              <td>{dl.status}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Proctor Assignments */}
+            {selectedTA && (
+              <div className="card">
+                <div className="card-body">
+                  <h5 className="mb-3 border-bottom pb-2">Proctor Assignments</h5>
+                  {proctors.length === 0 ? (
+                    <p className="text-muted">No proctor assignments found.</p>
+                  ) : (
+                    <div className="table-responsive">
+                      <table className="table table-bordered table-hover text-nowrap align-middle">
+                        <thead className="table-light">
+                          <tr>
+                            <th>Exam</th>
+                            <th>Classroom</th>
+                            <th>Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {proctors.map(pa => (
+                            <tr key={pa.id}>
+                              <td>{getExamName(pa.examId)}</td>
+                              <td>{getRoomName(pa.classroomId)}</td>
+                              <td>{pa.status}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
-
-        {/* TA */}
-        {selectedDept && (
-          <div className="mb-3">
-            <label className="form-label">TA</label>
-            <select
-              className="form-select"
-              value={selectedTA}
-              onChange={e => setSelectedTA(e.target.value)}
-            >
-              <option value="">-- choose TA --</option>
-              {filteredTAs.map(t => (
-                <option key={t.id} value={t.id}>
-                  {t.firstName} {t.lastName}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        {/* Duty Logs */}
-        {selectedTA && (
-          <div className="card mb-4">
-            <div className="card-body">
-              <h5 className="mb-3">Duty Logs</h5>
-              {dutyLogs.length === 0 ? (
-                <p className="text-muted">No duty-logs found.</p>
-              ) : (
-                <table className="table">
-                  <thead>
-                    <tr>
-                      <th>ID</th>
-                      <th>Task Type</th>
-                      <th>Workload</th>
-                      <th>Start Time</th>
-                      <th>Duration</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {dutyLogs.map(dl => (
-                      <tr key={dl.id}>
-                        <td>{dl.id}</td>
-                        <td>{dl.taskType}</td>
-                        <td>{dl.workload}</td>
-                        <td>{new Date(dl.startTime).toLocaleString()}</td>
-                        <td>{dl.duration} mins</td>
-                        <td>{dl.status}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Proctor Assignments */}
-        {selectedTA && (
-          <div className="card">
-            <div className="card-body">
-              <h5 className="mb-3">Proctor Assignments</h5>
-              {proctors.length === 0 ? (
-                <p className="text-muted">No proctor-assignments found.</p>
-              ) : (
-                <table className="table">
-                  <thead>
-                    <tr>
-                      <th>Exam</th>
-                      <th>Classroom</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {proctors.map(pa => (
-                      <tr key={pa.id}>
-                        <td>{getExamName(pa.examId)}</td>
-                        <td>{getRoomName(pa.classroomId)}</td>
-                        <td>{pa.status}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

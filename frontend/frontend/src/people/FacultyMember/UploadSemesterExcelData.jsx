@@ -1,11 +1,10 @@
-// src/people/Admin/ImportStudents.jsx
 import React, { useState } from "react";
 import * as XLSX from "xlsx";
 import FacultyMemberLayout from "../FacultyMember/FacultyMemberLayout";
 
 const ImportStudents = () => {
   const [fileName, setFileName] = useState("");
-  const [excelData, setExcelData] = useState([]);    // 2D array of rows
+  const [excelData, setExcelData] = useState([]);
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
 
@@ -21,7 +20,6 @@ const ImportStudents = () => {
       const workbook = XLSX.read(data, { type: "array" });
       const sheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[sheetName];
-      // returns array of arrays
       const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
       setExcelData(rows);
     };
@@ -37,8 +35,8 @@ const ImportStudents = () => {
     try {
       const form = new FormData();
       form.append("file", file);
-
       const token = localStorage.getItem("authToken");
+
       const res = await fetch("http://localhost:8080/api/excel-import/imp-students", {
         method: "POST",
         headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -51,7 +49,6 @@ const ImportStudents = () => {
       }
 
       alert("Student data imported successfully!");
-      // reset
       setFile(null);
       setFileName("");
       setExcelData([]);
@@ -64,69 +61,78 @@ const ImportStudents = () => {
   };
 
   return (
-    <div className="d-flex">
-      <div style={{ width: "300px" }}>
+    <div className="d-flex flex-column flex-lg-row">
+      <div className="w-100 w-lg-auto" style={{ maxWidth: "300px" }}>
         <FacultyMemberLayout />
       </div>
 
-      <div className="container py-5 flex-grow-1">
-        <div className="card shadow-sm border-0">
-          <div className="card-body">
-            <h4 className="fw-bold mb-4 text-primary">Import Students via Excel</h4>
+      <div className="container-fluid py-4">
+        <div className="row justify-content-center">
+          <div className="col-12 col-md-11 col-lg-9">
+            <div className="card shadow border-0">
+              <div className="card-body">
+                <h4 className="fw-bold mb-4 text-primary text-center text-lg-start border-bottom pb-2">
+                  Import Students via Excel
+                </h4>
 
-            <div className="mb-3">
-              <label htmlFor="studentFile" className="form-label fw-semibold">
-                Select Student Excel File
-              </label>
-              <input
-                type="file"
-                className="form-control"
-                id="studentFile"
-                accept=".xlsx, .xls"
-                onChange={handleFileUpload}
-              />
-            </div>
-
-            {fileName && (
-              <div className="alert alert-info mt-3">
-                <strong>Selected File:</strong> {fileName}
-              </div>
-            )}
-
-            {excelData.length > 0 && (
-              <>
-                <div className="d-flex justify-content-end mb-3">
-                  <button
-                    className="btn btn-sm btn-primary"
-                    onClick={handleUploadClick}
-                    disabled={uploading}
-                  >
-                    {uploading ? "Uploading…" : "Import Students"}
-                  </button>
+                {/* File Input */}
+                <div className="mb-3">
+                  <label htmlFor="studentFile" className="form-label fw-semibold">
+                    Select Student Excel File
+                  </label>
+                  <input
+                    type="file"
+                    className="form-control"
+                    id="studentFile"
+                    accept=".xlsx, .xls"
+                    onChange={handleFileUpload}
+                  />
                 </div>
 
-                <div className="table-responsive">
-                  <table className="table table-bordered table-striped">
-                    <thead className="table-light">
-                      <tr>
-                        {excelData[0].map((header, idx) => (
-                          <th key={idx}>{header}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {excelData.slice(1).map((row, rIdx) => (
-                        <tr key={rIdx}>
-                          {row.map((cell, cIdx) => (
-                            <td key={cIdx}>{cell}</td>
+                {fileName && (
+                  <div className="alert alert-info">
+                    <strong>Selected File:</strong> {fileName}
+                  </div>
+                )}
+
+                {/* Upload button */}
+                {excelData.length > 0 && (
+                  <>
+                    <div className="d-flex justify-content-end mb-3">
+                      <button
+                        className="btn btn-sm btn-primary"
+                        onClick={handleUploadClick}
+                        disabled={uploading}
+                      >
+                        {uploading ? "Uploading…" : "Import Students"}
+                      </button>
+                    </div>
+
+                    {/* Preview Table */}
+                    <div className="table-responsive" style={{ maxHeight: "400px", overflowY: "auto" }}>
+                      <table className="table table-bordered table-striped text-nowrap">
+                        <thead className="table-light sticky-top">
+                          <tr>
+                            {excelData[0].map((header, idx) => (
+                              <th key={idx}>{header}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {excelData.slice(1).map((row, rIdx) => (
+                            <tr key={rIdx}>
+                              {row.map((cell, cIdx) => (
+                                <td key={cIdx}>{cell}</td>
+                              ))}
+                            </tr>
                           ))}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </>
-            )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
