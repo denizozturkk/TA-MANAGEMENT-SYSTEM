@@ -1,171 +1,161 @@
-// src/people/TA/Layout-TA.jsx
-import React, { useState } from "react";
-import { NavLink } from "react-router-dom";
+import React from "react";
+import { Link } from "react-router-dom";
 
-const LayoutTA = ({ children }) => {
-  const [open, setOpen] = useState({
-    workload: false,
-    leave:    false,
-    swap:     false,
-  });
+const LayoutTA = () => (
+  <>
+    {/* Mobile toggle button */}
+    <button
+      className="btn btn-link text-light d-md-none p-2 position-fixed"
+      style={{ top: '1rem', left: '1rem', zIndex: 1050 }}
+      type="button"
+      data-bs-toggle="offcanvas"
+      data-bs-target="#mobileSidebar"
+      aria-controls="mobileSidebar"
+      aria-label="Toggle sidebar"
+    >
+      <i className="icofont-navigation-menu fs-3"></i>
+    </button>
 
-  const toggle = (key) =>
-    setOpen((o) => ({ ...o, [key]: !o[key] }));
-
-  const linkClass = ({ isActive }) =>
-    isActive
-      ? "text-white fw-bold d-inline-block"
-      : "text-light d-inline-block";
-
-  return (
-    <div className="container-xxl">
-      <div className="row">
-        {/* Sidebar */}
-        <div className="col-lg-3">
-          <div
-            className="sidebar px-4 py-4 py-md-5 me-0 d-flex flex-column"
-            style={{ backgroundColor: "purple", minHeight: "100vh" }}
-          >
-            {/* Brand */}
-            <NavLink
-              to="/workload/view"
-              className="mb-4 brand-icon text-white d-flex align-items-center"
+    {/* Mobile Sidebar */}
+    <div
+      className="offcanvas offcanvas-start d-md-none text-light"
+      tabIndex="-1"
+      id="mobileSidebar"
+      aria-labelledby="mobileSidebarLabel"
+      style={{ backgroundColor: '#2D2A62', width: '240px' }}
+    >
+      <div className="offcanvas-header">
+        <h5 className="offcanvas-title text-light" id="mobileSidebarLabel">TA Panel</h5>
+        <button
+          type="button"
+          className="btn-close btn-close-white"
+          data-bs-dismiss="offcanvas"
+          aria-label="Close"
+        />
+      </div>
+      <div className="offcanvas-body p-0">
+        <ul className="menu-list list-unstyled mb-0">
+          <li className="border-bottom">
+            <button
+              className="m-link text-light d-flex align-items-center p-3 w-100 bg-transparent border-0 text-start"
+              data-bs-toggle="collapse"
+              data-bs-target="#taMenuMobile"
+              aria-expanded="false"
+              aria-controls="taMenuMobile"
+              type="button"
             >
-              <svg
-                width="35"
-                height="35"
-                fill="currentColor"
-                className="me-2"
-                viewBox="0 0 16 16"
-              >
-                {/* …SVG here… */}
-              </svg>
-              <span className="h5 mb-0">My-Task TA</span>
-            </NavLink>
-
-            <ul className="menu-list flex-grow-1">
-              {/* Workload */}
-              <li className="mb-3">
-                <div className="d-flex justify-content-between align-items-center">
-                  <NavLink to="/workload/view" className={linkClass}>
-                    <i className="icofont-hour-glass fs-5 me-2" />
-                    Workload
-                  </NavLink>
-                  <button
-                    className="btn btn-link text-light p-0"
-                    onClick={() => toggle("workload")}
-                  >
-                    <i className={`icofont-rounded-${open.workload ? "up" : "down"}`} />
-                  </button>
-                </div>
-                {open.workload && (
-                  <ul className="ps-3 mt-2">
-                    <li className="mb-1">
-                      <NavLink to="/workload/view" className={linkClass}>
-                        View Workload
-                      </NavLink>
-                    </li>
-                    <li>
-                      <NavLink to="/workload/report" className={linkClass}>
-                        Report Workload
-                      </NavLink>
-                    </li>
-                  </ul>
-                )}
-              </li>
-
-              {/* Leave */}
-              <li className="mb-3">
-                <div className="d-flex justify-content-between align-items-center">
-                  <NavLink to="/leave" className={linkClass}>
-                    <i className="icofont-leave fs-5 me-2" />
-                    Leave
-                  </NavLink>
-                  <button
-                    className="btn btn-link text-light p-0"
-                    onClick={() => toggle("leave")}
-                  >
-                    <i className={`icofont-rounded-${open.leave ? "up" : "down"}`} />
-                  </button>
-                </div>
-                {open.leave && (
-                  <ul className="ps-3 mt-2">
-                    <li className="mb-1">
-                      <NavLink to="/leave" className={linkClass}>
-                        Submit Leave
-                      </NavLink>
-                    </li>
-                    <li>
-                      <NavLink to="/leave" className={linkClass}>
-                        View Leave Requests
-                      </NavLink>
-                    </li>
-                  </ul>
-                )}
-              </li>
-
-              {/* Swap */}
-              <li className="mb-3">
-                <div className="d-flex justify-content-between align-items-center">
-                  <NavLink to="/swap" className={linkClass}>
-                    <i className="icofont-exchange fs-5 me-2" />
-                    Swap
-                  </NavLink>
-                  <button
-                    className="btn btn-link text-light p-0"
-                    onClick={() => toggle("swap")}
-                  >
-                    <i className={`icofont-rounded-${open.swap ? "up" : "down"}`} />
-                  </button>
-                </div>
-                {open.swap && (
-                  <ul className="ps-3 mt-2">
-                    <li className="mb-1">
-                      <NavLink to="/swap" className={linkClass}>
-                        Submit Swap
-                      </NavLink>
-                    </li>
-                    <li>
-                      <NavLink to="/swap-proctor" className={linkClass}>
-                        View Swap Requests
-                      </NavLink>
-                    </li>
-                  </ul>
-                )}
-              </li>
-
-              {/* Past Tasks */}
-              <li className="mb-3">
-                <NavLink to="/past-tasks" className={linkClass}>
-                  <i className="icofont-history fs-5 me-2" />
-                  Past Tasks
-                </NavLink>
-              </li>
-
-              {/* Calendar */}
-              <li className="mb-3">
-                <NavLink to="/calendar" className={linkClass}>
-                  <i className="icofont-calendar fs-5 me-2" />
-                  Calendar
-                </NavLink>
-              </li>
-            </ul>
-
-            <button className="btn btn-link sidebar-mini-btn text-light mt-auto">
-              <i className="icofont-bubble-right" />
+              <i className="icofont-user-suited me-2"></i>TA Tools
+              <i className="icofont-dotted-down ms-auto"></i>
             </button>
-          </div>
-        </div>
-
-        {/* Main content */}
-        <div className="col-lg-9">
-          <div className="container-xxl py-5">
-            {children}
-          </div>
-        </div>
+            <ul className="collapse ms-4" id="taMenuMobile">
+              <li><Link className="ms-link text-light d-block py-2" to="/workload/view">View Workload</Link></li>
+              <li><Link className="ms-link text-light d-block py-2" to="/workload/report">Report Workload</Link></li>
+              <li><Link className="ms-link text-light d-block py-2" to="/leave">Submit Leave</Link></li>
+              <li><Link className="ms-link text-light d-block py-2" to="/swap">Swap Proctor</Link></li>
+              <li><Link className="ms-link text-light d-block py-2" to="/past-tasks">Past Tasks</Link></li>
+              <li><Link className="ms-link text-light d-block py-2" to="/calendar">Calendar</Link></li>
+            </ul>
+          </li>
+          <li className="border-bottom">
+            <button
+              className="m-link text-light d-flex align-items-center p-3 w-100 bg-transparent border-0 text-start"
+              data-bs-toggle="collapse"
+              data-bs-target="#profileMenuMobile"
+              aria-expanded="false"
+              aria-controls="profileMenuMobile"
+              type="button"
+            >
+              <i className="icofont-user-alt-2 me-2"></i>My Profile
+              <i className="icofont-dotted-down ms-auto"></i>
+            </button>
+            <ul className="collapse ms-4" id="profileMenuMobile">
+              <li><Link className="ms-link text-light d-block py-2" to="/changecontactinformation">Change Contact Info</Link></li>
+              <li><Link className="ms-link text-light d-block py-2" to="/changepassword">Change Password</Link></li>
+              <li><Link className="ms-link text-light d-block py-2" to="/notification">Notifications</Link></li>
+              <li><Link className="ms-link text-light d-block py-2" to="/viewprofile">View Profile</Link></li>
+            </ul>
+          </li>
+        </ul>
       </div>
     </div>
-  );
-};
+
+    {/* Desktop Sidebar */}
+    <aside
+      className="sidebar d-none d-md-flex flex-column px-4 py-4 py-md-5"
+      style={{ backgroundColor: '#2D2A62', width: '240px' }}
+    >
+      <style>{`
+        .sidebar .menu-list .ms-link:hover {
+          background-color: #E31B23 !important;
+          color: #FFFFFF !important;
+        }
+        .sidebar .m-link:hover {
+          color: #E31B23 !important;
+        }
+        .sidebar .ms-link,
+        .sidebar .m-link {
+          transition: background-color 0.2s, color 0.2s;
+        }
+      `}</style>
+
+      <Link to="/" className="mb-4 text-light d-flex align-items-center">
+        <span className="logo-icon me-2">
+          <svg width="35" height="35" fill="currentColor" viewBox="0 0 16 16">
+            <path fillRule="evenodd" d="M10.854 7.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 9.793l2.646-2.647a.5.5 0 0 1 .708 0z" />
+            <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z" />
+          </svg>
+        </span>
+        <span className="logo-text fs-5">TA Panel</span>
+      </Link>
+
+      <ul className="menu-list flex-grow-1 list-unstyled">
+        <li className="collapsed">
+          <button
+            className="m-link text-light d-flex align-items-center mb-2 w-100 bg-transparent border-0 text-start"
+            data-bs-toggle="collapse"
+            data-bs-target="#taMenuDesktop"
+            aria-expanded="false"
+            aria-controls="taMenuDesktop"
+            type="button"
+          >
+            <i className="icofont-user-suited me-2"></i>TA Tools
+            <span className="arrow icofont-dotted-down ms-auto fs-5"></span>
+          </button>
+          <ul className="collapse sub-menu" id="taMenuDesktop">
+            <li><Link className="ms-link text-light d-block py-1 px-2" to="/workload/view">View Workload</Link></li>
+            <li><Link className="ms-link text-light d-block py-1 px-2" to="/workload/report">Report Workload</Link></li>
+            <li><Link className="ms-link text-light d-block py-1 px-2" to="/leave">Submit Leave</Link></li>
+            <li><Link className="ms-link text-light d-block py-1 px-2" to="/swap">Swap Proctor</Link></li>
+            <li><Link className="ms-link text-light d-block py-1 px-2" to="/past-tasks">Past Tasks</Link></li>
+            <li><Link className="ms-link text-light d-block py-1 px-2" to="/calendar">Calendar</Link></li>
+          </ul>
+        </li>
+        <li className="collapsed mt-3">
+          <button
+            className="m-link text-light d-flex align-items-center mb-2 w-100 bg-transparent border-0 text-start"
+            data-bs-toggle="collapse"
+            data-bs-target="#profileMenuDesktop"
+            aria-expanded="false"
+            aria-controls="profileMenuDesktop"
+            type="button"
+          >
+            <i className="icofont-user-alt-2 me-2"></i>My Profile
+            <span className="arrow icofont-dotted-down ms-auto fs-5"></span>
+          </button>
+          <ul className="collapse sub-menu" id="profileMenuDesktop">
+            <li><Link className="ms-link text-light d-block py-1 px-2" to="/changecontactinformation">Change Contact Info</Link></li>
+            <li><Link className="ms-link text-light d-block py-1 px-2" to="/changepassword">Change Password</Link></li>
+            <li><Link className="ms-link text-light d-block py-1 px-2" to="/notification">Notifications</Link></li>
+            <li><Link className="ms-link text-light d-block py-1 px-2" to="/viewprofile">View Profile</Link></li>
+          </ul>
+        </li>
+      </ul>
+
+      <button type="button" className="btn btn-link sidebar-mini-btn text-light mt-auto">
+        <i className="icofont-bubble-right"></i>
+      </button>
+    </aside>
+  </>
+);
 
 export default LayoutTA;

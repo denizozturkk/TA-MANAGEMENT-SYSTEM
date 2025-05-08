@@ -101,7 +101,14 @@ const SubmitLeaveRequestTA = () => {
   }
 
   return (
-    <LayoutTA>
+  <div className="d-flex flex-column flex-lg-row">
+    {/* Sidebar (Sol) */}
+    <div className="w-100 w-lg-auto" style={{ maxWidth: "300px" }}>
+      <LayoutTA />
+    </div>
+
+    {/* İçerik Alanı (Sağ) */}
+    <div className="container-fluid py-4">
       <div className="card shadow-sm border-0 mb-4">
         <div className="card-body">
           <h4 className="fw-bold mb-4 text-primary">
@@ -128,7 +135,6 @@ const SubmitLeaveRequestTA = () => {
               )}
               {assignments.map((pa) => {
                 const leave = leaveMap[pa.id];
-                // look up exam details
                 const exam = exams.find((e) => e.id === pa.examId) || {};
                 const date = exam.dateTime
                   ? new Date(exam.dateTime).toLocaleDateString()
@@ -175,20 +181,14 @@ const SubmitLeaveRequestTA = () => {
         </div>
       </div>
 
+      {/* Modal alanı buraya gelecek */}
       {modalOpen && (
-        <div
-          className="modal fade show"
-          style={{ display: "block", background: "rgba(0,0,0,0.5)" }}
-        >
-          <div className="modal-dialog modal-dialog-centered">
+        <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
+          <div className="modal-dialog modal-dialog-centered modal-dialog-scrollable">
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title">Submit Leave Request</h5>
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={() => setModalOpen(false)}
-                />
+                <button type="button" className="btn-close" onClick={() => setModalOpen(false)}></button>
               </div>
               <form onSubmit={handleSubmit}>
                 <div className="modal-body">
@@ -204,8 +204,8 @@ const SubmitLeaveRequestTA = () => {
                       <option>Casual Leave</option>
                     </select>
                   </div>
-                  <div className="row g-3 mb-3">
-                    <div className="col">
+                  <div className="row">
+                    <div className="col-md-6 mb-3">
                       <label className="form-label">From</label>
                       <input
                         name="from"
@@ -216,7 +216,7 @@ const SubmitLeaveRequestTA = () => {
                         required
                       />
                     </div>
-                    <div className="col">
+                    <div className="col-md-6 mb-3">
                       <label className="form-label">To</label>
                       <input
                         name="to"
@@ -230,28 +230,19 @@ const SubmitLeaveRequestTA = () => {
                   </div>
                   <div className="mb-3">
                     <label className="form-label">Reason</label>
-                    <input
+                    <textarea
                       name="reason"
-                      type="text"
+                      rows="3"
                       className="form-control"
                       value={form.reason}
                       onChange={handleChange}
+                      required
                     />
                   </div>
                 </div>
                 <div className="modal-footer">
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    onClick={() => setModalOpen(false)}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="btn btn-primary"
-                    disabled={saving}
-                  >
+                  <button type="button" className="btn btn-secondary" onClick={() => setModalOpen(false)}>Cancel</button>
+                  <button type="submit" className="btn btn-primary" disabled={saving}>
                     {saving ? "Submitting…" : "Submit Leave"}
                   </button>
                 </div>
@@ -260,8 +251,10 @@ const SubmitLeaveRequestTA = () => {
           </div>
         </div>
       )}
-    </LayoutTA>
-  );
+    </div>
+  </div>
+);
+
 };
 
 export default SubmitLeaveRequestTA;
