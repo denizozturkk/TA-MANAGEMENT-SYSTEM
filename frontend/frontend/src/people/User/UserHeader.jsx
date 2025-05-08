@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import avatarPlaceholder from "../User/avatar3.jpg";
+import logo from "./logobilkent.png";  // Bilkent logo in same folder
 
 // Basit JWT parser
 function parseJwt(token) {
@@ -25,11 +26,9 @@ const UserHeader = () => {
 
   useEffect(() => {
     if (!token) return;
-    fetch("http://localhost:8080/api/notifications", {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-      .then((res) => (res.ok ? res.json() : []))
-      .then((data) => setNotifications(Array.isArray(data) ? data : []))
+    fetch("/api/notifications", { headers: { Authorization: `Bearer ${token}` } })
+      .then(res => (res.ok ? res.json() : []))
+      .then(data => setNotifications(Array.isArray(data) ? data : []))
       .catch(() => setNotifications([]));
   }, [token]);
 
@@ -40,93 +39,106 @@ const UserHeader = () => {
   };
 
   return (
-    <div className="header bg-light">
-      <nav className="navbar py-3">
-        <div className="container-xxl d-flex justify-content-between align-items-center">
+    <nav className="navbar bg-light py-3 px-4 px-md-5">
+      <div
+        className="container-xxl d-flex flex-wrap flex-md-nowrap align-items-center justify-content-between"
+        style={{ position: 'relative' }}
+      >
+        {/* Logo */}
+        <div className="navbar-brand p-0" >
+          <img src={logo} alt="Bilkent Logo" height="80" />
+        </div>
 
-          {/* Solda logo/ana sayfa */}
-          <div className="navbar-brand text-dark">
-            Bilkent TA Management System
-          </div>
+        {/* Desktop centered title */}
+        <span
+          className="d-none d-md-block"
+          style={{
+            position: 'absolute',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            color: '#2D2A62',
+            fontWeight: 'bold',
+            fontSize: '1.75rem',
+          }}
+        >
+          Bilkent TA Management System
+        </span>
 
-          {/* Sağ: bildirim + kullanıcı */}
-          <div className="d-flex align-items-center">
+        {/* Controls (notifications + user) */}
+        <div className="d-flex align-items-center">
+          {/* Notification */}
+          <Link to="/notification" className="text-dark position-relative me-3 fs-4">
+            <i className="icofont-alarm"></i>
+            {notifications.length > 0 && (
+              <span className="position-absolute top-0 start-100 translate-middle badge bg-danger rounded-pill">
+                {notifications.length}
+              </span>
+            )}
+          </Link>
 
-            {/* Ana bildirim butonu (bell) */}
-            <div className="me-3 position-relative">
-              <Link to="/notification" className="text-dark">
-                <i className="icofont-bell fs-5 text-dark"></i>
-              </Link>
-              {notifications.length > 0 && (
-                <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                  {notifications.length}
-                </span>
-              )}
-            </div>
-
-            {/* Kullanıcı menüsü */}
-            <div className="dropdown">
-              <a
-                className="d-flex align-items-center text-dark text-decoration-none dropdown-toggle"
-                href="#!"
-                id="userMenu"
-                data-bs-toggle="dropdown"
-                aria-expanded="false"
-              >
-                <img
-                  src={payload.avatarUrl || avatarPlaceholder}
-                  alt="avatar"
-                  width="32"
-                  height="32"
-                  className="rounded-circle me-2"
-                />
-                <div className="text-end">
-                  <div className="fw-bold">{fullName}</div>
-                  <small>{displayRole}</small>
-                </div>
-              </a>
-              <ul
-                className="dropdown-menu dropdown-menu-end shadow"
-                aria-labelledby="userMenu"
-              >
-                <li>
-                  <Link className="dropdown-item text-dark" to="/viewprofile">
-                    <i className="icofont-user me-2 text-dark"></i>View Profile
-                  </Link>
-                </li>
-                <li>
-                  <Link className="dropdown-item text-dark" to="/changepassword">
-                    <i className="icofont-lock me-2 text-dark"></i>Change Password
-                  </Link>
-                </li>
-                <li>
-                  <Link className="dropdown-item text-dark" to="/changecontactinformation">
-                    <i className="icofont-address-book me-2 text-dark"></i>Update Contact
-                  </Link>
-                </li>
-                <li>
-                  <Link className="dropdown-item text-dark" to="/notification">
-                    <i className="icofont-bell me-2 text-dark"></i>Notifications
-                  </Link>
-                </li>
-                <li>
-                  <Link className="dropdown-item text-dark" to="/givefeedback">
-                    <i className="icofont-comment me-2 text-dark"></i>Give Feedback
-                  </Link>
-                </li>
-                <li><hr className="dropdown-divider" /></li>
-                <li>
-                  <button className="dropdown-item text-dark" onClick={handleLogout}>
-                    <i className="icofont-logout me-2 text-dark"></i>Sign Out
-                  </button>
-                </li>
-              </ul>
-            </div>
-
+          {/* User dropdown + profile info always shown */}
+          <div className="dropdown d-flex align-items-center">
+            <a
+              className="d-flex align-items-center text-dark text-decoration-none dropdown-toggle"
+              href="#!"
+              id="userMenu"
+              data-bs-toggle="dropdown"
+              aria-expanded="false"
+            >
+              <img
+                src={payload.avatarUrl || avatarPlaceholder}
+                alt="avatar"
+                width="36"
+                height="36"
+                className="rounded-circle me-2"
+              />
+              {/* Name and role always visible, including mobile */}
+              <div className="text-start">
+                <div className="fw-bold fs-6">{fullName}</div>
+                <small className="text-muted">{displayRole}</small>
+              </div>
+            </a>
+            <ul
+              className="dropdown-menu shadow"
+              aria-labelledby="userMenu"
+              style={{ left: '50%', transform: 'translateX(-50%)', right: 'auto' }}
+            >
+              <li>
+                <Link className="dropdown-item text-dark" to="/viewprofile">
+                  <i className="icofont-user me-2"></i>View Profile
+                </Link>
+              </li>
+              <li>
+                <Link className="dropdown-item text-dark" to="/changepassword">
+                  <i className="icofont-lock me-2"></i>Change Password
+                </Link>
+              </li>
+              <li>
+                <Link className="dropdown-item text-dark" to="/changecontactinformation">
+                  <i className="icofont-address-book me-2"></i>Update Contact
+                </Link>
+              </li>
+              <li>
+                <Link className="dropdown-item text-dark" to="/notification">
+                  <i className="icofont-alarm me-2"></i>Notifications
+                </Link>
+              </li>
+              <li>
+                <Link className="dropdown-item text-dark" to="/givefeedback">
+                  <i className="icofont-comment me-2"></i>Give Feedback
+                </Link>
+              </li>
+              <li><hr className="dropdown-divider" /></li>
+              <li>
+                <button className="dropdown-item text-dark" onClick={handleLogout}>
+                  <i className="icofont-logout me-2"></i>Sign Out
+                </button>
+              </li>
+            </ul>
           </div>
         </div>
-      </nav>
-    </div>
+      </div>
+    </nav>
   );
 };
 

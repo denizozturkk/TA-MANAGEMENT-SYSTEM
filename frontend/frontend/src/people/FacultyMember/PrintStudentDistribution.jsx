@@ -198,7 +198,7 @@ const PrintStudentDistribution = () => {
                 Preview
               </button>
               <button
-                className="btn btn-primary"
+                className="btn btn-success"
                 onClick={handleDownloadPdf}
                 disabled={!examId}
               >

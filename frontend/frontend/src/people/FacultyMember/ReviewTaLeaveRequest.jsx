@@ -8,7 +8,7 @@ const LeaveRequest = () => {
   const [tas, setTAs] = useState({});
   const [proctorAssignments, setProctorAssignments] = useState({});
   const [selectedLeave, setSelectedLeave] = useState(null);
-  const [actionType, setActionType] = useState(null); // "ACCEPTED" or "REJECTED"
+  const [actionType, setActionType] = useState(null);
 
   const token = localStorage.getItem("authToken");
   const BASE = "http://localhost:8080/api";
@@ -17,7 +17,6 @@ const LeaveRequest = () => {
     "Content-Type": "application/json",
   };
 
-  // 1) fetch current user to get facultyId
   useEffect(() => {
     if (!token) return;
     fetch(`${BASE}/users/me`, { headers })
@@ -26,7 +25,6 @@ const LeaveRequest = () => {
       .catch(err => console.error("Profile fetch error:", err));
   }, [token]);
 
-  // 2) once we have facultyId, fetch only that member’s leave requests
   useEffect(() => {
     if (!facultyId) return;
     fetch(`${BASE}/faculty-members/${facultyId}/leave-requests`, { headers })
@@ -35,7 +33,6 @@ const LeaveRequest = () => {
       .catch(err => console.error("Leave-requests fetch error:", err));
   }, [facultyId]);
 
-  // 3) load all TAs for name lookup
   useEffect(() => {
     if (!token) return;
     fetch(`${BASE}/ta`, { headers })
@@ -50,7 +47,6 @@ const LeaveRequest = () => {
       .catch(err => console.error("TA fetch error:", err));
   }, [token]);
 
-  // 4) load all proctor‐assignments for status lookup
   useEffect(() => {
     if (!token) return;
     fetch(`${BASE}/proctor-assignments`, { headers })
@@ -85,16 +81,16 @@ const LeaveRequest = () => {
   };
 
   return (
-    <div className="d-flex">
-      <div style={{ width: "300px" }}>
+    <div className="d-flex flex-column flex-lg-row">
+      <div className="w-100 w-lg-auto" style={{ maxWidth: "300px" }}>
         <FacultyMemberLayout />
       </div>
-      <div className="container py-5 flex-grow-1">
-        <h3 className="fw-bold mb-4">Leave Requests</h3>
-        <div className="card mb-3">
-          <div className="card-body">
-            <table className="table table-hover align-middle mb-0">
-              <thead>
+      <div className="container-fluid py-4">
+        <h3 className="fw-bold mb-4 text-center text-lg-start">Leave Requests</h3>
+        <div className="card">
+          <div className="card-body table-responsive">
+            <table className="table table-hover table-bordered align-middle text-nowrap">
+              <thead className="table-light">
                 <tr>
                   <th>Leave ID</th>
                   <th>TA</th>
@@ -103,7 +99,7 @@ const LeaveRequest = () => {
                   <th>To</th>
                   <th>Reason</th>
                   <th>Status</th>
-                  <th>Actions</th>
+                  <th className="text-center">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -111,30 +107,23 @@ const LeaveRequest = () => {
                   <tr key={item.id}>
                     <td>#{item.id}</td>
                     <td>{tas[item.taId] || item.taId}</td>
-                    <td>
-                      {proctorAssignments[item.proctorAssignmentId] ||
-                        item.proctorAssignmentId}
-                    </td>
+                    <td>{proctorAssignments[item.proctorAssignmentId] || item.proctorAssignmentId}</td>
                     <td>{item.startDate}</td>
                     <td>{item.endDate}</td>
                     <td>{item.reason}</td>
                     <td>
-                      <span
-                        className={`badge ${
-                          item.status === "WAITING_RESPONSE"
-                            ? "bg-warning"
-                            : item.status === "ACCEPTED"
-                            ? "bg-success"
-                            : "bg-danger"
-                        }`}
-                      >
+                      <span className={`badge ${
+                        item.status === "WAITING_RESPONSE" ? "bg-warning" :
+                        item.status === "ACCEPTED" ? "bg-success" :
+                        "bg-danger"
+                      }`}>
                         {item.status.replace("_", " ")}
                       </span>
                     </td>
-                    <td>
-                      <div className="btn-group">
+                    <td className="text-center">
+                      <div className="btn-group d-flex flex-column flex-md-row">
                         <button
-                          className="btn btn-sm btn-outline-success"
+                          className="btn btn-sm btn-outline-success me-md-1 mb-1 mb-md-0"
                           disabled={item.status !== "WAITING_RESPONSE"}
                           onClick={() => {
                             setSelectedLeave(item);
@@ -172,9 +161,7 @@ const LeaveRequest = () => {
               <div className="modal-content">
                 <div className="modal-header">
                   <h5 className="modal-title">
-                    {actionType === "ACCEPTED"
-                      ? "Approve Leave"
-                      : "Reject Leave"}
+                    {actionType === "ACCEPTED" ? "Approve Leave" : "Reject Leave"}
                   </h5>
                   <button
                     className="btn-close"
@@ -184,14 +171,9 @@ const LeaveRequest = () => {
                 <div className="modal-body">
                   <p>
                     Are you sure you want to{" "}
-                    <strong>
-                      {actionType === "ACCEPTED" ? "approve" : "reject"}
-                    </strong>{" "}
+                    <strong>{actionType === "ACCEPTED" ? "approve" : "reject"}</strong>{" "}
                     leave request <strong>#{selectedLeave.id}</strong> for TA{" "}
-                    <strong>
-                      {tas[selectedLeave.taId] || selectedLeave.taId}
-                    </strong>
-                    ?
+                    <strong>{tas[selectedLeave.taId] || selectedLeave.taId}</strong>?
                   </p>
                 </div>
                 <div className="modal-footer">
@@ -202,14 +184,8 @@ const LeaveRequest = () => {
                     Cancel
                   </button>
                   <button
-                    className={`btn ${
-                      actionType === "ACCEPTED"
-                        ? "btn-success"
-                        : "btn-danger"
-                    }`}
-                    onClick={() =>
-                      handleStatusUpdate(selectedLeave.id, actionType)
-                    }
+                    className={`btn ${actionType === "ACCEPTED" ? "btn-success" : "btn-danger"}`}
+                    onClick={() => handleStatusUpdate(selectedLeave.id, actionType)}
                   >
                     {actionType === "ACCEPTED" ? "Approve" : "Reject"}
                   </button>
