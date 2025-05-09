@@ -188,6 +188,31 @@ const saveBusyHour = async () => {
     alert("Failed to save busy hour: " + err.message);
   }
 };
+// build payload without ever including `id`
+const baseUrl = `http://localhost:8080/api/ta/${taId}/busy-hours`;
+
+// … after saveBusyHour …
+
+const deleteBusyHour = async () => {
+  if (!window.confirm("Are you sure you want to delete this busy hour?")) return;
+
+  try {
+    const res = await fetch(`${baseUrl}/${modalInfo.id}`, {
+      method: "DELETE",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+      },
+      credentials: "include",
+    });
+    if (!res.ok) throw new Error(`Server responded ${res.status}`);
+    await loadEvents();
+    setModalOpen(false);
+  } catch (err) {
+    console.error("deleteBusyHour error:", err);
+    alert("Failed to delete busy hour: " + err.message);
+  }
+};
+
   
 
   // layout identical to PendingDutiesTA
@@ -227,76 +252,49 @@ const saveBusyHour = async () => {
         />
 
 
-        {modalOpen && (
-          <div
-            className="modal fade show"
-            style={{ display: "block", background: "rgba(0,0,0,0.5)" }}
+{modalOpen && (
+  <div className="modal fade show" style={{ display: "block", background: "rgba(0,0,0,0.5)" }}>
+    <div className="modal-dialog modal-dialog-centered">
+      <div className="modal-content">
+        <div className="modal-header">
+          <h5 className="modal-title">
+            {modalInfo.isEdit ? "Edit" : "Add"} Busy Hour
+          </h5>
+          <button type="button" className="btn-close" onClick={() => setModalOpen(false)} />
+        </div>
+        <div className="modal-body">
+          {/* … your existing form fields … */}
+        </div>
+        <div className="modal-footer">
+          {modalInfo.isEdit && (
+            <button
+              type="button"
+              className="btn btn-danger me-auto"
+              onClick={deleteBusyHour}
+            >
+              Delete
+            </button>
+          )}
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={() => setModalOpen(false)}
           >
-            <div className="modal-dialog modal-dialog-centered">
-              <div className="modal-content">
-                <div className="modal-header">
-                  <h5 className="modal-title">
-                    {modalInfo.isEdit ? "Edit" : "Add"} Busy Hour
-                  </h5>
-                  <button
-                    type="button"
-                    className="btn-close"
-                    onClick={() => setModalOpen(false)}
-                  />
-                </div>
-                <div className="modal-body">
-                  <div className="mb-3">
-                    <label className="form-label">Name</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={modalInfo.title}
-                      onChange={e =>
-                        setModalInfo({ ...modalInfo, title: e.target.value })
-                      }
-                    />
-                  </div>
-                  <div className="mb-3">
-                    <label className="form-label">Date & Time</label>
-                    <div>
-                      {new Date(modalInfo.start).toLocaleString()} –{" "}
-                      {new Date(modalInfo.end).toLocaleTimeString()}
-                    </div>
-                  </div>
-                  <div className="form-check">
-                    <input
-                      id="recurring"
-                      type="checkbox"
-                      className="form-check-input"
-                      checked={modalInfo.recurring}
-                      onChange={() =>
-                        setModalInfo({
-                          ...modalInfo,
-                          recurring: !modalInfo.recurring,
-                        })
-                      }
-                    />
-                    <label htmlFor="recurring" className="form-check-label">
-                      Recurring weekly
-                    </label>
-                  </div>
-                </div>
-                <div className="modal-footer">
-                  <button
-                    type="button"             // ← prevent default form‐submit behavior
-                    className="btn btn-primary"
-                    onClick={saveBusyHour}
-                  >
-                    Cancel
-                  </button>
-                  <button className="btn btn-primary" onClick={saveBusyHour}>
-                    Save
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+            Cancel
+          </button>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={saveBusyHour}
+          >
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
       </div>
     </div>
   );
