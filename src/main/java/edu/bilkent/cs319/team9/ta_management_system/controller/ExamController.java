@@ -50,4 +50,25 @@ public class ExamController {
         examService.delete(id);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/offering/{offeringId}")
+    public ResponseEntity<List<ExamDto>> getByOfferingId(@PathVariable Long offeringId) {
+        List<ExamDto> dtos = examService.findByOfferingId(offeringId).stream()
+                .map(mapper::toDto)
+                .toList();
+        return ResponseEntity.ok(dtos);
+    }
+
+    @GetMapping("/offering/{offeringId}/insufficient-proctors")
+    public ResponseEntity<List<ExamDto>> getExamsWithInsufficientProctors(
+            @PathVariable Long offeringId) {
+
+        List<ExamDto> dtos = examService
+                .findUnderProctoredByOfferingId(offeringId)
+                .stream()
+                .map(mapper::toDto)
+                .toList();
+
+        return ResponseEntity.ok(dtos);
+    }
 }

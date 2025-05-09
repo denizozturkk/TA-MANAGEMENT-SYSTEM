@@ -9,4 +9,6 @@ public interface ExamService {
     List<Exam> findAll();
     Exam update(Long id, Exam e);
     void delete(Long id);
+    List<Exam> findByOfferingId(Long offeringId);
+    List<Exam> findUnderProctoredByOfferingId(Long offeringId);
 }

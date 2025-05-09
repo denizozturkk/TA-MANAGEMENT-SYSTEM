@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -102,11 +103,27 @@ public class ExamServiceImpl implements ExamService {
         return repo.save(existing);
     }
 
-
-
+    @Override
+    public List<Exam> findByOfferingId(Long offeringId) {
+        return repo.findByOfferingId(offeringId);
+    }
 
     @Override
     public void delete(Long id) {
         repo.deleteById(id);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Exam> findUnderProctoredByOfferingId(Long offeringId) {
+        return repo.findByOfferingId(offeringId)
+                .stream()
+                .filter(exam -> {
+                    int assigned = exam.getExamRooms().stream()
+                            .mapToInt(er -> er.getNumProctors())
+                            .sum();
+                    return assigned < exam.getNumProctors();
+                })
+                .collect(Collectors.toList());
     }
 }

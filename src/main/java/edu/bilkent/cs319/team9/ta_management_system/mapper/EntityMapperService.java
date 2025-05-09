@@ -565,4 +565,25 @@ public class EntityMapperService {
         bh.setEndDateTime(dto.getEndDateTime());
         return bh;
     }
+
+    public ExamRoomDto toDto(ExamRoom er) {
+        ExamRoomDto dto = new ExamRoomDto();
+        dto.setExamId(er.getExam().getId());
+        dto.setClassroomId(er.getClassroom().getId());
+        dto.setNumProctors(er.getNumProctors());
+        return dto;
+    }
+
+    public ExamRoom toEntity(ExamRoomDto dto) {
+        ExamRoom er = new ExamRoom();
+        // set the embedded id
+        er.setId(new ExamRoomId(dto.getExamId(), dto.getClassroomId()));
+        // just wire in references by id; JPA will pick them up
+        Exam exam = new Exam();       exam.setId(dto.getExamId());
+        Classroom room = new Classroom(); room.setId(dto.getClassroomId());
+        er.setExam(exam);
+        er.setClassroom(room);
+        er.setNumProctors(dto.getNumProctors());
+        return er;
+    }
 }
