@@ -1,3 +1,4 @@
+// src/people/TA/PendingDutiesTA.jsx
 import React, { useState, useEffect } from "react";
 import LayoutTA from "./Layout-TA";
 
@@ -20,6 +21,7 @@ const PendingDutiesTA = () => {
   const [reason, setReason] = useState("");
   const [extensionDays, setExtensionDays] = useState(1);
   const [leaveDates, setLeaveDates] = useState({ start: "", end: "" });
+  const [fileForSubmit, setFileForSubmit] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -33,17 +35,15 @@ const PendingDutiesTA = () => {
         ]);
 
         if (!respD.ok) throw new Error("Duty logs fetch failed");
-        const logs = await respD.json();
-        setDuties(Array.isArray(logs) ? logs : []);
+        setDuties(await respD.json());
 
-        const allE = await respE.json();
-        setExtReqs(Array.isArray(allE) ? allE : []);
-
-        const allP = await respP.json();
-        setProctors(Array.isArray(allP) ? allP.filter(p => p.status !== "COMPLETED" && p.status !== "CANCELLED") : []);
-
-        const allL = await respL.json();
-        setLeaves(Array.isArray(allL) ? allL : []);
+        setExtReqs(await respE.json());
+        setProctors(
+          (await respP.json()).filter(
+            (p) => p.status !== "COMPLETED" && p.status !== "CANCELLED"
+          )
+        );
+        setLeaves(await respL.json());
       } catch (err) {
         console.error(err);
         alert("Failed to load pending duties");
@@ -55,13 +55,15 @@ const PendingDutiesTA = () => {
   const openModal = (type, item) => {
     setModalType(type);
     setSelected(item);
+    // reset all form states
     setReason("");
     setExtensionDays(1);
     setLeaveDates({ start: "", end: "" });
+    setFileForSubmit(null);
   };
   const closeModal = () => setModalType(null);
 
-  const submitExtension = async e => {
+  const submitExtension = async (e) => {
     e.preventDefault();
     setSubmitting(true);
     try {
@@ -71,16 +73,15 @@ const PendingDutiesTA = () => {
         instructorId: selected.facultyId,
         excuseType: "MEDICAL_REPORT",
         requestedExtensionDays: extensionDays,
-        reason
+        reason,
       };
       const res = await fetch(`${BASE}/extension-requests`, {
         method: "POST",
         headers: { ...hdrs, "Content-Type": "application/json" },
-        body: JSON.stringify(body)
+        body: JSON.stringify(body),
       });
       if (!res.ok) throw new Error(await res.text());
-      const ext = await res.json();
-      setExtReqs(er => [...er, ext]);
+      setExtReqs(async (er) => [...er, await res.json()]);
       closeModal();
     } catch (err) {
       alert("Extension request failed: " + err.message);
@@ -89,7 +90,7 @@ const PendingDutiesTA = () => {
     }
   };
 
-  const submitLeave = async e => {
+  const submitLeave = async (e) => {
     e.preventDefault();
     setSubmitting(true);
     try {
@@ -98,21 +99,76 @@ const PendingDutiesTA = () => {
         proctorAssignmentId: selected.id,
         startDate: leaveDates.start,
         endDate: leaveDates.end,
-        reason
+        reason,
       };
-      const res = await fetch(`${BASE}/leave-requests?taId=${taId}&proctorAssignmentId=${selected.id}`, {
-        method: "POST",
-        headers: { ...hdrs, "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-      });
+      const res = await fetch(
+        `${BASE}/leave-requests?taId=${taId}&proctorAssignmentId=${selected.id}`,
+        {
+          method: "POST",
+          headers: { ...hdrs, "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        }
+      );
       if (!res.ok) throw new Error(await res.text());
-      const lv = await res.json();
-      setLeaves(ls => [...ls, lv]);
+      setLeaves(async (ls) => [...ls, await res.json()]);
       closeModal();
     } catch (err) {
       alert("Leave request failed: " + err.message);
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  // New: submit duty with file upload
+  const handleSubmitDutyForm = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      const formData = new FormData();
+      formData.append("taId", taId);
+      formData.append("file", fileForSubmit);
+
+      const res = await fetch(
+        `${BASE}/duty-logs/${selected.id}/submit?taId=${taId}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+          },
+          body: formData,
+        }
+      );
+      if (!res.ok) throw new Error(await res.text());
+      const updated = await res.json();
+      setDuties((prev) =>
+        prev.map((d) => (d.id === updated.id ? updated : d))
+      );
+      closeModal();
+    } catch (err) {
+      alert("Failed to submit duty: " + err.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const submitProctor = async (proctorId) => {
+    try {
+      const res = await fetch(
+        `${BASE}/proctor-assignments/${proctorId}/submit`,
+        {
+          method: "POST",
+          headers: hdrs,
+        }
+      );
+      if (!res.ok) throw new Error("Submit failed");
+      setProctors((prev) =>
+        prev.map((p) =>
+          p.id === proctorId ? { ...p, status: "SUBMITTED" } : p
+        )
+      );
+    } catch (err) {
+      alert("Failed to submit proctoring: " + err.message);
     }
   };
 
@@ -136,13 +192,12 @@ const PendingDutiesTA = () => {
                   <th>Hours</th>
                   <th>Status</th>
                   <th>Extension</th>
-                  <th>Proof</th>
                   <th>Action</th>
                 </tr>
               </thead>
               <tbody>
-                {duties.map(d => {
-                  const ext = extReqs.find(x => x.dutyLogId === d.id);
+                {duties.map((d) => {
+                  const ext = extReqs.find((x) => x.dutyLogId === d.id);
                   return (
                     <tr key={d.id}>
                       <td>{new Date(d.dateTime).toLocaleString()}</td>
@@ -152,18 +207,27 @@ const PendingDutiesTA = () => {
                       <td>
                         {ext ? (
                           <span className="badge bg-info">{ext.status}</span>
+                        ) : d.status === "PENDING" ? (
+                          <button
+                            className="btn btn-sm btn-outline-secondary"
+                            onClick={() => openModal("extension", d)}
+                          >
+                            Request
+                          </button>
                         ) : (
-                          <button className="btn btn-sm btn-outline-secondary" onClick={() => openModal("extension", d)}>Request</button>
+                          <button className="btn btn-sm btn-outline-secondary" disabled>
+                            Request
+                          </button>
                         )}
                       </td>
                       <td>
-                        {d.fileUrlTa ? (
-                          <a href={d.fileUrlTa} className="btn btn-sm btn-primary" download>Download</a>
-                        ) : "—"}
-                      </td>
-                      <td>
                         {d.status === "PENDING" && (
-                          <button className="btn btn-sm btn-outline-primary" onClick={() => openModal("proof-duty", d)}>Upload Proof</button>
+                          <button
+                            className="btn btn-sm btn-success"
+                            onClick={() => openModal("submitDuty", d)}
+                          >
+                            Submit
+                          </button>
                         )}
                       </td>
                     </tr>
@@ -183,13 +247,12 @@ const PendingDutiesTA = () => {
                   <th>Assignment ID</th>
                   <th>Status</th>
                   <th>Leave</th>
-                  <th>Proof</th>
                   <th>Action</th>
                 </tr>
               </thead>
               <tbody>
-                {proctors.map(p => {
-                  const lv = leaves.find(l => l.proctorAssignmentId === p.id);
+                {proctors.map((p) => {
+                  const lv = leaves.find((l) => l.proctorAssignmentId === p.id);
                   return (
                     <tr key={p.id}>
                       <td>{p.id}</td>
@@ -198,17 +261,22 @@ const PendingDutiesTA = () => {
                         {lv ? (
                           <span className="badge bg-info">{lv.status}</span>
                         ) : (
-                          <button className="btn btn-sm btn-outline-secondary" onClick={() => openModal("leave", p)}>Request</button>
+                          <button
+                            className="btn btn-sm btn-outline-secondary"
+                            onClick={() => openModal("leave", p)}
+                          >
+                            Request
+                          </button>
                         )}
                       </td>
                       <td>
-                        {p.proofUrl ? (
-                          <a href={p.proofUrl} className="btn btn-sm btn-primary" download>Download</a>
-                        ) : "—"}
-                      </td>
-                      <td>
                         {p.status === "ASSIGNED" && (
-                          <button className="btn btn-sm btn-outline-primary" onClick={() => openModal("proof-proctor", p)}>Upload Proof</button>
+                          <button
+                            className="btn btn-sm btn-success"
+                            onClick={() => submitProctor(p.id)}
+                          >
+                            Submit
+                          </button>
                         )}
                       </td>
                     </tr>
@@ -220,72 +288,196 @@ const PendingDutiesTA = () => {
         </div>
       </div>
 
-     {modalType === "extension" && (
-  <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
-    <div className="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-      <div className="modal-content">
-        <div className="modal-header">
-          <h5 className="modal-title">Request Extension</h5>
-          <button type="button" className="btn-close" onClick={closeModal} />
+      {/* Extension Modal */}
+      {modalType === "extension" && (
+        <div
+          className="modal fade show d-block"
+          tabIndex="-1"
+          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+        >
+          <div className="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Request Extension</h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={closeModal}
+                />
+              </div>
+              <form onSubmit={submitExtension}>
+                <div className="modal-body">
+                  <div className="mb-3">
+                    <label className="form-label">Days to Extend</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      min="1"
+                      value={extensionDays}
+                      onChange={(e) => setExtensionDays(+e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">Reason</label>
+                    <textarea
+                      className="form-control"
+                      rows="3"
+                      value={reason}
+                      onChange={(e) => setReason(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={closeModal}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={submitting}
+                  >
+                    {submitting ? "Submitting..." : "Submit Request"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
         </div>
-        <form onSubmit={submitExtension}>
-          <div className="modal-body">
-            <div className="mb-3">
-              <label className="form-label">Days to Extend</label>
-              <input type="number" className="form-control" min="1" value={extensionDays} onChange={e => setExtensionDays(+e.target.value)} required />
-            </div>
-            <div className="mb-3">
-              <label className="form-label">Reason</label>
-              <textarea className="form-control" rows="3" value={reason} onChange={e => setReason(e.target.value)} required />
-            </div>
-          </div>
-          <div className="modal-footer">
-            <button type="button" className="btn btn-secondary" onClick={closeModal}>Cancel</button>
-            <button type="submit" className="btn btn-primary" disabled={submitting}>
-              {submitting ? "Submitting..." : "Submit Request"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-)}
+      )}
 
-{/* Modal: Leave */}
-{modalType === "leave" && (
-  <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
-    <div className="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-      <div className="modal-content">
-        <div className="modal-header">
-          <h5 className="modal-title">Request Leave</h5>
-          <button type="button" className="btn-close" onClick={closeModal} />
+      {/* Leave Modal */}
+      {modalType === "leave" && (
+        <div
+          className="modal fade show d-block"
+          tabIndex="-1"
+          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+        >
+          <div className="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Request Leave</h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={closeModal}
+                />
+              </div>
+              <form onSubmit={submitLeave}>
+                <div className="modal-body">
+                  <div className="mb-3">
+                    <label className="form-label">Start Date</label>
+                    <input
+                      type="date"
+                      className="form-control"
+                      value={leaveDates.start}
+                      onChange={(e) =>
+                        setLeaveDates((ld) => ({ ...ld, start: e.target.value }))
+                      }
+                      required
+                    />
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">End Date</label>
+                    <input
+                      type="date"
+                      className="form-control"
+                      value={leaveDates.end}
+                      onChange={(e) =>
+                        setLeaveDates((ld) => ({ ...ld, end: e.target.value }))
+                      }
+                      required
+                    />
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">Reason</label>
+                    <textarea
+                      className="form-control"
+                      rows="3"
+                      value={reason}
+                      onChange={(e) => setReason(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={closeModal}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={submitting}
+                  >
+                    {submitting ? "Submitting..." : "Submit Leave"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
         </div>
-        <form onSubmit={submitLeave}>
-          <div className="modal-body">
-            <div className="mb-3">
-              <label className="form-label">Start Date</label>
-              <input type="date" className="form-control" value={leaveDates.start} onChange={e => setLeaveDates(ld => ({ ...ld, start: e.target.value }))} required />
-            </div>
-            <div className="mb-3">
-              <label className="form-label">End Date</label>
-              <input type="date" className="form-control" value={leaveDates.end} onChange={e => setLeaveDates(ld => ({ ...ld, end: e.target.value }))} required />
-            </div>
-            <div className="mb-3">
-              <label className="form-label">Reason</label>
-              <textarea className="form-control" rows="3" value={reason} onChange={e => setReason(e.target.value)} required />
+      )}
+
+      {/* Submit Duty Modal */}
+      {modalType === "submitDuty" && (
+        <div
+          className="modal fade show d-block"
+          tabIndex="-1"
+          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+        >
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Submit Duty Work</h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={closeModal}
+                />
+              </div>
+              <form onSubmit={handleSubmitDutyForm}>
+                <div className="modal-body">
+                  <div className="mb-3">
+                    <label className="form-label">Attach PDF</label>
+                    <input
+                      type="file"
+                      accept="application/pdf"
+                      className="form-control"
+                      onChange={(e) => setFileForSubmit(e.target.files[0])}
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={closeModal}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={submitting || !fileForSubmit}
+                  >
+                    {submitting ? "Submitting..." : "Submit Duty"}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
-          <div className="modal-footer">
-            <button type="button" className="btn btn-secondary" onClick={closeModal}>Cancel</button>
-            <button type="submit" className="btn btn-primary" disabled={submitting}>
-              {submitting ? "Submitting..." : "Submit Leave"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-)}
+        </div>
+      )}
     </div>
   );
 };
