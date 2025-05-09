@@ -28,6 +28,7 @@ const SignInPage = () => {
       localStorage.setItem("authToken", token);
       localStorage.setItem("userRole", role);
 localStorage.setItem("userId", user_id);
+localStorage.setItem("user_id", user_id)
 
       let target = "/";
       switch (role) {
