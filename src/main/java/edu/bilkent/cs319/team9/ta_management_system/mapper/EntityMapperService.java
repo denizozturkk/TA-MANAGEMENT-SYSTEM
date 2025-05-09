@@ -301,6 +301,9 @@ public class EntityMapperService {
         dto.setEndTime(dl.getEndTime());
         dto.setStatus(dl.getStatus());
         dto.setReason(dl.getReason());
+
+        dto.setFileNameTa(dl.getFileNameTa());
+        dto.setContentTypeTa(dl.getContentTypeTa());
         // Relationships → just IDs
         dto.setTaId(dl.getTa().getId());
         dto.setFacultyId(dl.getFaculty().getId());

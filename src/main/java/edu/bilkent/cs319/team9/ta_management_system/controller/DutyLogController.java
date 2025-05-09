@@ -7,7 +7,9 @@ import edu.bilkent.cs319.team9.ta_management_system.model.DutyStatus;
 import edu.bilkent.cs319.team9.ta_management_system.service.DutyLogService;
 import edu.bilkent.cs319.team9.ta_management_system.service.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -111,6 +113,33 @@ public class DutyLogController {
                 .map(mapper::toDto)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(dtos);
+    }
+
+    @GetMapping("/{id}/downloadTa")
+    public ResponseEntity<byte[]> downloadTa(
+            @PathVariable Long id,
+            @RequestParam("taId") Long taId) {
+
+        DutyLog dl = dutyLogService.findById(id);
+        if (dl == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        // make sure this TA actually owns that duty
+        if (dl.getTa() == null || !dl.getTa().getId().equals(taId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        // make sure they did upload a file
+        if (dl.getDataTa() == null || dl.getDataTa().length == 0) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + dl.getFileNameTa() + "\"")
+                .contentType(MediaType.parseMediaType(dl.getContentTypeTa()))
+                .body(dl.getDataTa());
     }
 
 }

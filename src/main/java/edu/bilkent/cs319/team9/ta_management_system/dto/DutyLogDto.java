@@ -23,4 +23,7 @@ public class DutyLogDto {
     private Long offeringId;
 
     private String reason;
+
+    private String fileNameTa;
+    private String contentTypeTa;
 }

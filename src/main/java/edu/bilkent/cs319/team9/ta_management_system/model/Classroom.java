@@ -18,7 +18,7 @@ public class Classroom {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @EqualsAndHashCode.Include
-    @Column(name = "classroom_id")
+    //@Column(name = "classroom_id")
     private Long id;
 
     private String building;
