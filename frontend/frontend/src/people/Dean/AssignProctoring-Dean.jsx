@@ -219,23 +219,27 @@ const AssignProctoringDean = () => {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    setLoading(true);
-    Promise.all([
-      fetch("http://localhost:8080/api/ta").then((r) => r.json()),
-      fetch("http://localhost:8080/api/exams").then((r) => r.json()),
-      fetch("http://localhost:8080/api/proctor-assignments").then((r) => r.json()),
-    ])
-      .then(([examData, taData, paData]) => {
-        setExams(examData);
-        setTAs(taData);
-        setAssignments(paData);
-      })
-      .catch((err) => {
-        console.error(err);
-        alert("Error loading proctoring data");
-      })
-      .finally(() => setLoading(false));
-  }, []);
+  setLoading(true);
+  Promise.all([
+    fetch("http://localhost:8080/api/ta").then((r) => r.json()),
+    fetch("http://localhost:8080/api/exams").then((r) => r.json()),
+    fetch("http://localhost:8080/api/proctor-assignments").then((r) => r.json()),
+  ])
+    .then(([examData, taData, paData]) => {
+      setExams(Array.isArray(examData) ? examData : []);
+      setTAs(Array.isArray(taData) ? taData : []);
+      setAssignments(Array.isArray(paData) ? paData : []);
+    })
+    .catch((err) => {
+      console.error(err);
+      alert("Error loading proctoring data");
+      setExams([]); // fallback
+      setTAs([]);
+      setAssignments([]);
+    })
+    .finally(() => setLoading(false));
+}, []);
+
 
   const openModal = (exam) => {
     setSelectedExam(exam);
