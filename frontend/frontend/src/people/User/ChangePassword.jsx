@@ -63,13 +63,13 @@ const RecoverPasswordPage = () => {
     setSuccessMsg('');
 
     if (newPassword !== confirmPass) {
-      setErrorMsg('Yeni şifre ve onay uyuşmuyor.');
+      setErrorMsg('New pass and confirmation as not aligned.');
       return;
     }
 
     const token = localStorage.getItem('authToken');
     if (!token) {
-      setErrorMsg('Giriş yapmalısınız.');
+      setErrorMsg('You must be logged in.');
       return;
     }
 
@@ -91,10 +91,10 @@ const RecoverPasswordPage = () => {
 
       if (!res.ok) {
         const errBody = await res.json().catch(() => ({}));
-        throw new Error(errBody.message || 'Şifre güncelleme başarısız.');
+        throw new Error(errBody.message || 'Couldn\'t change password.');
       }
 
-      setSuccessMsg('Şifre başarıyla güncellendi.');
+      setSuccessMsg('Changed pass successfully.');
       // istersen yönlendirme:
       // navigate('/viewprofile');
     } catch (err) {
@@ -117,7 +117,7 @@ const RecoverPasswordPage = () => {
                     alt="Change Password"
                   />
                   <h3>Change Password</h3>
-                  <p>Mevcut şifrenizi girin ve yeni şifre oluşturun.</p>
+                  <p>Enter your password and make a new password.</p>
                 </div>
 
                 {errorMsg && (

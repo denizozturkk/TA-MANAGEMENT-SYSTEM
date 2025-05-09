@@ -65,7 +65,7 @@ const TutorGraderForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!transcript) {
-      alert("Lütfen transkript dosyanızı yükleyin.");
+      alert("Please enter a transcript file.");
       return;
     }
 
@@ -92,12 +92,12 @@ const TutorGraderForm = () => {
 
       if (!res.ok) {
         const errText = await res.text().catch(() => res.statusText);
-        throw new Error(errText || "Sunucu hatası");
+        throw new Error(errText || "Error occurred while submitting the application.");
       }
 
       const created = await res.json();
-      alert("Başvurunuz başarıyla gönderildi!");
-      console.log("Oluşan başvuru:", created);
+      alert("Your application has been submitted successfully.");
+      console.log("Application sent:", created);
 
       // formu sıfırla
       setFormData({
@@ -123,8 +123,8 @@ const TutorGraderForm = () => {
       });
       setTranscript(null);
     } catch (err) {
-      console.error("Başvuru gönderme hatası:", err);
-      alert(`Gönderme hatası: ${err.message}`);
+      console.error("Error sending application:", err);
+      alert(`Error: ${err.message}`);
     } finally {
       setSubmitting(false);
     }
@@ -132,7 +132,7 @@ const TutorGraderForm = () => {
 
   return (
     <div className="container my-5 p-4 bg-light rounded shadow" style={{ maxWidth: "800px" }}>
-      <h3 className="mb-4">Tutor/Grader Başvuru Formu</h3>
+      <h3 className="mb-4">Tutor/Grader Application Form</h3>
       <form onSubmit={handleSubmit}>
         {/* Temel Bilgiler */}
         <input
@@ -177,7 +177,7 @@ const TutorGraderForm = () => {
           onChange={handleChange}
           required
         >
-          <option value="">Bölüm Seçin</option>
+          <option value="">Select Department</option>
           <option value="CS">CS</option>
           <option value="EE">EE</option>
           <option value="CHEM">CHEM</option>
@@ -224,13 +224,13 @@ const TutorGraderForm = () => {
         {/* Dizi Girdileri */}
         <input
           className="form-control mb-2"
-          placeholder="Lab Courses (örn: CS102, EE200)"
+          placeholder="Lab Courses (example: CS102, EE200)"
           onChange={e => handleArrayInput(e, "labCourses")}
           value={formData.labCourses.join(", ")}
         />
         <input
           className="form-control mb-2"
-          placeholder="Gradership Courses (örn: CS101, EE150)"
+          placeholder="Gradership Courses (example: CS101, EE150)"
           onChange={e => handleArrayInput(e, "gradershipCourses")}
           value={formData.gradershipCourses.join(", ")}
         />
@@ -256,14 +256,14 @@ const TutorGraderForm = () => {
         <input
           className="form-control mb-2"
           name="CS102"
-          placeholder="CS102 → Grade (örn: A-)"
+          placeholder="CS102 → Grade (example: A-)"
           onChange={e => handleMapInput(e, "letterGradesByCourse")}
           value={formData.letterGradesByCourse["CS102"] || ""}
         />
         <input
           className="form-control mb-2"
           name="EE200"
-          placeholder="EE200 → Grade (örn: B+)"
+          placeholder="EE200 → Grade (example: B+)"
           onChange={e => handleMapInput(e, "letterGradesByCourse")}
           value={formData.letterGradesByCourse["EE200"] || ""}
         />
@@ -317,7 +317,7 @@ const TutorGraderForm = () => {
           className="btn btn-primary"
           disabled={submitting}
         >
-          {submitting ? "Gönderiliyor..." : "Başvuruyu Gönder"}
+          {submitting ? "Sending..." : "Sent"}
         </button>
       </form>
     </div>

@@ -26,7 +26,7 @@ const AuthActorsAdmin = () => {
           <LayoutAdmin />
         </div>
         <div className="container-fluid py-4">
-          <p className="text-danger">⚠️ Admin olarak giriş yapmalısınız.</p>
+          <p className="text-danger">You must login as admin.</p>
         </div>
       </div>
     );
@@ -43,7 +43,7 @@ const AuthActorsAdmin = () => {
 
   const handleAuthorize = async () => {
     if (!actorId) {
-      alert("Lütfen Actor ID girin.");
+      alert("Please enter Actor ID.");
       return;
     }
     setLoading(l => ({ ...l, auth: true }));
@@ -63,11 +63,11 @@ const AuthActorsAdmin = () => {
         const msg = await parseError(res);
         throw new Error(msg || `HTTP ${res.status}`);
       }
-      alert(`✅ Actor #${actorId} rolü '${newRole}' olarak güncellendi.`);
+      alert(`Actor #${actorId} role changed as '${newRole}'.`);
       setActorId("");
     } catch (err) {
       console.error(err);
-      alert(`❌ Yetkilendirme başarısız: ${err.message}`);
+      alert(`Failed authorization: ${err.message}`);
     } finally {
       setLoading(l => ({ ...l, auth: false }));
     }
@@ -75,10 +75,10 @@ const AuthActorsAdmin = () => {
 
   const handleDelete = async () => {
     if (!deleteId) {
-      alert("Lütfen silinecek User ID girin.");
+      alert("Please enter User ID.");
       return;
     }
-    if (!window.confirm(`User #${deleteId} gerçekten silinsin mi?`)) {
+    if (!window.confirm(`Really delete #${deleteId}?`)) {
       return;
     }
     setLoading(l => ({ ...l, del: true }));
@@ -91,11 +91,11 @@ const AuthActorsAdmin = () => {
         const msg = await parseError(res);
         throw new Error(msg || `HTTP ${res.status}`);
       }
-      alert(`✅ User #${deleteId} başarıyla silindi.`);
+      alert(`User #${deleteId} deleted.`);
       setDeleteId("");
     } catch (err) {
       console.error(err);
-      alert(`❌ Silme başarısız: ${err.message}`);
+      alert(`Failed removing: ${err.message}`);
     } finally {
       setLoading(l => ({ ...l, del: false }));
     }
@@ -115,7 +115,7 @@ const AuthActorsAdmin = () => {
             {/* Yetkilendirme Kartı */}
             <div className="card shadow-sm mb-4">
               <div className="card-body">
-                <h4 className="fw-bold mb-3 text-primary">Actor Yetkilendir / Rol Değiştir</h4>
+                <h4 className="fw-bold mb-3 text-primary">Actor Authorize / Change Role</h4>
                 <div className="row g-2 align-items-end">
                   <div className="col-md-4">
                     <label className="form-label">Actor ID</label>
@@ -128,7 +128,7 @@ const AuthActorsAdmin = () => {
                     />
                   </div>
                   <div className="col-md-4">
-                    <label className="form-label">Yeni Rol</label>
+                    <label className="form-label">New Role</label>
                     <select
                       className="form-select"
                       value={newRole}
@@ -146,7 +146,7 @@ const AuthActorsAdmin = () => {
                       onClick={handleAuthorize}
                       disabled={loading.auth}
                     >
-                      {loading.auth ? "İşleniyor…" : "Gönder"}
+                      {loading.auth ? "Sending" : "Sent"}
                     </button>
                   </div>
                 </div>
@@ -156,7 +156,7 @@ const AuthActorsAdmin = () => {
             {/* Silme Kartı */}
             <div className="card shadow-sm">
               <div className="card-body">
-                <h4 className="fw-bold mb-3 text-primary">User Sil</h4>
+                <h4 className="fw-bold mb-3 text-primary">User Delete</h4>
                 <div className="row g-2 align-items-end">
                   <div className="col-md-8">
                     <label className="form-label">User ID</label>
@@ -174,7 +174,7 @@ const AuthActorsAdmin = () => {
                       onClick={handleDelete}
                       disabled={loading.del}
                     >
-                      {loading.del ? "Siliniyor…" : "Sil"}
+                      {loading.del ? "Deleting" : "Deleted"}
                     </button>
                   </div>
                 </div>
