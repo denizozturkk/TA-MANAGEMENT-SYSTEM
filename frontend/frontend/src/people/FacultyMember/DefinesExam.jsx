@@ -282,7 +282,7 @@ const DefinesExamPage = () => {
                       {new Date(ex.dateTime).toLocaleString()}
                     </p>
                     <p>
-                      <strong>Duration:</strong> {ex.duration} minutes
+                      <strong>Duration:</strong> {ex.duration} hours
                     </p>
                     <div className="mt-3">
                       <strong>Proctors:</strong>
@@ -394,7 +394,7 @@ const DefinesExamPage = () => {
                     </div>
                     <div className="mb-3">
                       <label className="form-label">
-                        Duration (mins)
+                        Duration (hours)
                       </label>
                       <input
                         type="number"

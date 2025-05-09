@@ -99,13 +99,22 @@ const UploadDutyLogPage = () => {
       return alert("❌ Please select a TA for manual assignment.");
     }
 
-    // 2) calculate duration in minutes
-    const start = new Date(form.startTime);
-    const end = new Date(form.endTime);
-    const duration = Math.round((end - start) / 60000);
-    if (isNaN(duration) || duration <= 0) {
-      return alert("❌ Please enter valid start and end times.");
-    }
+// calculate duration in hours
+const start = new Date(form.startTime);
+const end   = new Date(form.endTime);
+
+// raw hours difference (may be fractional)
+const rawHours = (end - start) / (1000 * 60 * 60);
+
+// round to 2 decimals
+const duration = Math.round(rawHours * 100) / 100;
+
+if (isNaN(duration) || duration <= 0) {
+  return alert("❌ Please enter valid start and end times.");
+}
+
+// now `duration` is in hours (e.g. 1.50 for one and a half hours)
+
 
     // 3) build FormData
     const fd = new FormData();
@@ -218,7 +227,7 @@ const UploadDutyLogPage = () => {
           </div>
 
           <div className="col-md-2">
-            <label className="form-label">Workload (min)</label>
+            <label className="form-label">Workload (hours)</label>
             <input
               type="number"
               className="form-control"
