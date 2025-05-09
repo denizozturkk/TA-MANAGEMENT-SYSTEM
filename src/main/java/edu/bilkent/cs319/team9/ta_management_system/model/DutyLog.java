@@ -60,12 +60,8 @@ public class DutyLog {
     private String contentType;
 
     @Lob
-    @Column(
-            name           = "data",
-            columnDefinition= "LONGBLOB"
-    )
+    @Column(name = "data", columnDefinition = "LONGBLOB", nullable = true)
     private byte[] data;
-
 
 
     @Column(name = "reason", length = 500)
@@ -79,7 +75,7 @@ public class DutyLog {
     private String contentTypeTa;
 
     @Lob
-    @Column(name = "data_ta", columnDefinition = "LONGBLOB")
+    @Column(name = "data_ta", columnDefinition = "LONGBLOB", nullable = true)
     private byte[] dataTa;
 
 }
