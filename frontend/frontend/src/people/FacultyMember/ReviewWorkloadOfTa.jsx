@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import FacultyMemberLayout from "../FacultyMember/FacultyMemberLayout";
+import Modal from "react-bootstrap/Modal";
+import Button from "react-bootstrap/Button";
 
 function parseJwt(token) {
   try {
@@ -20,6 +22,10 @@ const DutiesByDepartmentPage = () => {
   const [selectedTA, setSelectedTA] = useState("");
   const [dutyLogs, setDutyLogs] = useState([]);
   const [proctors, setProctors] = useState([]);
+
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
+  const [rejectingId, setRejectingId] = useState(null);
 
   const BASE = "http://localhost:8080/api";
   const token = localStorage.getItem("authToken");
@@ -85,6 +91,43 @@ const DutiesByDepartmentPage = () => {
     return c ? `${c.building} ${c.roomNumber}` : `Room #${id}`;
   };
 
+  const handleAccept = async (assignmentId) => {
+    try {
+      await fetch(`${BASE}/proctor-assignments/${assignmentId}/accept`, {
+        method: "POST",
+        headers,
+      });
+      setProctors(proctors.map(p =>
+        p.id === assignmentId ? { ...p, status: "APPROVED" } : p
+      ));
+    } catch (err) {
+      console.error("Accept failed:", err);
+    }
+  };
+
+  const openRejectModal = (assignmentId) => {
+    setRejectingId(assignmentId);
+    setShowRejectModal(true);
+  };
+
+  const handleReject = async () => {
+    try {
+      await fetch(`${BASE}/proctor-assignments/${rejectingId}/reject`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ reason: rejectReason }),
+      });
+      setProctors(proctors.map(p =>
+        p.id === rejectingId ? { ...p, status: "REJECTED" } : p
+      ));
+      setShowRejectModal(false);
+      setRejectReason("");
+      setRejectingId(null);
+    } catch (err) {
+      console.error("Reject failed:", err);
+    }
+  };
+
   return (
     <div className="d-flex flex-column flex-lg-row">
       <div className="w-100 w-lg-auto" style={{ maxWidth: 300 }}>
@@ -98,7 +141,7 @@ const DutiesByDepartmentPage = () => {
               View TA Duty Logs & Proctors
             </h3>
 
-            {/* Department */}
+            {/* Department Selector */}
             <div className="mb-3">
               <label className="form-label">Department</label>
               <select
@@ -186,6 +229,7 @@ const DutiesByDepartmentPage = () => {
                             <th>Exam</th>
                             <th>Classroom</th>
                             <th>Status</th>
+                            <th>Action</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -194,6 +238,22 @@ const DutiesByDepartmentPage = () => {
                               <td>{getExamName(pa.examId)}</td>
                               <td>{getRoomName(pa.classroomId)}</td>
                               <td>{pa.status}</td>
+                              <td>
+                                <button
+                                  className="btn btn-sm btn-success me-2"
+                                  disabled={pa.status !== "SUBMITTED"}
+                                  onClick={() => handleAccept(pa.id)}
+                                >
+                                  Accept
+                                </button>
+                                <button
+                                  className="btn btn-sm btn-danger"
+                                  disabled={pa.status !== "SUBMITTED"}
+                                  onClick={() => openRejectModal(pa.id)}
+                                >
+                                  Reject
+                                </button>
+                              </td>
                             </tr>
                           ))}
                         </tbody>
@@ -206,6 +266,31 @@ const DutiesByDepartmentPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Reject Reason Modal */}
+      <Modal show={showRejectModal} onHide={() => setShowRejectModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Reject Assignment</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <label className="form-label">Reason</label>
+          <textarea
+            className="form-control"
+            value={rejectReason}
+            onChange={(e) => setRejectReason(e.target.value)}
+            rows={3}
+            placeholder="Enter reason for rejection"
+          />
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowRejectModal(false)}>
+            Cancel
+          </Button>
+          <Button variant="danger" onClick={handleReject}>
+            Submit Rejection
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 };
