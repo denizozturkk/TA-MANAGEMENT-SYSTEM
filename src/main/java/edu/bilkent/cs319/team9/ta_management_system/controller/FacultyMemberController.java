@@ -128,15 +128,17 @@ public class FacultyMemberController {
     public ResponseEntity<DutyLogDto> uploadDutyLog(
             @PathVariable Long facultyId,
             @PathVariable Long taId,
-            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "file", required = false) MultipartFile file,
             @RequestParam("taskType") DutyType taskType,
             @RequestParam("workload") Long workload,
             @RequestParam("offeringId") Long offeringId,
             @RequestParam("startTime")
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startTime,
+            @RequestParam("endTime")
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endTime,
             @RequestParam("duration") Long duration,
             @RequestParam("status") DutyStatus status,
-            @RequestParam("classroomIds") List<Long> classroomIds
+            @RequestParam(value = "classroomIds", required = false) List<Long> classroomIds
     ) {
         Set<Classroom> classrooms = new HashSet<>( classroomRepository.findAllById(classroomIds) );
         Offering offering = offeringRepository.findById(offeringId)
@@ -146,7 +148,7 @@ public class FacultyMemberController {
 
         DutyLog created = facultyMemberService.uploadDutyLog(
                 facultyId, taId, offering, file, taskType,
-                workload, startTime, duration, status, classrooms
+                workload, startTime, endTime, duration, status, classrooms
         );
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(mapper.toDto(created));
@@ -155,17 +157,21 @@ public class FacultyMemberController {
     @PostMapping("/{facultyId}/duty-logs/automatic")
     public ResponseEntity<DutyLogDto> uploadDutyLogAutomatic(
             @PathVariable Long facultyId,
-            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "file", required = false) MultipartFile file,
             @RequestParam("taskType") DutyType taskType,
             @RequestParam("workload") Long workload,
             @RequestParam("offeringId") Long offeringId,
             @RequestParam("startTime")
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startTime,
+            @RequestParam("endTime")
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endTime,
             @RequestParam("duration") Long duration,
             @RequestParam("status") DutyStatus status,
-            @RequestParam("classroomIds") List<Long> classroomIds
+            @RequestParam(value = "classroomIds", required = false) List<Long> classroomIds
     ) {
-        Set<Classroom> classrooms = new HashSet<>( classroomRepository.findAllById(classroomIds) );
+        Set<Classroom> classrooms = (classroomIds == null)
+                           ? Collections.emptySet()
+                           : new HashSet<>( classroomRepository.findAllById(classroomIds) );
         Offering offering = offeringRepository.findById(offeringId)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Offering not found with id " + offeringId
@@ -173,7 +179,7 @@ public class FacultyMemberController {
 
         DutyLog created = facultyMemberService.uploadDutyLogAutomatic(
                 facultyId, offering, file, taskType,
-                workload, startTime, duration, status, classrooms
+                workload, startTime, endTime, duration, status, classrooms
         );
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(mapper.toDto(created));

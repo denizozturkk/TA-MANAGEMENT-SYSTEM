@@ -12,6 +12,7 @@ public class OfferingDto {
     private Integer year;
     private Long instructorId; // Reference by ID
     private Long courseId;
+    private String courseCode;
     private Set<Long> taIds;
     private Set<Long> studentIds;
     private Set<Long> examIds;

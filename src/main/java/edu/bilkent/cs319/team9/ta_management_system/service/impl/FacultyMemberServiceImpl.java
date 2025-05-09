@@ -111,7 +111,7 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
         TA ta = saved.getTa();
         String title = "Leave Request Approved";
         String body  = String.format(
-                "Your leave request (ID %d) from %s to %s has been approved.",
+                "Your leave request (ID %d) has been approved.",
                 saved.getId()
         );
         notificationService.notifyUser(
@@ -140,7 +140,7 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
         TA ta = saved.getTa();
         String notifTitle = "Leave Request Rejected";
         String notifBody  = String.format(
-                "Your leave request (ID %d) from %s to %s has been rejected.",
+                "Your leave request (ID %d) has been rejected.",
                 saved.getId()
         );
         notificationService.notifyUser(
@@ -182,6 +182,7 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
                                  DutyType taskType,
                                  Long workload,
                                  LocalDateTime startTime,
+                                 LocalDateTime endTime,
                                  Long duration,
                                  DutyStatus status,
                                  Set<Classroom> classrooms) {
@@ -211,7 +212,6 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
         }
 
         // 4) Busy-hour conflict check
-        LocalDateTime endTime = startTime.plusMinutes(duration);
         boolean hasConflict = busyHourService.findByTaId(taId).stream()
                 .anyMatch(bh -> bh.overlaps(startTime, endTime));
         if (hasConflict) {
@@ -221,23 +221,19 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
             );
         }
 
-        // 5) Validate file
-        if (file.isEmpty()) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Uploaded file is empty"
-            );
-        }
-        if (!"application/pdf".equalsIgnoreCase(file.getContentType())) {
-            throw new ResponseStatusException(
-                    HttpStatus.UNSUPPORTED_MEDIA_TYPE,
-                    "Only PDF files are allowed"
-            );
+        boolean hasPdf = file != null && !file.isEmpty();
+        if (hasPdf) {
+            if (!"application/pdf".equalsIgnoreCase(file.getContentType())) {
+                throw new ResponseStatusException(
+                        HttpStatus.UNSUPPORTED_MEDIA_TYPE,
+                        "Only PDF files are allowed"
+                );
+            }
         }
 
         try {
             // 6) Build and save the DutyLog
-            DutyLog dutyLog = DutyLog.builder()
+            DutyLog.DutyLogBuilder builder = DutyLog.builder()
                     .faculty(faculty)
                     .ta(ta)
                     .offering(offering)
@@ -245,18 +241,18 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
                     .taskType(taskType)
                     .workload(workload)
                     .startTime(startTime)
+                    .endTime(endTime)
                     .duration(duration)
                     .status(status)
-                    .classrooms(classrooms)
+                    .classrooms(classrooms);
 
-                    // — PDF fields —
-                    .fileName(file.getOriginalFilename())
-                    .contentType(file.getContentType())
-                    .data(file.getBytes())
-                    .build();
-
-            // save before notifications
-            dutyLog = dutyLogRepository.save(dutyLog);
+            if (hasPdf) {
+                builder
+                        .fileName(file.getOriginalFilename())
+                        .contentType(file.getContentType())
+                        .data(file.getBytes());
+            }
+            DutyLog dutyLog = dutyLogRepository.save(builder.build());
 
             // 5) In-app notification
             String notificationTitle = "Duty Assigned";
@@ -289,12 +285,13 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
                             faculty.getFirstName(),
                     false
             );
-
-            helper.addAttachment(
-                    file.getOriginalFilename(),
-                    new ByteArrayResource(file.getBytes()),
-                    file.getContentType()
-            );
+            if (hasPdf){
+                helper.addAttachment(
+                        file.getOriginalFilename(),
+                        new ByteArrayResource(file.getBytes()),
+                        file.getContentType()
+                );
+            }
 
             mailSender.send(message);
             return dutyLog;
@@ -318,6 +315,7 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
             DutyType taskType,
             Long workload,
             LocalDateTime startTime,
+            LocalDateTime endTime,
             Long duration,
             DutyStatus status,
             Set<Classroom> classrooms) {
@@ -327,9 +325,6 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
                         HttpStatus.NOT_FOUND,
                         "FacultyMember not found with id " + facultyId
                 ));
-
-        // 2) determine exam window (to avoid conflicts)
-        LocalDateTime endTime = startTime.plusMinutes(duration);
 
         // 3) pick the first available TA in the same department with the lowest workload
         List<TA> candidates = taService.findAll().stream()
@@ -376,6 +371,7 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
                 taskType,
                 workload,
                 startTime,
+                endTime,
                 duration,
                 status,
                 classrooms

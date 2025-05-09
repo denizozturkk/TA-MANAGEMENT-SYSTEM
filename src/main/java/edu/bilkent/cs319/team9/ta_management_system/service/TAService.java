@@ -1,5 +1,6 @@
 package edu.bilkent.cs319.team9.ta_management_system.service;
 
+import edu.bilkent.cs319.team9.ta_management_system.dto.TADto;
 import edu.bilkent.cs319.team9.ta_management_system.model.TA;
 import java.util.List;
 
@@ -9,4 +10,5 @@ public interface TAService {
     List<TA> findAll();
     TA update(Long id, TA ta);
     void delete(Long id);
+    public List<TA> findTAsByOfferingId(Long offeringId);
 }
