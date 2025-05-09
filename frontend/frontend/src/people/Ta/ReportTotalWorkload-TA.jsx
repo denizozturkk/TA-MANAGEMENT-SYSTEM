@@ -55,7 +55,6 @@ const PendingDutiesTA = () => {
   const openModal = (type, item) => {
     setModalType(type);
     setSelected(item);
-    // reset all form states
     setReason("");
     setExtensionDays(1);
     setLeaveDates({ start: "", end: "" });
@@ -119,7 +118,6 @@ const PendingDutiesTA = () => {
     }
   };
 
-  // New: submit duty with file upload
   const handleSubmitDutyForm = async (e) => {
     e.preventDefault();
     setSubmitting(true);
@@ -132,10 +130,7 @@ const PendingDutiesTA = () => {
         `${BASE}/duty-logs/${selected.id}/submit?taId=${taId}`,
         {
           method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            Accept: "application/json",
-          },
+          headers: { Authorization: `Bearer ${token}` },
           body: formData,
         }
       );
@@ -156,10 +151,7 @@ const PendingDutiesTA = () => {
     try {
       const res = await fetch(
         `${BASE}/proctor-assignments/${proctorId}/submit`,
-        {
-          method: "POST",
-          headers: hdrs,
-        }
+        { method: "POST", headers: hdrs }
       );
       if (!res.ok) throw new Error("Submit failed");
       setProctors((prev) =>
@@ -169,6 +161,28 @@ const PendingDutiesTA = () => {
       );
     } catch (err) {
       alert("Failed to submit proctoring: " + err.message);
+    }
+  };
+
+  // New: download the TA-uploaded PDF
+  const downloadTa = async (dutyId, fileName) => {
+    try {
+      const res = await fetch(
+        `${BASE}/duty-logs/${dutyId}/downloadTa?taId=${taId}`,
+        { method: "GET", headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (!res.ok) throw new Error("Download failed");
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName || "duty-proof.pdf";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      alert("Download failed: " + err.message);
     }
   };
 
@@ -187,9 +201,9 @@ const PendingDutiesTA = () => {
             <table className="table">
               <thead>
                 <tr>
-                  <th>When</th>
+                  <th>Deadline</th>
                   <th>Type</th>
-                  <th>Hours</th>
+                  <th>Workload</th>
                   <th>Status</th>
                   <th>Proof</th>
                   <th>Extension</th>
@@ -202,54 +216,58 @@ const PendingDutiesTA = () => {
                   const ext = extReqs.find((x) => x.dutyLogId === d.id);
                   return (
                     <tr key={d.id}>
-                          <td>{new Date(d.endTime).toLocaleString()}</td>
-                          <td>{d.taskType}</td>
-                          <td>{d.workload}</td>
-                          <td>{d.status}</td>
-                          <td>
-                            {d.proofUrl ? (
-                              <a
-                                href={d.proofUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="btn btn-sm btn-outline-primary"
-                              >
-                                Download
-                              </a>
-                            ) : (
-                              <span className="text-muted">No file</span>
-                            )}
-                          </td>
-                          <td>
-                            {ext ? (
-                              <span className={`badge ${ext.status === "REJECTED" ? "bg-danger" : "bg-info"}`}>
-                                {ext.status}
-                              </span>
-                            ) : d.status === "PENDING" ? (
-                              <button
-                                className="btn btn-sm btn-outline-secondary"
-                                onClick={() => openModal("extension", d)}
-                              >
-                                Request
-                              </button>
-                            ) : (
-                              <button className="btn btn-sm btn-outline-secondary" disabled>
-                                Request
-                              </button>
-                            )}
-                          </td>
-                          <td>
-                            {d.status === "PENDING" && (
-                              <button
-                                className="btn btn-sm btn-success"
-                                onClick={() => openModal("submitDuty", d)}
-                              >
-                                Submit
-                              </button>
-                            )}
-                          </td>
-                        </tr>
-
+                      <td>{new Date(d.endTime).toLocaleString()}</td>
+                      <td>{d.taskType}</td>
+                      <td>{d.workload}</td>
+                      <td>{d.status}</td>
+                      <td>
+                        {d.fileNameTa ? (
+                          <button
+                            className="btn btn-sm btn-outline-primary"
+                            onClick={() => downloadTa(d.id, d.fileNameTa)}
+                          >
+                            Download
+                          </button>
+                        ) : (
+                          <span className="text-muted">No file</span>
+                        )}
+                      </td>
+                      <td>
+                        {ext ? (
+                          <span
+                            className={`badge ${
+                              ext.status === "REJECTED" ? "bg-danger" : "bg-info"
+                            }`}
+                          >
+                            {ext.status}
+                          </span>
+                        ) : d.status === "PENDING" ? (
+                          <button
+                            className="btn btn-sm btn-outline-secondary"
+                            onClick={() => openModal("extension", d)}
+                          >
+                            Request
+                          </button>
+                        ) : (
+                          <button
+                            className="btn btn-sm btn-outline-secondary"
+                            disabled
+                          >
+                            Request
+                          </button>
+                        )}
+                      </td>
+                      <td>
+                        {d.status === "PENDING" && (
+                          <button
+                            className="btn btn-sm btn-success"
+                            onClick={() => openModal("submitDuty", d)}
+                          >
+                            Submit
+                          </button>
+                        )}
+                      </td>
+                    </tr>
                   );
                 })}
               </tbody>
