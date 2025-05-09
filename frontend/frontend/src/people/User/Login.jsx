@@ -23,11 +23,11 @@ const SignInPage = () => {
         const errBody = await res.json().catch(() => ({}));
         throw new Error(errBody.message || "Login failed");
       }
-      const { token, role, userId } = await res.json();
+      const { token, role, user_id } = await res.json();
       // persist
       localStorage.setItem("authToken", token);
       localStorage.setItem("userRole", role);
-      localStorage.setItem("userId", userId);
+localStorage.setItem("userId", user_id);
 
       let target = "/";
       switch (role) {
