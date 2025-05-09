@@ -1,13 +1,16 @@
+// src/people/Dean/MakeReportDean.jsx
 import React, { useState, useEffect } from "react";
 import LayoutDean from "./Layout-Dean";
 
 const reportOptions = [
-  { key: "LOG",     label: "Login Reports",   icon: "lock"         },
-  { key: "SWAP",    label: "Swap Reports",    icon: "exchange-alt" },
-  { key: "DUTY",    label: "Duty Reports",    icon: "check-alt"    },
-  { key: "PROCTOR", label: "Proctor Reports", icon: "user-safety"  },
+  { key: "LOG",     label: "Login Reports" },
+  { key: "SWAP",    label: "Swap Reports" },
+  { key: "DUTY",    label: "Duty Reports" },
+  { key: "PROCTOR", label: "Proctor Reports" },
 ];
+
 const baseUrl = "http://localhost:8080/api/admin";
+
 const MakeReportDean = () => {
   const deanId = localStorage.getItem("userId");
   const token  = localStorage.getItem("authToken");
@@ -18,18 +21,14 @@ const MakeReportDean = () => {
   const [requests,     setRequests]     = useState([]);
   const [loadingReqs,  setLoadingReqs]  = useState(true);
   const [actionKey,    setActionKey]    = useState(null);
-  const [toast,       setToast]       = useState({ show:false, message:"", type:"" });
+  const [toast,        setToast]        = useState({ show: false, message: "", type: "" });
 
   useEffect(() => {
     if (!deanId) return alert("No deanId found—please log in again.");
     setToday(new Date().toISOString().split("T")[0]);
 
     fetch(`http://localhost:8080/api/dean/${deanId}/report-requests`, {
-      method:  "GET",
-      headers: {
-        "Accept":        "application/json",
-        "Authorization": `Bearer ${token}`
-      }
+      headers: { ...headers, Accept: "application/json" }
     })
       .then((res) => {
         if (!res.ok) throw new Error(`Status ${res.status}`);
@@ -41,119 +40,76 @@ const MakeReportDean = () => {
         alert("Error loading report requests");
       })
       .finally(() => setLoadingReqs(false));
-  }, [deanId, token]);
+  }, [deanId]);
 
   const handleDateChange = (e) => {
     const { name, value } = e.target;
     setDateRange((p) => ({ ...p, [name]: value }));
   };
 
-const requestReport = async (key) => {
-  const { startDate, endDate } = dateRange;
-  if (!startDate || !endDate) {
-    return alert("Please select both start and end dates.");
-  }
+  const requestReport = async (key) => {
+    const { startDate, endDate } = dateRange;
+    if (!startDate || !endDate) return alert("Please select both dates.");
+    setActionKey(key);
 
-  setActionKey(key);
+    const payload = {
+      reportType: key,
+      fromTime:   `${startDate}T00:00:00`,
+      toTime:     `${endDate}T23:59:59`,
+      details:    "",
+      status:     "PENDING",
+    };
 
-  // build payload
-  const payload = {
-    reportType: key,
-    fromTime:   `${startDate}T00:00:00`,
-    toTime:     `${endDate}T23:59:59`,
-    details:    "",
-    status:     "PENDING",
+    try {
+      const res = await fetch(
+        `http://localhost:8080/api/dean/${deanId}/report-requests`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...headers },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      const bodyText = await res.text();
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const newReq = JSON.parse(bodyText);
+      setRequests((prev) => [newReq, ...prev]);
+    } catch (err) {
+      console.error(`Failed to request ${key}:`, err);
+      alert(`Failed to request report: ${key}`);
+    } finally {
+      setActionKey(null);
+    }
   };
 
-  try {
-    const res = await fetch(
-      `http://localhost:8080/api/dean/${deanId}/report-requests`,
-      {
-        method:  "POST",
+  const downloadReport = async (reportType, fromTime, toTime) => {
+    try {
+      const pdfType = reportType.toLowerCase();
+      const url = `${baseUrl}/reports/${pdfType}/pdf?from=${fromTime}&to=${toTime}`;
+      const res = await fetch(url, {
         headers: {
-          "Content-Type":  "application/json",
-          "Authorization": `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      }
-    );
+          Authorization: `Bearer ${token}`,
+          Accept:        "application/pdf"
+        }
+      });
+      if (!res.ok) throw new Error(`Failed to download PDF: ${res.status}`);
+      const blob = await res.blob();
+      const downloadUrl = URL.createObjectURL(blob);
 
-    // read whole body first
-    const bodyText = await res.text();
+      const a = document.createElement("a");
+      a.href = downloadUrl;
+      a.download = `${pdfType}-report-${fromTime.split("T")[0]}-to-${toTime.split("T")[0]}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
 
-    // log & bail on error
-    if (!res.ok) {
-      console.error("Server responded with:", res.status, bodyText);
-      throw new Error(`HTTP ${res.status}`);
+      URL.revokeObjectURL(downloadUrl);
+      setToast({ show: true, type: "success", message: "PDF downloaded" });
+    } catch (err) {
+      console.error("Download failed:", err);
+      setToast({ show: true, type: "danger", message: err.message });
     }
-
-    // parse and prepend new request
-    const newReq = JSON.parse(bodyText);
-    setRequests((prev) => [newReq, ...prev]);
-
-  } catch (err) {
-    console.error(`Failed to request ${key}:`, err);
-    alert(`Failed to request ${reportOptions.find(r => r.key === key).label}`);
-  } finally {
-    setActionKey(null);
-  }
-};
-// ─── Download a completed report with your existing API ───
-const downloadReport = async (reportType, fromTime, toTime) => {
-  if (!reportType) {
-    console.error("downloadReport called with undefined reportType");
-    return setToast({
-      show: true,
-      type: "danger",
-      message: "Invalid report type"
-    });
-  }
-
-  try {
-    // Spring mappings are /reports/log/pdf, /reports/swap/pdf, etc.
-    const pdfType = reportType.toLowerCase();
-
-    // Build the URL exactly as your AdminController expects
-    const url = `${baseUrl}/reports/${pdfType}/pdf` +
-                `?from=${encodeURIComponent(fromTime)}` +
-                `&to=${encodeURIComponent(toTime)}`;
-
-    const res = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept:        "application/pdf"
-      }
-    });
-    if (!res.ok) {
-      throw new Error(`Failed to download PDF: ${res.status}`);
-    }
-
-    // Turn the response into a blob & create a download link
-    const blob        = await res.blob();
-    const downloadUrl = URL.createObjectURL(blob);
-
-    // Extract just the date portion for a friendly filename
-    const start = fromTime.split("T")[0];
-    const end   = toTime.split("T")[0];
-
-    const a = document.createElement("a");
-    a.href     = downloadUrl;
-    a.download = `${pdfType}-report-${start}-to-${end}.pdf`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-
-    // Clean up
-    URL.revokeObjectURL(downloadUrl);
-
-    setToast({ show: true, type: "success", message: "PDF downloaded" });
-  } catch (err) {
-    console.error("Download failed:", err);
-    setToast({ show: true, type: "danger", message: err.message });
-  }
-};
-
-
+  };
 
   return (
     <LayoutDean>
@@ -233,7 +189,7 @@ const downloadReport = async (reportType, fromTime, toTime) => {
                       const label = reportOptions.find(o => o.key === reportType)?.label || reportType;
                       const start = fromTime.split("T")[0];
                       const end   = toTime.split("T")[0];
-                    
+
                       return (
                         <tr key={id}>
                           <td>{label}</td>
@@ -261,7 +217,6 @@ const downloadReport = async (reportType, fromTime, toTime) => {
                         </tr>
                       );
                     })
-                    
                   )}
                 </tbody>
               </table>

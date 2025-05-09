@@ -191,46 +191,65 @@ const PendingDutiesTA = () => {
                   <th>Type</th>
                   <th>Hours</th>
                   <th>Status</th>
+                  <th>Proof</th>
                   <th>Extension</th>
                   <th>Action</th>
                 </tr>
               </thead>
+
               <tbody>
                 {duties.map((d) => {
                   const ext = extReqs.find((x) => x.dutyLogId === d.id);
                   return (
                     <tr key={d.id}>
-                      <td>{new Date(d.dateTime).toLocaleString()}</td>
-                      <td>{d.taskType}</td>
-                      <td>{d.workload}</td>
-                      <td>{d.status}</td>
-                      <td>
-                        {ext ? (
-                          <span className="badge bg-info">{ext.status}</span>
-                        ) : d.status === "PENDING" ? (
-                          <button
-                            className="btn btn-sm btn-outline-secondary"
-                            onClick={() => openModal("extension", d)}
-                          >
-                            Request
-                          </button>
-                        ) : (
-                          <button className="btn btn-sm btn-outline-secondary" disabled>
-                            Request
-                          </button>
-                        )}
-                      </td>
-                      <td>
-                        {d.status === "PENDING" && (
-                          <button
-                            className="btn btn-sm btn-success"
-                            onClick={() => openModal("submitDuty", d)}
-                          >
-                            Submit
-                          </button>
-                        )}
-                      </td>
-                    </tr>
+                          <td>{new Date(d.endTime).toLocaleString()}</td>
+                          <td>{d.taskType}</td>
+                          <td>{d.workload}</td>
+                          <td>{d.status}</td>
+                          <td>
+                            {d.proofUrl ? (
+                              <a
+                                href={d.proofUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="btn btn-sm btn-outline-primary"
+                              >
+                                Download
+                              </a>
+                            ) : (
+                              <span className="text-muted">No file</span>
+                            )}
+                          </td>
+                          <td>
+                            {ext ? (
+                              <span className={`badge ${ext.status === "REJECTED" ? "bg-danger" : "bg-info"}`}>
+                                {ext.status}
+                              </span>
+                            ) : d.status === "PENDING" ? (
+                              <button
+                                className="btn btn-sm btn-outline-secondary"
+                                onClick={() => openModal("extension", d)}
+                              >
+                                Request
+                              </button>
+                            ) : (
+                              <button className="btn btn-sm btn-outline-secondary" disabled>
+                                Request
+                              </button>
+                            )}
+                          </td>
+                          <td>
+                            {d.status === "PENDING" && (
+                              <button
+                                className="btn btn-sm btn-success"
+                                onClick={() => openModal("submitDuty", d)}
+                              >
+                                Submit
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+
                   );
                 })}
               </tbody>
