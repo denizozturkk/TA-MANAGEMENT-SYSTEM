@@ -238,41 +238,54 @@ const DutiesByDepartmentPage = () => {
                             <th>Task Type</th>
                             <th>Workload</th>
                             <th>Start Time</th>
-                            <th>Duration</th>
                             <th>Status</th>
+                            <th>Proof</th>
                             <th>Action</th>
                           </tr>
                         </thead>
+
                         <tbody>
-                          {dutyLogs.map((dl) => (
-                            <tr key={dl.id}>
-                              <td>{dl.id}</td>
-                              <td>{dl.taskType}</td>
-                              <td>{dl.workload}</td>
-                              <td>
-                                {new Date(dl.startTime).toLocaleString()}
-                              </td>
-                              <td>{dl.duration} mins</td>
-                              <td>{dl.status}</td>
-                              <td>
-                                <button
-                                  className="btn btn-sm btn-success me-2"
-                                  disabled={dl.status !== "SUBMITTED"}
-                                  onClick={() => handleAcceptDuty(dl.id)}
-                                >
-                                  Accept
-                                </button>
-                                <button
-                                  className="btn btn-sm btn-danger"
-                                  disabled={dl.status !== "SUBMITTED"}
-                                  onClick={() => openRejectModal(dl.id)}
-                                >
-                                  Reject
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
+                            {dutyLogs.map((dl) => (
+                              <tr key={dl.id}>
+                                <td>{dl.id}</td>
+                                <td>{dl.taskType}</td>
+                                <td>{dl.workload}</td>
+                                <td>{new Date(dl.startTime).toLocaleString()}</td>
+                                <td>{dl.status}</td>
+                                <td>
+                                  {dl.proofUrl ? (
+                                    <a
+                                      href={dl.proofUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="btn btn-sm btn-outline-primary"
+                                    >
+                                      Download
+                                    </a>
+                                  ) : (
+                                    <span className="text-muted">No file</span>
+                                  )}
+                                </td>
+                                <td>
+                                  <button
+                                    className="btn btn-sm btn-success me-2"
+                                    disabled={dl.status !== "SUBMITTED"}
+                                    onClick={() => handleAcceptDuty(dl.id)}
+                                  >
+                                    Accept
+                                  </button>
+                                  <button
+                                    className="btn btn-sm btn-danger"
+                                    disabled={dl.status !== "SUBMITTED"}
+                                    onClick={() => openRejectModal(dl.id)}
+                                  >
+                                    Reject
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+
                       </table>
                     </div>
                   )}
