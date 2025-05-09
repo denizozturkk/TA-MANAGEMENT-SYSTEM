@@ -2,20 +2,29 @@ package edu.bilkent.cs319.team9.ta_management_system.service.impl;
 
 
 import edu.bilkent.cs319.team9.ta_management_system.exception.NotFoundException;
+import edu.bilkent.cs319.team9.ta_management_system.model.Classroom;
 import edu.bilkent.cs319.team9.ta_management_system.model.Exam;
+import edu.bilkent.cs319.team9.ta_management_system.model.ExamRoom;
+import edu.bilkent.cs319.team9.ta_management_system.model.ExamRoomId;
+import edu.bilkent.cs319.team9.ta_management_system.repository.ClassroomRepository;
 import edu.bilkent.cs319.team9.ta_management_system.repository.ExamRepository;
+import edu.bilkent.cs319.team9.ta_management_system.repository.ExamRoomRepository;
 import edu.bilkent.cs319.team9.ta_management_system.service.ExamService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @Transactional
 @RequiredArgsConstructor
 public class ExamServiceImpl implements ExamService {
     private final ExamRepository repo;
+    private final ClassroomRepository classroomRepo;
+    private final ExamRoomRepository examRoomRepo;
 
     @Override
     public Exam create(Exam exam) {
@@ -53,11 +62,48 @@ public class ExamServiceImpl implements ExamService {
     }
 
     @Override
+    @Transactional
     public Exam update(Long id, Exam e) {
-        if (!repo.existsById(id)) throw new NotFoundException("Exam", id);
-        e.setId(id);
-        return repo.save(e);
+        Exam existing = repo.findById(id)
+                .orElseThrow(() -> new NotFoundException("Exam not found"));
+
+        // Step 1: Delete old examRooms at DB level (optional but recommended)
+        examRoomRepo.deleteByExamId(existing.getId());
+        existing.getExamRooms().clear();
+
+        // Step 2: Create NEW ExamRoom entities
+        Set<ExamRoom> newRooms = new HashSet<>();
+        for (ExamRoom er : e.getExamRooms()) {
+            Classroom cls = classroomRepo.findById(er.getClassroom().getId())
+                    .orElseThrow(() -> new NotFoundException("Classroom not found"));
+
+            ExamRoom newEr = new ExamRoom();
+            newEr.setId(new ExamRoomId(existing.getId(), cls.getId()));
+            newEr.setExam(existing);
+            newEr.setClassroom(cls);
+            newEr.setNumProctors(er.getNumProctors());
+
+            newRooms.add(newEr);
+        }
+
+        // Step 3: Update mutable fields
+        existing.setExamName(e.getExamName());
+        existing.setDateTime(e.getDateTime());
+        existing.setDuration(e.getDuration());
+        existing.setNumProctors(e.getNumProctors());
+        existing.setDepartment(e.getDepartment());
+        existing.setExamType(e.getExamType());
+        existing.setOffering(e.getOffering());
+        existing.setFaculty(e.getFaculty());
+
+        // Step 4: Do NOT replace collection — modify it!
+        existing.getExamRooms().addAll(newRooms);
+
+        return repo.save(existing);
     }
+
+
+
 
     @Override
     public void delete(Long id) {
