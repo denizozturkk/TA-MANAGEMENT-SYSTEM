@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import LayoutTA from "./Layout-TA";
 
 const ViewWorkloadTA = () => {
-  const [items, setItems] = useState([]);
+  const [items, setItems] = useState([]); // enriched duty list with workload
+  const [totalWorkload, setTotalWorkload] = useState(0);
   const [loading, setLoading] = useState(true);
 
   const taId = localStorage.getItem("userId");
@@ -27,6 +28,8 @@ const ViewWorkloadTA = () => {
         const all = await res.json();
         const approved = all.filter(d => d.status === "APPROVED");
 
+        let total = 0;
+
         const enriched = await Promise.all(
           approved.map(async d => {
             const fRes = await fetch(`${BASE}/faculty-members/${d.facultyId}`, {
@@ -37,13 +40,18 @@ const ViewWorkloadTA = () => {
             });
             if (!fRes.ok) throw new Error("Failed to load faculty");
             const faculty = await fRes.json();
-            const dateStr = new Date(d.dateTime).toLocaleDateString();
+            const dateStr = new Date(d.dateTime || d.startTime).toLocaleDateString();
             const facultyName = `${faculty.firstName} ${faculty.lastName}`;
-            return `${d.taskType} — ${dateStr} — ${facultyName}`;
+            total += d.workload || 0;
+            return {
+              description: `${d.taskType} — ${dateStr} — ${facultyName}`,
+              workload: d.workload || 0
+            };
           })
         );
 
         setItems(enriched);
+        setTotalWorkload(total);
       } catch (err) {
         console.error("Error loading approved duties:", err);
         alert("Error loading approved duties");
@@ -70,19 +78,25 @@ const ViewWorkloadTA = () => {
             {loading ? (
               <p>Loading approved duties…</p>
             ) : (
-              <ul className="list-group">
-                {items.length > 0 ? (
-                  items.map((desc, i) => (
-                    <li key={i} className="list-group-item">
-                      {desc}
+              <>
+                <ul className="list-group mb-3">
+                  {items.length > 0 ? (
+                    items.map((item, i) => (
+                      <li key={i} className="list-group-item">
+                        <div>{item.description}</div>
+                        <small className="text-muted">Workload: {item.workload} hours</small>
+                      </li>
+                    ))
+                  ) : (
+                    <li className="list-group-item text-center">
+                      No approved duties found
                     </li>
-                  ))
-                ) : (
-                  <li className="list-group-item text-center">
-                    No approved duties found
-                  </li>
-                )}
-              </ul>
+                  )}
+                </ul>
+                <div className="text-end fw-bold">
+                  Total Workload: {totalWorkload.toFixed(2)} hours
+                </div>
+              </>
             )}
           </div>
         </div>
