@@ -1,258 +1,295 @@
 // src/people/TA/Calendar-TA.jsx
 import React, { useState, useEffect } from "react";
+import FullCalendar from "@fullcalendar/react";
+import timeGridPlugin from "@fullcalendar/timegrid";
+import interactionPlugin from "@fullcalendar/interaction";
 import LayoutTA from "./Layout-TA";
-// your FullCalendar imports if you still need them (you can remove if unused)
-// import FullCalendar from "@fullcalendar/react";
-// import dayGridPlugin from "@fullcalendar/daygrid";
-// import interactionPlugin from "@fullcalendar/interaction";
 
 import "../../pages/assets/plugin/fullcalendar/main.min.css";
 import "../../pages/assets/css/my-task.style.min.css";
 
-const semesters = [
-  "Fall / 2023-2024",
-  "Spring / 2024-2025",
-  "Summer / 2024-2025",
-  "Winter / 2024-2025",
-];
+const CalendarTA = () => {
+  const taId = localStorage.getItem("userId");
+  const token = localStorage.getItem("authToken");
+  const RANGE_START = "2025-01-27";
+  const RANGE_END = "2025-05-18";
 
-const courses = [
-  { id: 1, code: "CS101", name: "Intro to Programming" },
-  { id: 2, code: "MATH201", name: "Calculus II" },
-  { id: 3, code: "PHYS150", name: "Mechanics" },
-  { id: 4, code: "CHEM110", name: "General Chemistry" },
-];
-
-const TOTAL_DAYS = 7;
-const TOTAL_HOURS = 14; // 8:30 → 21:30
-
-// Inline Schedule grid component (unchanged)
-const Schedule = ({
-  courses,
-  timeslots,
-  excludedTimeslots,
-  onCellClick,
-}) => {
-  const dayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  const hourLabels = Array.from({ length: TOTAL_HOURS }, (_, i) => {
-    const h = 8 + i;
-    return `${h.toString().padStart(2, "0")}:30`;
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalInfo, setModalInfo] = useState({
+    isEdit: false,
+    id: null,
+    start: null,
+    end: null,
+    title: "",
+    recurring: false,
   });
 
-  return (
-    <div className="table-responsive mb-4">
-      <table className="table table-bordered text-center" style={{ tableLayout: "fixed", width: "100%" }}>
-        <thead>
-          <tr>
-            <th style={{ width: 80 }}>Time</th>
-            {dayLabels.map((d) => (
-              <th key={d}>{d}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {hourLabels.map((label, hi) => (
-            <tr key={hi}>
-              <th className="align-middle">{label}</th>
-              {dayLabels.map((_, di) => {
-                const idx = hi * TOTAL_DAYS + di;
-                const courseId = timeslots[idx];
-                const course = courses.find((c) => c.id === courseId);
-                const isExcluded = !!excludedTimeslots[idx];
-                const cellStyle = {
-                  cursor: isExcluded ? "not-allowed" : "pointer",
-                  verticalAlign: "middle",
-                  minWidth: 80,
-                  height: 50,
-                  backgroundColor: isExcluded
-                    ? "#6c757d"
-                    : course
-                    ? "#6238B3"
-                    : undefined,
-                  color: (isExcluded || course) ? "#ffffff" : undefined,
-                };
-                return (
-                  <td
-                    key={di}
-                    style={cellStyle}
-                    title={course ? `${course.code} – ${course.name}` : undefined}
-                    onClick={() => !isExcluded && onCellClick(idx)}
-                  >
-                    {course && (
-                      <>
-                        <div className="fw-bold">{course.code}</div>
-                        <div className="small">{course.name}</div>
-                      </>
-                    )}
-                  </td>
-                );
-              })}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-};
-
-const CalendarTA = () => {
-  const taId = /* your TA’s ID, e.g. from context or props */ 123;
-  const [semester, setSemester] = useState(semesters[0]);
-  const [timeslots, setTimeslots] = useState({});
-  const [excluded, setExcluded] = useState({});
-  const [loading, setLoading] = useState(true);
-
-  const [modalOpen, setModalOpen] = useState(false);
-  const [cellIdx, setCellIdx] = useState(null);
-  const [selectedCourse, setSelectedCourse] = useState(courses[0]);
+  
 
   useEffect(() => {
-    setLoading(true);
-    Promise.all([
-      fetch(`/api/ta/${taId}/timeslots`),
-      fetch(`/api/ta/${taId}/excluded-timeslots`)
-    ])
-      .then(async ([resSlots, resEx]) => {
-        if (!resSlots.ok || !resEx.ok) throw new Error();
-        const slots = await resSlots.json();         // e.g. { "0":1, "5":2, ... }
-        const exList = await resEx.json();          // e.g. [0, 12, 20]
-        setTimeslots(slots);
-        const exMap = {};
-        exList.forEach((i) => { exMap[i] = true; });
-        setExcluded(exMap);
-      })
-      .catch((err) => {
-        console.error(err);
-        alert("Failed to load schedule");
-      })
-      .finally(() => setLoading(false));
-  }, [taId]);
+    loadEvents();
+  }, []);
 
-  const onCellClick = (idx) => {
-    setCellIdx(idx);
-    const existing = timeslots[idx];
-    const pre = courses.find((c) => c.id === existing) || courses[0];
-    setSelectedCourse(pre);
-    setModalOpen(true);
+  // handlers
+  
+const handleDateClick = info => {
+  const startDate = info.date;                        // a JS Date in your local TZ
+  const endDate   = new Date(startDate.getTime() + 30 * 60000);
+
+  setModalInfo({
+    isEdit:    false,
+    id:        null,
+    title:     "",
+    recurring: false,
+
+    // use our helper instead of toISOString()
+    start:     toLocalIso(startDate),  // e.g. "2025-05-09T14:30:00"
+    end:       toLocalIso(endDate),
+  });
+  setModalOpen(true);
+};
+function toLocalIso(date) {
+  // offset in ms
+  const tzOffset = date.getTimezoneOffset() * 60000;
+  // substract the offset, then build an ISO string, and drop the “Z”
+  return new Date(date.getTime() - tzOffset)
+    .toISOString()
+    .slice(0, 19);
+}
+
+const handleEventClick = info => {
+  const e = info.event;
+  const startDate = e.start;
+  const endDate   = e.end;
+
+  setModalInfo({
+    isEdit:    true,
+    id:        e.extendedProps.originalId,
+    title:     e.title,
+    recurring: e.extendedProps.recurring,
+
+    // same conversion on existing events
+    start:     toLocalIso(startDate),
+    end:       toLocalIso(endDate),
+  });
+  setModalOpen(true);
+};
+
+
+// Fetch & build events…
+const loadEvents = async () => {
+  setLoading(true);
+  try {
+    const res = await fetch(
+      `http://localhost:8080/api/ta/${taId}/busy-hours`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+        credentials: "include",
+      }
+    );
+    if (!res.ok) throw new Error(`Server responded ${res.status}`);
+    const dtos = await res.json();
+
+    // One-off (non-recurring) events:
+    const oneOff = dtos
+      .filter(d => !d.recurring)
+      .map(d => ({
+        id:    String(d.id),
+        title: d.name,
+        // These ISO strings (no “Z”) will be parsed as local (GMT+3) by new Date()
+        start: d.start_date_time,
+        end:   d.end_date_time,
+        extendedProps: { originalId: d.id, recurring: false },
+      }));
+
+    // Recurring events → expand weekly
+    const recur = dtos
+      .filter(d => d.recurring)
+      .flatMap(d => {
+        const start0   = new Date(d.start_date_time);
+        const end0     = new Date(d.end_date_time);
+        const duration = end0.getTime() - start0.getTime();
+
+        // Define your calendar bounds in local time:
+        const windowStart = new Date(`${RANGE_START}T00:00:00`);
+        const windowEnd   = new Date(`${RANGE_END}T23:59:59`);
+
+        // Roll forward until the first occurrence inside the window
+        let cur = new Date(start0);
+        while (cur < windowStart) {
+          cur.setDate(cur.getDate() + 7);
+        }
+
+        // Collect one instance per week
+        const instances = [];
+        while (cur <= windowEnd) {
+          instances.push({
+            id:    `${d.id}-${cur.toISOString()}`,
+            title: d.name,
+            start: cur.toISOString(),
+            end:   new Date(cur.getTime() + duration).toISOString(),
+            extendedProps: { originalId: d.id, recurring: true },
+          });
+          cur.setDate(cur.getDate() + 7);
+        }
+        return instances;
+      });
+
+    setEvents([...oneOff, ...recur]);
+  } catch (err) {
+    console.error("loadEvents error:", err);
+    alert("Failed to load busy hours: " + err.message);
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+useEffect(() => { loadEvents(); }, []);
+
+// build payload without ever including `id`
+const saveBusyHour = async () => {
+  const { isEdit, id, start, end, title, recurring } = modalInfo;
+  const day = new Date(start).getDay() || 7; // Sunday→7
+
+  const payload = {
+    start_date_time: start,         // maps to DTO.startDateTime
+    end_date_time:   end,           // maps to DTO.endDateTime
+    ta_id:           Number(taId),  // maps to DTO.taId
   };
 
-  const saveSlot = async () => {
-    const courseId = selectedCourse.id;
-    setTimeslots((prev) => ({ ...prev, [cellIdx]: courseId }));
+
+
+  const baseUrl = `http://localhost:8080/api/ta/${taId}/busy-hours`;
+  const url     = isEdit ? `${baseUrl}/${id}` : baseUrl;
+  const method  = isEdit ? "PUT" : "POST";
+
+  try {
+    console.log("→ payload:", payload);
+    const res = await fetch(url, {
+      method,
+      headers: {
+        "Content-Type":  "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+      credentials: "include",
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const errJson = await res.json().catch(() => ({}));
+      throw new Error(errJson.message || `HTTP ${res.status}`);
+    }
+    await loadEvents();
     setModalOpen(false);
-    try {
-      await fetch(`/api/ta/${taId}/timeslots/${cellIdx}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ courseId }),
-      });
-    } catch (err) {
-      console.error(err);
-      alert("Failed to save slot");
-    }
-  };
+  } catch (err) {
+    console.error("saveBusyHour error:", err);
+    alert("Failed to save busy hour: " + err.message);
+  }
+};
+  
 
-  const toggleExclude = async () => {
-    const newVal = !excluded[cellIdx];
-    setExcluded((prev) => ({ ...prev, [cellIdx]: newVal }));
-    try {
-      await fetch(`/api/ta/${taId}/excluded-timeslots/${cellIdx}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ exclude: newVal }),
-      });
-    } catch (err) {
-      console.error(err);
-      alert("Failed to update exclusion");
-    }
-  };
-
+  // layout identical to PendingDutiesTA
   if (loading) {
     return (
-      <LayoutTA>
-        <div className="container-xxl py-4">
-          <p>Loading schedule…</p>
+      <div className="d-flex flex-column flex-lg-row">
+        <div className="w-100 w-lg-auto" style={{ maxWidth: "300px" }}>
+          <LayoutTA />
         </div>
-      </LayoutTA>
+        <div className="container-fluid py-4">
+          <p>Loading calendar…</p>
+        </div>
+      </div>
     );
   }
 
   return (
-    <div className="container-xxl py-4">
-      <LayoutTA> 
-        <div className="d-flex align-items-center mb-3">
-          <h5 className="me-3 mb-0">Semester:</h5>
-          <select
-            className="form-select me-4"
-            style={{ maxWidth: 200 }}
-            value={semester}
-            onChange={(e) => setSemester(e.target.value)}
-          >
-            {semesters.map((s) => (
-              <option key={s}>{s}</option>
-            ))}
-          </select>
-        </div>
-      
-
-        <Schedule
-          courses={courses}
-          timeslots={timeslots}
-          excludedTimeslots={excluded}
-          onCellClick={onCellClick}
+    <div className="d-flex flex-column flex-lg-row">
+      <div className="w-100 w-lg-auto" style={{ maxWidth: "300px" }}>
+        <LayoutTA />
+      </div>
+      <div className="container-fluid py-4">
+        <h3 className="fw-bold mb-4 text-primary">My Calendar</h3>
+        <FullCalendar
+          plugins={[ timeGridPlugin, interactionPlugin ]}
+          initialView="timeGridWeek"
+          timeZone="local"               // <-- this uses your system clock (GMT+3)
+          validRange={{ start: RANGE_START, end: RANGE_END }}
+          slotMinTime="08:30:00"
+          slotMaxTime="21:30:00"
+          slotDuration="00:30:00"
+          headerToolbar={{ left: "prev", center: "title", right: "next" }}
+          dateClick={handleDateClick}
+          eventClick={handleEventClick}
+          events={events}
+          height="auto"
         />
 
+
         {modalOpen && (
-          <div className="modal fade show" style={{ display: "block", background: "rgba(0,0,0,0.5)" }}>
+          <div
+            className="modal fade show"
+            style={{ display: "block", background: "rgba(0,0,0,0.5)" }}
+          >
             <div className="modal-dialog modal-dialog-centered">
               <div className="modal-content">
                 <div className="modal-header">
                   <h5 className="modal-title">
-                    Edit Slot #{cellIdx}{" "}
-                    {timeslots[cellIdx] && (
-                      <small className="text-muted">
-                        – {courses.find((c) => c.id === timeslots[cellIdx]).code} –
-                        {courses.find((c) => c.id === timeslots[cellIdx]).name}
-                      </small>
-                    )}
+                    {modalInfo.isEdit ? "Edit" : "Add"} Busy Hour
                   </h5>
-                  <button className="btn-close" onClick={() => setModalOpen(false)} />
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={() => setModalOpen(false)}
+                  />
                 </div>
                 <div className="modal-body">
                   <div className="mb-3">
-                    <label className="form-label">Course</label>
-                    <select
-                      className="form-select"
-                      value={selectedCourse.id}
-                      onChange={(e) =>
-                        setSelectedCourse(courses.find((c) => c.id === +e.target.value))
+                    <label className="form-label">Name</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={modalInfo.title}
+                      onChange={e =>
+                        setModalInfo({ ...modalInfo, title: e.target.value })
                       }
-                    >
-                      {courses.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.code} – {c.name}
-                        </option>
-                      ))}
-                    </select>
+                    />
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">Date & Time</label>
+                    <div>
+                      {new Date(modalInfo.start).toLocaleString()} –{" "}
+                      {new Date(modalInfo.end).toLocaleTimeString()}
+                    </div>
                   </div>
                   <div className="form-check">
                     <input
-                      id="exclude"
+                      id="recurring"
                       type="checkbox"
                       className="form-check-input"
-                      checked={!!excluded[cellIdx]}
-                      onChange={toggleExclude}
+                      checked={modalInfo.recurring}
+                      onChange={() =>
+                        setModalInfo({
+                          ...modalInfo,
+                          recurring: !modalInfo.recurring,
+                        })
+                      }
                     />
-                    <label className="form-check-label" htmlFor="exclude">
-                      Exclude this slot
+                    <label htmlFor="recurring" className="form-check-label">
+                      Recurring weekly
                     </label>
                   </div>
                 </div>
                 <div className="modal-footer">
-                  <button className="btn btn-secondary" onClick={() => setModalOpen(false)}>
+                  <button
+                    type="button"             // ← prevent default form‐submit behavior
+                    className="btn btn-primary"
+                    onClick={saveBusyHour}
+                  >
                     Cancel
                   </button>
-                  <button className="btn btn-primary" onClick={saveSlot}>
+                  <button className="btn btn-primary" onClick={saveBusyHour}>
                     Save
                   </button>
                 </div>
@@ -260,9 +297,8 @@ const CalendarTA = () => {
             </div>
           </div>
         )}
-      </LayoutTA>
+      </div>
     </div>
-    
   );
 };
 
