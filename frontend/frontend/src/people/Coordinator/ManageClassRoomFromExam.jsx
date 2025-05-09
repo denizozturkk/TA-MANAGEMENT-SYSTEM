@@ -1,141 +1,229 @@
-import React, { useState } from "react";
-import CoordinatorLayout from "./CoordinatorLayout"; // adjust path if needed
-
-const exams = [
-  { id: "EX-001", name: "Midterm Exam" },
-  { id: "EX-002", name: "Final Exam" },
-  { id: "EX-003", name: "Makeup Exam" }
-];
-
-const allClassrooms = [
-  { id: "CLS-001", name: "Physics Lab" },
-  { id: "CLS-002", name: "Lecture Hall 101" },
-  { id: "CLS-003", name: "Computer Science Lab" },
-  { id: "CLS-004", name: "Seminar Room" }
-];
+import React, { useEffect, useState } from "react";
+import CoordinatorLayout from "./CoordinatorLayout";
 
 const ManageExamClassrooms = () => {
-  const [selectedExamId, setSelectedExamId] = useState("");
-  const [selectedClassroomId, setSelectedClassroomId] = useState("");
-  const [examClassroomMap, setExamClassroomMap] = useState({});
+  const [exams, setExams] = useState([]);
+  const [allClassrooms, setAllClassrooms] = useState([]);
+  const [freeClassrooms, setFreeClassrooms] = useState([]);
+  const [assignedRooms, setAssignedRooms] = useState([]);
 
-  const handleAddClassroom = () => {
-    if (!selectedExamId || !selectedClassroomId) return;
-    const current = examClassroomMap[selectedExamId] || [];
-    const cls = allClassrooms.find(c => c.id === selectedClassroomId);
-    if (!current.some(c => c.id === cls.id)) {
-      setExamClassroomMap({
-        ...examClassroomMap,
-        [selectedExamId]: [...current, cls]
-      });
-      setSelectedClassroomId("");
-    }
+  const [selectedExamId, setSelectedExamId] = useState("");
+  const [selectedExam, setSelectedExam] = useState(null);
+  const [selectedClassroomId, setSelectedClassroomId] = useState("");
+  const [numProctors, setNumProctors] = useState(1);
+
+  const token = localStorage.getItem("authToken");
+  const headers = {
+    Authorization: `Bearer ${token}`,
+    "Content-Type": "application/json",
   };
 
-  const handleRemoveClassroom = id => {
-    const current = examClassroomMap[selectedExamId] || [];
-    setExamClassroomMap({
-      ...examClassroomMap,
-      [selectedExamId]: current.filter(c => c.id !== id)
-    });
+  // Initial fetch: exams and all classrooms
+  useEffect(() => {
+    if (!token) return;
+
+    fetch("http://localhost:8080/api/classrooms", { headers })
+      .then((res) => res.json())
+      .then((data) => setAllClassrooms(Array.isArray(data) ? data : []));
+
+    fetch("http://localhost:8080/api/exams", { headers })
+      .then((res) => res.json())
+      .then((data) => setExams(Array.isArray(data) ? data : []));
+  }, [token]);
+
+  // When user selects an exam
+  const handleExamChange = (e) => {
+    const examId = e.target.value;
+    setSelectedExamId(examId);
+    setSelectedExam(exams.find((ex) => String(ex.id) === examId) || null);
+    setSelectedClassroomId("");
+    setNumProctors(1);
+
+    if (!examId) {
+      setFreeClassrooms([]);
+      setAssignedRooms([]);
+      return;
+    }
+
+    // Fetch free (unassigned) classrooms
+    fetch(
+      `http://localhost:8080/api/exam-rooms/exam/${examId}/unassigned-classrooms`,
+      { headers }
+    )
+      .then((res) => res.json())
+      .then((data) => setFreeClassrooms(Array.isArray(data) ? data : []));
+
+    // Fetch exam details to get assigned rooms
+    fetch(`http://localhost:8080/api/exams/${examId}`, { headers })
+      .then((res) => res.json())
+      .then((examDto) => {
+        const rooms = Array.isArray(examDto.examRooms)
+          ? examDto.examRooms
+          : [];
+        const mapped = rooms.map((er) => {
+          const cls =
+            allClassrooms.find((c) => String(c.id) === String(er.classroomId)) ||
+            { id: er.classroomId };
+          return { classroom: cls, numProctors: er.numProctors };
+        });
+        setAssignedRooms(mapped);
+      });
+  };
+
+  // Add classroom to exam via POST
+  const handleAddClassroom = () => {
+    if (!selectedExamId || !selectedClassroomId || numProctors < 1) return;
+
+    fetch("http://localhost:8080/api/exam-rooms", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        examId: Number(selectedExamId),
+        classroomId: Number(selectedClassroomId),
+        numProctors: Number(numProctors),
+      }),
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error(`Server returned ${res.status}`);
+        return res.json();
+      })
+      .then((erDto) => {
+        const cls = allClassrooms.find(
+          (c) => String(c.id) === String(erDto.classroomId)
+        );
+        if (!cls) return;
+
+        setAssignedRooms((prev) => [
+          ...prev,
+          { classroom: cls, numProctors: erDto.numProctors },
+        ]);
+        setFreeClassrooms((prev) =>
+          prev.filter((c) => String(c.id) !== String(cls.id))
+        );
+        setSelectedClassroomId("");
+        setNumProctors(1);
+      })
+      .catch((err) => console.error("Add failed:", err));
+  };
+
+  // Remove classroom from exam
+  const handleRemoveClassroom = (classroomId) => {
+    fetch(
+      `http://localhost:8080/api/exam-rooms/${selectedExamId}/${classroomId}`,
+      { method: "DELETE", headers }
+    )
+      .then(() => {
+        setAssignedRooms((prev) =>
+          prev.filter((a) => String(a.classroom.id) !== String(classroomId))
+        );
+        const cls = allClassrooms.find(
+          (c) => String(c.id) === String(classroomId)
+        );
+        if (cls) setFreeClassrooms((prev) => [...prev, cls]);
+      })
+      .catch((err) => console.error("Delete failed:", err));
   };
 
   return (
     <div className="d-flex flex-column flex-md-row">
-      {/* Sidebar */}
       <div className="w-100 w-md-auto" style={{ maxWidth: "300px" }}>
         <CoordinatorLayout />
       </div>
-
-      {/* Main Content */}
       <div className="container px-3 px-md-5 py-4 flex-grow-1">
-        <h2 className="mb-4 text-center text-md-start">Manage Exam Classrooms</h2>
+        <h2 className="mb-4">Manage Exam Classrooms</h2>
 
-        {/* Exam Selection */}
+        {/* Exam selector */}
         <div className="mb-4">
           <label className="form-label">Select Exam</label>
           <select
             className="form-select"
             value={selectedExamId}
-            onChange={e => {
-              setSelectedExamId(e.target.value);
-              setSelectedClassroomId("");
-            }}
+            onChange={handleExamChange}
           >
-            <option value="">-- Choose an Exam --</option>
-            {exams.map(exam => (
-              <option key={exam.id} value={exam.id}>
-                {exam.name} ({exam.id})
+            <option value="">-- Choose Exam --</option>
+            {exams.map((ex) => (
+              <option key={ex.id} value={String(ex.id)}>
+                {ex.examName}
               </option>
             ))}
           </select>
         </div>
 
-        {selectedExamId && (
+        {selectedExam && (
           <>
-            {/* Classroom Assignment Card */}
+            {/* Assign new classroom + proctors */}
             <div className="card p-4 mb-4">
               <div className="row g-3 align-items-end">
-                <div className="col-12 col-md-6">
+                <div className="col-md-5">
                   <label className="form-label">Select Classroom</label>
                   <select
                     className="form-select"
                     value={selectedClassroomId}
-                    onChange={e => setSelectedClassroomId(e.target.value)}
+                    onChange={(e) => setSelectedClassroomId(e.target.value)}
                   >
                     <option value="">-- Choose Classroom --</option>
-                    {allClassrooms.map(cls => (
-                      <option key={cls.id} value={cls.id}>
-                        {cls.name} ({cls.id})
+                    {freeClassrooms.map((c) => (
+                      <option key={c.id} value={String(c.id)}>
+                        {c.building} {c.roomNumber}
                       </option>
                     ))}
                   </select>
                 </div>
-                <div className="col-12 col-md-3">
+                <div className="col-md-3">
+                  <label className="form-label"># Proctors</label>
+                  <input
+                    type="number"
+                    className="form-control"
+                    min="1"
+                    value={numProctors}
+                    onChange={(e) => setNumProctors(e.target.value)}
+                  />
+                </div>
+                <div className="col-md-2">
                   <button
-                    className="btn btn-success mt-2 mt-md-4 w-100"
+                    className="btn btn-success w-100"
+                    disabled={!selectedClassroomId || numProctors < 1}
                     onClick={handleAddClassroom}
-                    disabled={!selectedClassroomId}
                   >
-                    Add to Exam
+                    Add
                   </button>
                 </div>
               </div>
             </div>
 
-            {/* Assigned Classrooms Table */}
+            {/* Assigned list */}
             <div className="card p-3">
-              <h5 className="mb-3">Classrooms Assigned to Exam</h5>
-              {(examClassroomMap[selectedExamId] || []).length === 0 ? (
+              <h5>Assigned Classrooms for {selectedExam.examName}</h5>
+              {assignedRooms.length === 0 ? (
                 <p className="text-muted">No classrooms assigned yet.</p>
               ) : (
-                <div className="table-responsive">
-                  <table className="table table-bordered">
-                    <thead>
-                      <tr>
-                        <th>ID</th>
-                        <th>Name</th>
-                        <th>Action</th>
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Building</th>
+                      <th>Room</th>
+                      <th># Proctors</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {assignedRooms.map((a) => (
+                      <tr key={a.classroom.id}>
+                        <td>{a.classroom.building}</td>
+                        <td>{a.classroom.roomNumber}</td>
+                        <td>{a.numProctors}</td>
+                        <td>
+                          <button
+                            className="btn btn-danger btn-sm"
+                            onClick={() => handleRemoveClassroom(a.classroom.id)}
+                          >
+                            Remove
+                          </button>
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {examClassroomMap[selectedExamId].map(cls => (
-                        <tr key={cls.id}>
-                          <td>{cls.id}</td>
-                          <td>{cls.name}</td>
-                          <td>
-                            <button
-                              className="btn btn-danger btn-sm"
-                              onClick={() => handleRemoveClassroom(cls.id)}
-                            >
-                              Remove
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                    ))}
+                  </tbody>
+                </table>
               )}
             </div>
           </>

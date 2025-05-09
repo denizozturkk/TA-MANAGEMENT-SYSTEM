@@ -175,7 +175,14 @@ const Sidebar = () => (
         </li>
       </ul>
 
-      <button type="button" className="btn btn-link sidebar-mini-btn text-light mt-auto">
+      <button
+        type="button"
+        className="btn btn-link sidebar-mini-btn text-light mt-auto"
+        onClick={() => {
+          localStorage.removeItem("authToken");
+          window.location.href = "/login";
+        }}
+      >
         <i className="icofont-bubble-right"></i>
       </button>
     </aside>

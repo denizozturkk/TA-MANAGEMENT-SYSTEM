@@ -3,17 +3,10 @@ import LayoutDean from "./Layout-Dean";
 
 const ExamSchedulingDean = () => {
   const [currentUserId, setCurrentUserId] = useState(null);
-  const [exams, setExams] = useState([]);
-  const [allAssignments, setAllAssignments] = useState([]);
-  const [allTAs, setAllTAs] = useState([]);
   const [allClassrooms, setAllClassrooms] = useState([]);
   const [allOfferings, setAllOfferings] = useState([]);
   const [allCourses, setAllCourses] = useState([]);
   const [allFaculty, setAllFaculty] = useState([]);
-
-  const [showModal, setShowModal] = useState(false);
-  const [modalType, setModalType] = useState("create");
-  const [selectedExam, setSelectedExam] = useState(null);
 
   const [formData, setFormData] = useState({
     examName: "",
@@ -21,12 +14,9 @@ const ExamSchedulingDean = () => {
     examType: "Written",
     dateTime: "",
     duration: "",
-    numProctors: "",
     offeringId: "",
-    facultyId: "",
-    classrooms: [],
+    classrooms: [], // { classroomId, numProctors }
   });
-
   const [formErrors, setFormErrors] = useState({});
 
   const BASE = "http://localhost:8080/api";
@@ -34,365 +24,291 @@ const ExamSchedulingDean = () => {
 
   useEffect(() => {
     if (!token) return;
-    const headers = {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    };
+    const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
 
     fetch(`${BASE}/users/me`, { headers })
-      .then((res) => res.json())
-      .then((user) => {
-        setCurrentUserId(user.id);
-        return fetch(`${BASE}/exams`, { headers });
-      })
-      .then((res) => res.json())
-      .then((data) => {
-        const arr = Array.isArray(data) ? data : [];
-        setExams(arr);
-      })
-      .catch(() => setExams([]));
-
-    fetch(`${BASE}/proctor-assignments`, { headers })
-      .then((res) => res.json())
-      .then((data) => setAllAssignments(Array.isArray(data) ? data : []))
-      .catch(() => setAllAssignments([]));
-
-    fetch(`${BASE}/ta`, { headers })
-      .then((res) => res.json())
-      .then((data) => setAllTAs(Array.isArray(data) ? data : []))
-      .catch(() => setAllTAs([]));
+      .then((r) => r.json())
+      .then((u) => setCurrentUserId(u.id))
+      .catch(() => {});
 
     fetch(`${BASE}/classrooms`, { headers })
-      .then((res) => res.json())
-      .then((data) => setAllClassrooms(Array.isArray(data) ? data : []))
+      .then((r) => r.json())
+      .then((d) => setAllClassrooms(Array.isArray(d) ? d : []))
       .catch(() => setAllClassrooms([]));
 
     fetch(`${BASE}/offerings`, { headers })
-      .then((res) => res.json())
-      .then((data) => setAllOfferings(Array.isArray(data) ? data : []))
+      .then((r) => r.json())
+      .then((d) => setAllOfferings(Array.isArray(d) ? d : []))
       .catch(() => setAllOfferings([]));
 
     fetch(`${BASE}/courses`, { headers })
-      .then((res) => res.json())
-      .then((data) => setAllCourses(Array.isArray(data) ? data : []))
+      .then((r) => r.json())
+      .then((d) => setAllCourses(Array.isArray(d) ? d : []))
       .catch(() => setAllCourses([]));
 
     fetch(`${BASE}/faculty-members`, { headers })
-      .then((res) => res.json())
-      .then((data) => setAllFaculty(Array.isArray(data) ? data : []))
+      .then((r) => r.json())
+      .then((d) => setAllFaculty(Array.isArray(d) ? d : []))
       .catch(() => setAllFaculty([]));
   }, [token]);
 
   const deanId = allFaculty.find((f) => f.userId === currentUserId)?.id;
 
-  const openModal = (type, exam = null) => {
-    setModalType(type);
-    setSelectedExam(exam);
-
-    setFormErrors({});
-
-    if (exam) {
-      setFormData({
-        examName: exam.examName || "",
-        department: exam.department || "",
-        examType: exam.examType || "Written",
-        dateTime: exam.dateTime?.slice(0, 16) || "",
-        duration: exam.duration?.toString() || "",
-        numProctors: exam.numProctors?.toString() || "",
-        offeringId: exam.offeringId?.toString() || "",
-        facultyId: exam.facultyId?.toString() || "",
-        classrooms: Array.isArray(exam.examRooms)
-          ? exam.examRooms.map((r) => r.classroomId.toString())
-          : [],
-      });
-    } else {
-      setFormData({
-        examName: "",
-        department: "",
-        examType: "Written",
-        dateTime: "",
-        duration: "",
-        numProctors: "",
-        offeringId: "",
-        facultyId: "",
-        classrooms: [],
-      });
-    }
-
-    setShowModal(true);
-  };
-
-  const closeModal = () => {
-    setShowModal(false);
-    setSelectedExam(null);
-    setFormErrors({});
-    setFormData({
-      examName: "",
-      department: "",
-      examType: "Written",
-      dateTime: "",
-      duration: "",
-      numProctors: "",
-      offeringId: "",
-      facultyId: "",
-      classrooms: [],
-    });
-  };
-
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     if (type === "checkbox" && name === "classrooms") {
       setFormData((f) => {
-        const set = new Set(f.classrooms);
-        if (checked) set.add(value);
-        else set.delete(value);
-        return { ...f, classrooms: Array.from(set) };
+        const exists = f.classrooms.find((c) => c.classroomId === value);
+        if (checked && !exists) {
+          return { ...f, classrooms: [...f.classrooms, { classroomId: value, numProctors: "" }] };
+        } else if (!checked && exists) {
+          return { ...f, classrooms: f.classrooms.filter((c) => c.classroomId !== value) };
+        }
+        return f;
       });
+    } else if (name.startsWith("proctors-")) {
+      const id = name.split("-")[1];
+      setFormData((f) => ({
+        ...f,
+        classrooms: f.classrooms.map((c) =>
+          c.classroomId === id ? { ...c, numProctors: value } : c
+        ),
+      }));
     } else {
       setFormData((f) => ({ ...f, [name]: value }));
     }
   };
 
   const validateForm = () => {
-    const errors = {};
-    if (!formData.examName.trim()) errors.examName = "Exam name is required.";
-    if (formData.duration < 0) errors.duration = "Duration cannot be negative.";
-    if (formData.numProctors < 0) errors.numProctors = "Number of proctors cannot be negative.";
-    if (!formData.dateTime) errors.dateTime = "Date and time is required.";
-    if (!formData.department) errors.department = "Please select a department.";
-    if (!formData.offeringId) errors.offeringId = "Offering is required.";
-    if (formData.classrooms.length === 0) errors.classrooms = "At least one classroom must be selected.";
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
+    const errs = {};
+    if (!formData.examName.trim()) errs.examName = "Required";
+    if (!formData.department) errs.department = "Required";
+    if (!formData.dateTime) errs.dateTime = "Required";
+    if (formData.duration === "" || parseFloat(formData.duration) < 0)
+      errs.duration = "Non-negative";
+    if (!formData.offeringId) errs.offeringId = "Required";
+    if (formData.classrooms.length === 0) errs.classrooms = "Select ≥1";
+    formData.classrooms.forEach((c) => {
+      if (!c.numProctors || parseInt(c.numProctors, 10) < 0)
+        errs[`proctors-${c.classroomId}`] = "Non-negative";
+    });
+    setFormErrors(errs);
+    return !Object.keys(errs).length;
   };
 
-  const handleSave = () => {
+  const handleSave = (e) => {
+    e.preventDefault();
     if (!validateForm()) return;
-
-    const headers = {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    };
-
+    const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
     const payload = {
       examName: formData.examName,
       department: formData.department,
       examType: formData.examType,
       dateTime: formData.dateTime,
-      duration: Math.max(0, parseFloat(formData.duration)),
-      numProctors: Math.max(0, parseInt(formData.numProctors, 10)),
-      offeringId: parseInt(formData.offeringId),
-      facultyId: modalType === "create" ? deanId : parseInt(formData.facultyId),
-      examRooms: formData.classrooms.map((id) => ({
-        classroomId: parseInt(id, 10),
-        numProctors: Math.max(0, parseInt(formData.numProctors, 10)),
+      duration: parseFloat(formData.duration),
+      offeringId: parseInt(formData.offeringId, 10),
+      facultyId: deanId,
+      examRooms: formData.classrooms.map((c) => ({
+        classroomId: parseInt(c.classroomId, 10),
+        numProctors: parseInt(c.numProctors, 10),
       })),
     };
 
-    const url =
-      modalType === "create"
-        ? `${BASE}/exams`
-        : `${BASE}/exams/${selectedExam.id}`;
-
-    fetch(url, {
-      method: modalType === "create" ? "POST" : "PUT",
-      headers,
-      body: JSON.stringify(payload),
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error();
-        return res.json();
+    fetch(`${BASE}/exams`, { method: "POST", headers, body: JSON.stringify(payload) })
+      .then((r) => {
+        if (!r.ok) throw new Error();
+        alert("Created!");
+        setFormData({
+          examName: "",
+          department: "",
+          examType: "Written",
+          dateTime: "",
+          duration: "",
+          offeringId: "",
+          classrooms: [],
+        });
+        setFormErrors({});
       })
-      .then((data) => {
-        setExams((exams) =>
-          modalType === "create"
-            ? [data, ...exams]
-            : exams.map((ex) => (ex.id === data.id ? data : ex))
-        );
-        closeModal();
-      })
-      .catch(() => alert("Error saving exam"));
+      .catch(() => alert("Failed"));
   };
 
   return (
-    <div className="container py-4">
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h3>Exam Scheduling</h3>
-        <button className="btn btn-success" onClick={() => openModal("create")}>
-          + Create Exam
-        </button>
-      </div>
+    <div className="d-flex">
+      <aside style={{ width: 280 }}>
+        <LayoutDean />
+      </aside>
 
-      <div className="row">
-        {exams.map((ex) => (
-          <div key={ex.id} className="col-md-6 mb-3">
-            <div className="card shadow-sm">
-              <div className="card-body">
-                <h5>{ex.examName}</h5>
-                <p><strong>Type:</strong> {ex.examType}</p>
-                <p><strong>Date:</strong> {new Date(ex.dateTime).toLocaleString()}</p>
-                <p><strong>Proctors:</strong> {ex.numProctors}</p>
-                <button
-                  className="btn btn-sm btn-outline-primary"
-                  onClick={() => openModal("edit", ex)}
-                >
-                  Edit
+      <main className="flex-grow-1 p-4">
+        <h2 className="mb-4">Create New Exam</h2>
+        <div className="card shadow-sm">
+          <div className="card-body">
+            <form onSubmit={handleSave}>
+              <div className="row g-3">
+                <div className="col-md-6">
+                  <label className="form-label">Exam Name</label>
+                  <input
+                    type="text"
+                    name="examName"
+                    className="form-control"
+                    value={formData.examName}
+                    onChange={handleChange}
+                  />
+                  {formErrors.examName && (
+                    <small className="text-danger">{formErrors.examName}</small>
+                  )}
+                </div>
+                <div className="col-md-6">
+                  <label className="form-label">Department</label>
+                  <select
+                    name="department"
+                    className="form-select"
+                    value={formData.department}
+                    onChange={handleChange}
+                  >
+                    <option value="">Choose…</option>
+                    <option value="CS">CS</option>
+                    <option value="EE">EE</option>
+                    <option value="IE">IE</option>
+                    <option value="ME">ME</option>
+                  </select>
+                  {formErrors.department && (
+                    <small className="text-danger">{formErrors.department}</small>
+                  )}
+                </div>
+
+                <div className="col-md-4">
+                  <label className="form-label">Date & Time</label>
+                  <input
+                    type="datetime-local"
+                    name="dateTime"
+                    className="form-control"
+                    value={formData.dateTime}
+                    onChange={handleChange}
+                  />
+                  {formErrors.dateTime && (
+                    <small className="text-danger">{formErrors.dateTime}</small>
+                  )}
+                </div>
+                <div className="col-md-4">
+                  <label className="form-label">Duration (hrs)</label>
+                  <input
+                    type="number"
+                    name="duration"
+                    lang="tr"
+                    min="0"
+                    step="0.1"
+                    className="form-control"
+                    value={formData.duration}
+                    onChange={handleChange}
+                  />
+                  {formErrors.duration && (
+                    <small className="text-danger">{formErrors.duration}</small>
+                  )}
+                </div>
+                <div className="col-md-4">
+                  <label className="form-label">Exam Type</label>
+                  <select
+                    name="examType"
+                    className="form-select"
+                    value={formData.examType}
+                    onChange={handleChange}
+                  >
+                    <option value="Written">Written</option>
+                    <option value="Oral">Oral</option>
+                  </select>
+                </div>
+
+                <div className="col-md-6">
+                  <label className="form-label">Offering</label>
+                  <select
+                    name="offeringId"
+                    className="form-select"
+                    value={formData.offeringId}
+                    onChange={handleChange}
+                  >
+                    <option value="">Choose…</option>
+                    {allOfferings.map((o) => {
+                      const course = allCourses.find((c) => c.id === o.courseId);
+                      return (
+                        <option key={o.id} value={o.id}>
+                          {o.semester} {o.year} – {course?.courseCode}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  {formErrors.offeringId && (
+                    <small className="text-danger">{formErrors.offeringId}</small>
+                  )}
+                </div>
+              </div>
+
+              {/* Classrooms table */}
+              <div className="mt-4">
+                <h5>Classrooms & Proctors</h5>
+                <table className="table table-bordered align-middle">
+                  <thead className="table-light">
+                    <tr>
+                      <th style={{ width: "1%" }}></th>
+                      <th>Room</th>
+                      <th style={{ width: "20%" }}># Proctors</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {allClassrooms.map((cls) => {
+                      const sel = formData.classrooms.find(
+                        (c) => c.classroomId === cls.id.toString()
+                      );
+                      return (
+                        <tr key={cls.id}>
+                          <td className="text-center">
+                            <input
+                              type="checkbox"
+                              name="classrooms"
+                              value={cls.id}
+                              checked={!!sel}
+                              onChange={handleChange}
+                            />
+                          </td>
+                          <td>
+                            {cls.building} {cls.roomNumber}
+                          </td>
+                          <td>
+                            <input
+                              type="number"
+                              name={`proctors-${cls.id}`}
+                              min="0"
+                              step="1"
+                              className="form-control form-control-sm"
+                              disabled={!sel}
+                              placeholder="0"
+                              value={sel?.numProctors || ""}
+                              onChange={handleChange}
+                            />
+                            {formErrors[`proctors-${cls.id}`] && (
+                              <small className="text-danger">
+                                {formErrors[`proctors-${cls.id}`]}
+                              </small>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                {formErrors.classrooms && (
+                  <small className="text-danger">{formErrors.classrooms}</small>
+                )}
+              </div>
+
+              <div className="text-end mt-4">
+                <button type="submit" className="btn btn-primary px-4">
+                  Create Exam
                 </button>
               </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {showModal && (
-        <div className="modal d-block" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
-          <div className="modal-dialog modal-lg">
-            <div className="modal-content">
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  handleSave();
-                }}
-              >
-                <div className="modal-header">
-                  <h5 className="modal-title">{modalType === "create" ? "Create Exam" : "Edit Exam"}</h5>
-                  <button type="button" className="btn-close" onClick={closeModal}></button>
-                </div>
-                <div className="modal-body">
-                  <div className="mb-3">
-                    <label className="form-label">Exam Name</label>
-                    <input
-                      type="text"
-                      name="examName"
-                      value={formData.examName}
-                      onChange={handleChange}
-                      className="form-control"
-                      required
-                    />
-                    {formErrors.examName && <div className="text-danger">{formErrors.examName}</div>}
-                  </div>
-
-                  <div className="mb-3">
-                    <label className="form-label">Department</label>
-                    <select
-                      name="department"
-                      className="form-select"
-                      value={formData.department}
-                      onChange={handleChange}
-                    >
-                      <option value="">-- select department --</option>
-                      <option value="CS">CS</option>
-                      <option value="EE">EE</option>
-                      <option value="IE">IE</option>
-                      <option value="ME">ME</option>
-                    </select>
-                    {formErrors.department && <div className="text-danger">{formErrors.department}</div>}
-                  </div>
-
-                  <div className="mb-3">
-                    <label className="form-label">Exam Type</label>
-                    <select
-                      name="examType"
-                      className="form-select"
-                      value={formData.examType}
-                      onChange={handleChange}
-                    >
-                      <option value="Midterm">Midterm</option>
-                      <option value="Final">Final</option>
-                    </select>
-                  </div>
-
-                  <div className="mb-3">
-                    <label className="form-label">Date & Time</label>
-                    <input
-                      type="datetime-local"
-                      name="dateTime"
-                      className="form-control"
-                      value={formData.dateTime}
-                      onChange={handleChange}
-                    />
-                    {formErrors.dateTime && <div className="text-danger">{formErrors.dateTime}</div>}
-                  </div>
-
-                  <div className="mb-3">
-                    <label className="form-label">Duration (minutes)</label>
-                    <input
-                      type="number"
-                      name="duration"
-                      min="0"
-                      className="form-control"
-                      value={formData.duration}
-                      onChange={handleChange}
-                    />
-                    {formErrors.duration && <div className="text-danger">{formErrors.duration}</div>}
-                  </div>
-
-                  <div className="mb-3">
-                    <label className="form-label">Number of Proctors</label>
-                    <input
-                      type="number"
-                      name="numProctors"
-                      min="0"
-                      className="form-control"
-                      value={formData.numProctors}
-                      onChange={handleChange}
-                    />
-                    {formErrors.numProctors && <div className="text-danger">{formErrors.numProctors}</div>}
-                  </div>
-
-                  <div className="mb-3">
-                    <label className="form-label">Offering</label>
-                    <select
-                      name="offeringId"
-                      className="form-select"
-                      value={formData.offeringId}
-                      onChange={handleChange}
-                    >
-                      <option value="">-- select offering --</option>
-                      {allOfferings.map((o) => {
-                        const course = allCourses.find((c) => c.id === o.courseId);
-                        return (
-                          <option key={o.id} value={o.id}>
-                            ({o.semester} {o.year}) – {course ? course.courseCode : "Unknown"}
-                          </option>
-                        );
-                      })}
-                    </select>
-                    {formErrors.offeringId && <div className="text-danger">{formErrors.offeringId}</div>}
-                  </div>
-
-                  <div className="mb-3">
-                    <label className="form-label">Select Classrooms</label>
-                    <div className="d-flex flex-wrap gap-2">
-                      {allClassrooms.map((cls, i) => (
-                        <div className="form-check me-3" key={i}>
-                          <input
-                            type="checkbox"
-                            name="classrooms"
-                            value={cls.id}
-                            checked={formData.classrooms.includes(cls.id.toString())}
-                            onChange={handleChange}
-                            className="form-check-input"
-                            id={`cls-${i}`}
-                          />
-                          <label className="form-check-label" htmlFor={`cls-${i}`}>
-                            {cls.building} {cls.roomNumber}
-                          </label>
-                        </div>
-                      ))}
-                    </div>
-                    {formErrors.classrooms && <div className="text-danger mt-1">{formErrors.classrooms}</div>}
-                  </div>
-                </div>
-                <div className="modal-footer">
-                  <button type="button" className="btn btn-secondary" onClick={closeModal}>Cancel</button>
-                  <button type="submit" className="btn btn-primary">Save Exam</button>
-                </div>
-              </form>
-            </div>
+            </form>
           </div>
         </div>
-      )}
+      </main>
     </div>
   );
 };

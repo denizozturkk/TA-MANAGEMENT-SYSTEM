@@ -9,7 +9,7 @@ const RescheduleExamDean = () => {
     examName: "",
     examType: "MIDTERM",
     dateTime: "",
-    duration: 120,
+    duration: 2,       // hours, float
     department: "",
     numProctors: 1,
     rooms: ""
@@ -35,7 +35,7 @@ const RescheduleExamDean = () => {
       examName: exam.examName || "",
       examType: exam.examType || "MIDTERM",
       dateTime: (exam.dateTime || "").slice(0, 16),
-      duration: exam.duration || 120,
+      duration: exam.duration ?? 2,
       department: exam.department || "",
       numProctors: exam.numProctors || 1,
       rooms: (exam.examRooms || []).map(er => er.classroomId).join(",")
@@ -55,16 +55,19 @@ const RescheduleExamDean = () => {
     e.preventDefault();
     setSaving(true);
     try {
-      await fetch(`http://localhost:8080/api/dean/${deanId}/reschedule?examId=${editingExam.id}&newDateTime=${form.dateTime}`, {
-        method: "PUT",
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      // Reschedule date/time
+      await fetch(
+        `http://localhost:8080/api/dean/${deanId}/reschedule?examId=${editingExam.id}&newDateTime=${form.dateTime}`,
+        { method: "PUT", headers: { Authorization: `Bearer ${token}` } }
+      );
 
-      await fetch(`http://localhost:8080/api/dean/${deanId}/update-proctor-count?examId=${editingExam.id}&newProctorCount=${form.numProctors}`, {
-        method: "PUT",
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      // Update proctor count
+      await fetch(
+        `http://localhost:8080/api/dean/${deanId}/update-proctor-count?examId=${editingExam.id}&newProctorCount=${form.numProctors}`,
+        { method: "PUT", headers: { Authorization: `Bearer ${token}` } }
+      );
 
+      // Update core exam fields (now sending duration as hours)
       await fetch(`http://localhost:8080/api/exams/${editingExam.id}`, {
         method: "PUT",
         headers: {
@@ -76,25 +79,28 @@ const RescheduleExamDean = () => {
           examName: form.examName,
           examType: form.examType,
           department: form.department,
-          duration: Number(form.duration)
+          duration: parseFloat(form.duration)
         })
       });
 
+      // Remove old rooms
       for (const er of editingExam.examRooms) {
-        await fetch(`http://localhost:8080/api/dean/${deanId}/exam-classrooms/remove?examId=${editingExam.id}&classroomId=${er.classroomId}`, {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        await fetch(
+          `http://localhost:8080/api/dean/${deanId}/exam-classrooms/remove?examId=${editingExam.id}&classroomId=${er.classroomId}`,
+          { method: "DELETE", headers: { Authorization: `Bearer ${token}` } }
+        );
       }
 
+      // Add new rooms
       for (const roomId of form.rooms.split(",").map(r => r.trim()).filter(Boolean)) {
-        await fetch(`http://localhost:8080/api/dean/${deanId}/exam-classrooms/add?examId=${editingExam.id}&classroomId=${roomId}&proctorCount=${form.numProctors}`, {
-          method: "PUT",
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        await fetch(
+          `http://localhost:8080/api/dean/${deanId}/exam-classrooms/add?examId=${editingExam.id}&classroomId=${roomId}&proctorCount=${form.numProctors}`,
+          { method: "PUT", headers: { Authorization: `Bearer ${token}` } }
+        );
       }
 
       alert("Exam updated successfully");
+      // Refresh list
       const refreshed = await fetch("http://localhost:8080/api/exams", {
         headers: { Authorization: `Bearer ${token}` }
       }).then(r => r.json());
@@ -132,13 +138,21 @@ const RescheduleExamDean = () => {
       <div className="container py-4 flex-grow-1">
         <h4 className="fw-bold mb-4">Reschedule & Edit Exams</h4>
         {loading ? (
-          <div className="card"><div className="card-body">Loading exams…</div></div>
+          <div className="card">
+            <div className="card-body">Loading exams…</div>
+          </div>
         ) : (
           <table className="table table-hover">
             <thead>
               <tr>
-                <th>ID</th><th>Name</th><th>Type</th><th>Date & Time</th>
-                <th>Duration</th><th>Proctors</th><th>Rooms</th><th>Action</th>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Date & Time</th>
+                <th>Duration</th>
+                <th>Proctors</th>
+                <th>Rooms</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -148,11 +162,14 @@ const RescheduleExamDean = () => {
                   <td>{ex.examName}</td>
                   <td>{ex.examType}</td>
                   <td>{new Date(ex.dateTime).toLocaleString()}</td>
-                  <td>{ex.duration} min</td>
+                  <td>{ex.duration} hr</td>
                   <td>{ex.numProctors}</td>
                   <td>{ex.examRooms.map(er => er.roomName).join(", ")}</td>
                   <td>
-                    <button className="btn btn-sm btn-outline-primary" onClick={() => openEdit(ex)}>
+                    <button
+                      className="btn btn-sm btn-outline-primary"
+                      onClick={() => openEdit(ex)}
+                    >
                       Edit
                     </button>
                   </td>
@@ -160,7 +177,9 @@ const RescheduleExamDean = () => {
               ))}
               {exams.length === 0 && (
                 <tr>
-                  <td colSpan="8" className="text-center text-muted">No exams found.</td>
+                  <td colSpan="8" className="text-center text-muted">
+                    No exams found.
+                  </td>
                 </tr>
               )}
             </tbody>
@@ -169,60 +188,133 @@ const RescheduleExamDean = () => {
 
         {/* Modal */}
         {editingExam && (
-          <div className="modal fade show d-block" tabIndex="-1" style={{
-            backgroundColor: "rgba(0,0,0,0.5)",
-            position: "fixed",
-            top: 0, left: 0, right: 0, bottom: 0,
-            zIndex: 1055
-          }}>
-            <div className="modal-dialog modal-dialog-centered" style={{ maxWidth: "600px" }}>
+          <div
+            className="modal fade show d-block"
+            tabIndex="-1"
+            style={{
+              backgroundColor: "rgba(0,0,0,0.5)",
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 1055
+            }}
+          >
+            <div
+              className="modal-dialog modal-dialog-centered"
+              style={{ maxWidth: "600px" }}
+            >
               <form className="modal-content p-4" onSubmit={handleSubmit}>
                 <div className="modal-header">
                   <h5 className="modal-title">Edit Exam #{editingExam.id}</h5>
-                  <button type="button" className="btn-close" onClick={closeEdit} disabled={saving} />
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={closeEdit}
+                    disabled={saving}
+                  />
                 </div>
                 <div className="modal-body row gx-3">
                   {/* Fields */}
                   <div className="col-md-6 mb-3">
                     <label className="form-label">Exam Name</label>
-                    <input name="examName" value={form.examName} onChange={handleChange} className="form-control" required />
+                    <input
+                      name="examName"
+                      value={form.examName}
+                      onChange={handleChange}
+                      className="form-control"
+                      required
+                    />
                   </div>
                   <div className="col-md-6 mb-3">
                     <label className="form-label">Exam Type</label>
-                    <select name="examType" value={form.examType} onChange={handleChange} className="form-select">
+                    <select
+                      name="examType"
+                      value={form.examType}
+                      onChange={handleChange}
+                      className="form-select"
+                    >
                       <option value="MIDTERM">Midterm</option>
                       <option value="FINAL">Final</option>
                     </select>
                   </div>
                   <div className="col-md-6 mb-3">
                     <label className="form-label">Date & Time</label>
-                    <input type="datetime-local" name="dateTime" value={form.dateTime} onChange={handleChange} className="form-control" required />
+                    <input
+                      type="datetime-local"
+                      name="dateTime"
+                      value={form.dateTime}
+                      onChange={handleChange}
+                      className="form-control"
+                      required
+                    />
                   </div>
                   <div className="col-md-3 mb-3">
-                    <label className="form-label">Duration</label>
-                    <input type="number" name="duration" min="1" value={form.duration} onChange={handleChange} className="form-control" />
+                    <label className="form-label">Duration (hours)</label>
+                    <input
+                      type="number"
+                      lang="tr"
+                      name="duration"
+                      min="0"
+                      step="0.1"
+                      value={form.duration}
+                      onChange={handleChange}
+                      className="form-control"
+                    />
                   </div>
                   <div className="col-md-3 mb-3">
                     <label className="form-label">Proctors</label>
-                    <input type="number" name="numProctors" min="1" value={form.numProctors} onChange={handleChange} className="form-control" />
+                    <input
+                      type="number"
+                      name="numProctors"
+                      min="1"
+                      value={form.numProctors}
+                      onChange={handleChange}
+                      className="form-control"
+                    />
                   </div>
                   <div className="col-md-6 mb-3">
                     <label className="form-label">Department</label>
-                    <input name="department" value={form.department} onChange={handleChange} className="form-control" />
+                    <input
+                      name="department"
+                      value={form.department}
+                      onChange={handleChange}
+                      className="form-control"
+                    />
                   </div>
                   <div className="col-md-6 mb-3">
                     <label className="form-label">Room IDs (e.g. 1,2)</label>
-                    <input name="rooms" value={form.rooms} onChange={handleChange} className="form-control" />
+                    <input
+                      name="rooms"
+                      value={form.rooms}
+                      onChange={handleChange}
+                      className="form-control"
+                    />
                   </div>
                 </div>
                 <div className="modal-footer">
-                  <button type="button" className="btn btn-outline-danger me-auto" onClick={handleDelete} disabled={saving}>
+                  <button
+                    type="button"
+                    className="btn btn-outline-danger me-auto"
+                    onClick={handleDelete}
+                    disabled={saving}
+                  >
                     Delete
                   </button>
-                  <button type="button" className="btn btn-secondary" onClick={closeEdit} disabled={saving}>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={closeEdit}
+                    disabled={saving}
+                  >
                     Cancel
                   </button>
-                  <button type="submit" className="btn btn-primary" disabled={saving}>
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={saving}
+                  >
                     {saving ? "Saving…" : "Save Changes"}
                   </button>
                 </div>
