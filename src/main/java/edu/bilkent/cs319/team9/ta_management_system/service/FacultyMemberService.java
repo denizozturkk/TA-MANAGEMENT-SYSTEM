@@ -30,6 +30,7 @@ public interface FacultyMemberService {
                                  DutyType taskType,
                                  Long workload,
                                  LocalDateTime startTime,
+                                 LocalDateTime endTime,
                                  Long duration,
                                  DutyStatus status,
                                  Set<Classroom> classrooms);
@@ -41,6 +42,7 @@ public interface FacultyMemberService {
             DutyType taskType,
             Long workload,
             LocalDateTime startTime,
+            LocalDateTime endTime,
             Long duration,
             DutyStatus status,
             Set<Classroom> classrooms

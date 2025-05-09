@@ -23,10 +23,10 @@ public class BusyHour {
     @JoinColumn(name = "ta_id", nullable = false)
     private TA ta;
 
-    @Column(nullable = false)
+    @Column(name = "start_time", nullable = false)
     private LocalDateTime startDateTime;
 
-    @Column(nullable = false)
+    @Column(name = "end_time", nullable = false)
     private LocalDateTime endDateTime;
 
     public DayOfWeek getDayOfWeek() {

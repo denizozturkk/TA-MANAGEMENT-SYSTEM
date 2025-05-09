@@ -13,6 +13,7 @@ public class DutyLogDto {
     private int workload;
     private LocalDateTime startTime;
     private LocalDateTime dateTime;
+    private LocalDateTime endTime;
     private DutyStatus status;
 
     private Long taId;

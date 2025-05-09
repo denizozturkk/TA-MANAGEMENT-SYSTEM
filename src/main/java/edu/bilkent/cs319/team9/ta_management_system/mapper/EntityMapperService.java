@@ -298,6 +298,7 @@ public class EntityMapperService {
         dto.setWorkload(dl.getWorkload().intValue());
         dto.setStartTime(dl.getStartTime());
         dto.setDateTime(dl.getDateTime());
+        dto.setEndTime(dl.getEndTime());
         dto.setStatus(dl.getStatus());
         dto.setReason(dl.getReason());
         // Relationships → just IDs
@@ -326,6 +327,9 @@ public class EntityMapperService {
 
         dto.setInstructorId(offering.getInstructor() != null ? offering.getInstructor().getId() : null);
         dto.setCourseId(offering.getCourse() != null ? offering.getCourse().getId() : null);
+        dto.setCourseCode(offering.getCourse() != null
+                ? offering.getCourse().getCourseCode()
+                : null);
         dto.setSemesterDataId(offering.getSemesterData() != null ? offering.getSemesterData().getId() : null);
 
         dto.setTaIds(offering.getTas() != null ?

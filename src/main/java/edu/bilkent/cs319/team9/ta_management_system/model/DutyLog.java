@@ -25,7 +25,12 @@ public class DutyLog {
     private DutyType taskType;
 
     private Long workload;
+
+    @Column(nullable = false)
     private LocalDateTime startTime;
+
+    @Column(nullable=false)
+    private LocalDateTime endTime;
 
     private Long duration;
 
@@ -57,8 +62,7 @@ public class DutyLog {
     @Lob
     @Column(
             name           = "data",
-            columnDefinition= "LONGBLOB",
-            nullable       = true
+            columnDefinition= "LONGBLOB"
     )
     private byte[] data;
 
@@ -75,7 +79,7 @@ public class DutyLog {
     private String contentTypeTa;
 
     @Lob
-    @Column(name = "data_ta", columnDefinition = "LONGBLOB", nullable = false)
+    @Column(name = "data_ta", columnDefinition = "LONGBLOB")
     private byte[] dataTa;
 
 }
