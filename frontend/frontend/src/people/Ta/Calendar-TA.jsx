@@ -11,7 +11,6 @@ import "../../pages/assets/css/my-task.style.min.css";
 const CalendarTA = () => {
   // pull TA ID and auth token from storage
   const taId = localStorage.getItem("userId");
-  const taId = localStorage.getItem("userId");
   const token = localStorage.getItem("authToken");
   const RANGE_START = "2025-01-27";
   const RANGE_END = "2025-05-18";
