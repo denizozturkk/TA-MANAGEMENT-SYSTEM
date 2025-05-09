@@ -114,7 +114,7 @@ const SignInPage = () => {
                         className="btn btn-secondary btn-sm"
                         onClick={() => navigate("/tutorgraderform")}
                       >
-                        Tutor/Grader Başvurusu Yap
+                        Tutor/Grader Application Form
                       </button>
                     </div>
                   </form>

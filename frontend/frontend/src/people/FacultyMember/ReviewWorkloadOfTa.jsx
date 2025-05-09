@@ -48,7 +48,7 @@ const DutiesByDepartmentPage = () => {
   }, [token]);
 
   // ————————————————————————————
-  // Load TAs, Exams, Classrooms once we know we're authenticated
+  // Load TAs, Exams, Classrooms once authenticated
   // ————————————————————————————
   useEffect(() => {
     if (!token) return;
@@ -113,6 +113,31 @@ const DutiesByDepartmentPage = () => {
   const getRoomName = (id) => {
     const c = classrooms.find((x) => x.id === id);
     return c ? `${c.building} ${c.roomNumber}` : `Room #${id}`;
+  };
+
+  // ————————————————————————————
+  // Download TA-uploaded PDF proof
+  // ————————————————————————————
+  const downloadProof = async (dutyLogId, fileName) => {
+    try {
+      const res = await fetch(
+        `${BASE}/duty-logs/${dutyLogId}/downloadTa?taId=${selectedTA}`,
+        { method: "GET", headers }
+      );
+      if (!res.ok) throw new Error("Download failed");
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName || "proof.pdf";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+      alert("Could not download proof: " + err.message);
+    }
   };
 
   // ————————————————————————————
@@ -243,49 +268,49 @@ const DutiesByDepartmentPage = () => {
                             <th>Action</th>
                           </tr>
                         </thead>
-
                         <tbody>
-                            {dutyLogs.map((dl) => (
-                              <tr key={dl.id}>
-                                <td>{dl.id}</td>
-                                <td>{dl.taskType}</td>
-                                <td>{dl.workload}</td>
-                                <td>{new Date(dl.startTime).toLocaleString()}</td>
-                                <td>{dl.status}</td>
-                                <td>
-                                  {dl.proofUrl ? (
-                                    <a
-                                      href={dl.proofUrl}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="btn btn-sm btn-outline-primary"
-                                    >
-                                      Download
-                                    </a>
-                                  ) : (
-                                    <span className="text-muted">No file</span>
-                                  )}
-                                </td>
-                                <td>
+                          {dutyLogs.map((dl) => (
+                            <tr key={dl.id}>
+                              <td>{dl.id}</td>
+                              <td>{dl.taskType}</td>
+                              <td>{dl.workload}</td>
+                              <td>
+                                {new Date(dl.startTime).toLocaleString()}
+                              </td>
+                              <td>{dl.status}</td>
+                              <td>
+                                {dl.fileNameTa ? (
                                   <button
-                                    className="btn btn-sm btn-success me-2"
-                                    disabled={dl.status !== "SUBMITTED"}
-                                    onClick={() => handleAcceptDuty(dl.id)}
+                                    className="btn btn-sm btn-outline-primary"
+                                    onClick={() =>
+                                      downloadProof(dl.id, dl.fileNameTa)
+                                    }
                                   >
-                                    Accept
+                                    Download
                                   </button>
-                                  <button
-                                    className="btn btn-sm btn-danger"
-                                    disabled={dl.status !== "SUBMITTED"}
-                                    onClick={() => openRejectModal(dl.id)}
-                                  >
-                                    Reject
-                                  </button>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-
+                                ) : (
+                                  <span className="text-muted">No file</span>
+                                )}
+                              </td>
+                              <td>
+                                <button
+                                  className="btn btn-sm btn-success me-2"
+                                  disabled={dl.status !== "SUBMITTED"}
+                                  onClick={() => handleAcceptDuty(dl.id)}
+                                >
+                                  Accept
+                                </button>
+                                <button
+                                  className="btn btn-sm btn-danger"
+                                  disabled={dl.status !== "SUBMITTED"}
+                                  onClick={() => openRejectModal(dl.id)}
+                                >
+                                  Reject
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
                       </table>
                     </div>
                   )}
@@ -293,7 +318,7 @@ const DutiesByDepartmentPage = () => {
               </div>
             )}
 
-            {/* Proctor Assignments (unchanged) */}
+            {/* Proctor Assignments */}
             {selectedTA && (
               <div className="card">
                 <div className="card-body">
@@ -325,18 +350,12 @@ const DutiesByDepartmentPage = () => {
                                 <button
                                   className="btn btn-sm btn-success me-2"
                                   disabled={pa.status !== "SUBMITTED"}
-                                  onClick={() => {
-                                    /* TODO: wire up proctor review */
-                                  }}
                                 >
                                   Accept
                                 </button>
                                 <button
                                   className="btn btn-sm btn-danger"
                                   disabled={pa.status !== "SUBMITTED"}
-                                  onClick={() => {
-                                    /* TODO: wire up proctor review */
-                                  }}
                                 >
                                   Reject
                                 </button>
@@ -370,7 +389,10 @@ const DutiesByDepartmentPage = () => {
           />
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowRejectModal(false)}>
+          <Button
+            variant="secondary"
+            onClick={() => setShowRejectModal(false)}
+          >
             Cancel
           </Button>
           <Button variant="danger" onClick={handleRejectDuty}>

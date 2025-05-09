@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import FacultyMemberLayout from "../FacultyMember/FacultyMemberLayout";
 
@@ -22,10 +21,10 @@ const DefinesExamPage = () => {
     examType: "Written",
     dateTime: "",
     duration: "",
-    numProctors: "",
     offeringId: "",
     facultyId: "",
-    classrooms: []
+    // replaced numProctors + classrooms with a dynamic list:
+    examRooms: [{ classroomId: "", numProctors: "" }],
   });
 
   const BASE = "http://localhost:8080/api";
@@ -35,58 +34,52 @@ const DefinesExamPage = () => {
     if (!token) return;
     const headers = {
       Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
     };
 
-    // 1) fetch your profile
+    // fetch profile and then your exams
     fetch(`${BASE}/users/me`, { headers })
-      .then(res => res.json())
-      .then(user => {
+      .then((res) => res.json())
+      .then((user) => {
         setCurrentUserId(user.id);
-        // 2) fetch only your exams
         return fetch(`${BASE}/exams`, { headers });
       })
-      .then(res => res.json())
-      .then(data => {
+      .then((res) => res.json())
+      .then((data) => {
         const arr = Array.isArray(data) ? data : [];
-        setExams(arr.filter(ex => ex.facultyId === currentUserId));
+        setExams(arr.filter((ex) => ex.facultyId === currentUserId));
       })
       .catch(() => setExams([]));
 
-    // fetch proctor assignments
+    // fetch lookups in parallel
     fetch(`${BASE}/proctor-assignments`, { headers })
-      .then(res => res.json())
-      .then(data => setAllAssignments(Array.isArray(data) ? data : []))
+      .then((r) => r.json())
+      .then((d) => setAllAssignments(Array.isArray(d) ? d : []))
       .catch(() => setAllAssignments([]));
 
-    // fetch TAs
     fetch(`${BASE}/ta`, { headers })
-      .then(res => res.json())
-      .then(data => setAllTAs(Array.isArray(data) ? data : []))
+      .then((r) => r.json())
+      .then((d) => setAllTAs(Array.isArray(d) ? d : []))
       .catch(() => setAllTAs([]));
 
-    // fetch classrooms
     fetch(`${BASE}/classrooms`, { headers })
-      .then(res => res.json())
-      .then(data => setAllClassrooms(Array.isArray(data) ? data : []))
+      .then((r) => r.json())
+      .then((d) => setAllClassrooms(Array.isArray(d) ? d : []))
       .catch(() => setAllClassrooms([]));
 
-    // fetch offerings
     fetch(`${BASE}/offerings`, { headers })
-      .then(res => res.json())
-      .then(data => setAllOfferings(Array.isArray(data) ? data : []))
+      .then((r) => r.json())
+      .then((d) => setAllOfferings(Array.isArray(d) ? d : []))
       .catch(() => setAllOfferings([]));
 
-    // fetch courses so we can show course name
     fetch(`${BASE}/courses`, { headers })
-      .then(res => res.json())
-      .then(data => setAllCourses(Array.isArray(data) ? data : []))
+      .then((r) => r.json())
+      .then((d) => setAllCourses(Array.isArray(d) ? d : []))
       .catch(() => setAllCourses([]));
 
-    // fetch faculty
     fetch(`${BASE}/faculty-members`, { headers })
-      .then(res => res.json())
-      .then(data => setAllFaculty(Array.isArray(data) ? data : []))
+      .then((r) => r.json())
+      .then((d) => setAllFaculty(Array.isArray(d) ? d : []))
       .catch(() => setAllFaculty([]));
   }, [currentUserId]);
 
@@ -101,12 +94,15 @@ const DefinesExamPage = () => {
         examType: exam.examType || "Written",
         dateTime: exam.dateTime?.slice(0, 16) || "",
         duration: exam.duration?.toString() || "",
-        numProctors: exam.numProctors?.toString() || "",
         offeringId: exam.offeringId?.toString() || "",
         facultyId: exam.facultyId?.toString() || "",
-        classrooms: Array.isArray(exam.examRooms)
-          ? exam.examRooms.map(r => r.classroomId.toString())
-          : []
+        examRooms:
+          Array.isArray(exam.examRooms) && exam.examRooms.length > 0
+            ? exam.examRooms.map((r) => ({
+                classroomId: r.classroomId.toString(),
+                numProctors: r.numProctors.toString(),
+              }))
+            : [{ classroomId: "", numProctors: "" }],
       });
     } else {
       setFormData({
@@ -115,10 +111,9 @@ const DefinesExamPage = () => {
         examType: "Written",
         dateTime: "",
         duration: "",
-        numProctors: "",
         offeringId: "",
         facultyId: "",
-        classrooms: []
+        examRooms: [{ classroomId: "", numProctors: "" }],
       });
     }
 
@@ -134,33 +129,63 @@ const DefinesExamPage = () => {
       examType: "Written",
       dateTime: "",
       duration: "",
-      numProctors: "",
       offeringId: "",
       facultyId: "",
-      classrooms: []
+      examRooms: [{ classroomId: "", numProctors: "" }],
     });
   };
 
-  const handleChange = e => {
-    const { name, value, type, checked } = e.target;
-    if (type === "checkbox" && name === "classrooms") {
-      setFormData(f => {
-        const set = new Set(f.classrooms);
-        if (checked) set.add(value);
-        else set.delete(value);
-        return { ...f, classrooms: Array.from(set) };
-      });
-    } else {
-      setFormData(f => ({ ...f, [name]: value }));
-    }
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((f) => ({ ...f, [name]: value }));
+  };
+
+  // NEW: handle changes in the dynamic examRooms array
+  const handleRoomChange = (idx, field, value) => {
+    setFormData((f) => {
+      const rooms = f.examRooms.map((r, i) =>
+        i === idx ? { ...r, [field]: value } : r
+      );
+      // if last row is now fully filled, append a new blank one
+      const last = rooms[rooms.length - 1];
+      if (last.classroomId && last.numProctors) {
+        rooms.push({ classroomId: "", numProctors: "" });
+      }
+      return { ...f, examRooms: rooms };
+    });
+  };
+
+  // NEW: remove a row
+  const removeRoom = (idx) => {
+    setFormData((f) => {
+      const rooms = f.examRooms.filter((_, i) => i !== idx);
+      return {
+        ...f,
+        examRooms: rooms.length
+          ? rooms
+          : [{ classroomId: "", numProctors: "" }],
+      };
+    });
   };
 
   const handleSave = () => {
     const token = localStorage.getItem("authToken");
     const headers = {
       Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
     };
+
+    // build room assignments and total proctors
+    const roomAssignments = formData.examRooms
+      .filter((r) => r.classroomId && r.numProctors)
+      .map((r) => ({
+        classroomId: parseInt(r.classroomId, 10),
+        numProctors: parseInt(r.numProctors, 10),
+      }));
+    const totalProctors = roomAssignments.reduce(
+      (sum, r) => sum + r.numProctors,
+      0
+    );
 
     // automatically assign your user ID as faculty on create
     const facultyIdValue =
@@ -176,15 +201,12 @@ const DefinesExamPage = () => {
       examType: formData.examType,
       dateTime: formData.dateTime,
       duration: parseFloat(formData.duration),
-      numProctors: parseInt(formData.numProctors, 10),
+      numProctors: totalProctors,
       offeringId: formData.offeringId
         ? parseInt(formData.offeringId, 10)
         : null,
       facultyId: facultyIdValue,
-      examRooms: formData.classrooms.map(id => ({
-        classroomId: parseInt(id, 10),
-        numProctors: parseInt(formData.numProctors, 10)
-      }))
+      examRooms: roomAssignments,
     };
 
     const method = modalType === "create" ? "POST" : "PUT";
@@ -194,15 +216,15 @@ const DefinesExamPage = () => {
         : `${BASE}/exams/${selectedExam.id}`;
 
     fetch(url, { method, headers, body: JSON.stringify(payload) })
-      .then(res => {
+      .then((res) => {
         if (!res.ok) throw new Error();
         return res.json();
       })
-      .then(data => {
-        setExams(es =>
+      .then((data) => {
+        setExams((es) =>
           modalType === "create"
             ? [data, ...es]
-            : es.map(ex => (ex.id === data.id ? data : ex))
+            : es.map((ex) => (ex.id === data.id ? data : ex))
         );
         closeModal();
       })
@@ -214,11 +236,13 @@ const DefinesExamPage = () => {
     const headers = { Authorization: `Bearer ${token}` };
     fetch(`${BASE}/exams/${selectedExam.id}`, {
       method: "DELETE",
-      headers
+      headers,
     })
-      .then(res => {
+      .then((res) => {
         if (!res.ok) throw new Error();
-        setExams(es => es.filter(ex => ex.id !== selectedExam.id));
+        setExams((es) =>
+          es.filter((ex) => ex.id !== selectedExam.id)
+        );
         closeModal();
       })
       .catch(() => alert("Error deleting exam"));
@@ -241,9 +265,9 @@ const DefinesExamPage = () => {
         </div>
 
         <div className="row g-4">
-          {exams.map(ex => {
+          {exams.map((ex) => {
             const proctors = allAssignments.filter(
-              a => a.examId === ex.id
+              (a) => a.examId === ex.id
             );
             return (
               <div className="col-md-6 col-lg-4" key={ex.id}>
@@ -257,26 +281,30 @@ const DefinesExamPage = () => {
                       <strong>Date:</strong>{" "}
                       {new Date(ex.dateTime).toLocaleString()}
                     </p>
+                    <p>
+                      <strong>Duration:</strong> {ex.duration} hours
+                    </p>
                     <div className="mt-3">
                       <strong>Proctors:</strong>
                       <ul className="ps-3 mb-0">
                         {proctors.length > 0 ? (
-                          proctors.map(a => {
+                          proctors.map((a) => {
                             const ta = allTAs.find(
-                              t => t.id === a.taId
+                              (t) => t.id === a.taId
                             );
                             const taName = ta
                               ? `${ta.firstName} ${ta.lastName}`
                               : `TA #${a.taId}`;
                             const cls = allClassrooms.find(
-                              c => c.id === a.classroomId
+                              (c) => c.id === a.classroomId
                             );
                             const roomName = cls
                               ? `${cls.building} ${cls.roomNumber}`
                               : `Room #${a.classroomId}`;
                             return (
                               <li key={a.id}>
-                                {taName} – {roomName} <em>({a.status})</em>
+                                {taName} – {roomName}{" "}
+                                <em>({a.status})</em>
                               </li>
                             );
                           })
@@ -315,6 +343,7 @@ const DefinesExamPage = () => {
                   </div>
                 ) : (
                   <div className="modal-body">
+                    {/* other fields unchanged */}
                     <div className="mb-3">
                       <label className="form-label">Exam Name</label>
                       <input
@@ -365,25 +394,13 @@ const DefinesExamPage = () => {
                     </div>
                     <div className="mb-3">
                       <label className="form-label">
-                        Duration (mins)
+                        Duration (hours)
                       </label>
                       <input
                         type="number"
                         name="duration"
                         className="form-control"
                         value={formData.duration}
-                        onChange={handleChange}
-                      />
-                    </div>
-                    <div className="mb-3">
-                      <label className="form-label">
-                        Number of Proctors
-                      </label>
-                      <input
-                        type="number"
-                        name="numProctors"
-                        className="form-control"
-                        value={formData.numProctors}
                         onChange={handleChange}
                       />
                     </div>
@@ -398,13 +415,13 @@ const DefinesExamPage = () => {
                         <option value="">
                           -- select offering --
                         </option>
-                        {allOfferings.map(o => {
+                        {allOfferings.map((o) => {
                           const course = allCourses.find(
-                            c => c.id === o.courseId
+                            (c) => c.id === o.courseId
                           );
                           return (
                             <option key={o.id} value={o.id}>
-                               ({o.semester} {o.year}) –{" "}
+                              ({o.semester} {o.year}) –{" "}
                               {course
                                 ? course.courseCode
                                 : `Course #${o.courseId}`}
@@ -413,33 +430,73 @@ const DefinesExamPage = () => {
                         })}
                       </select>
                     </div>
+
+                    {/* NEW dynamic classroom + proctor rows */}
                     <div className="mb-3">
                       <label className="form-label">
-                        Select Classrooms
+                        Classroom Assignments
                       </label>
-                      <div className="d-flex flex-wrap gap-2">
-                        {allClassrooms.map((cls, i) => (
-                          <div className="form-check me-3" key={i}>
-                            <input
-                              type="checkbox"
-                              name="classrooms"
-                              value={cls.id}
-                              checked={formData.classrooms.includes(
-                                cls.id.toString()
-                              )}
-                              onChange={handleChange}
-                              className="form-check-input"
-                              id={`cls-${i}`}
-                            />
-                            <label
-                              className="form-check-label"
-                              htmlFor={`cls-${i}`}
+                      {formData.examRooms.map((r, i) => (
+                        <div
+                          className="d-flex mb-2 align-items-center"
+                          key={i}
+                        >
+                          <select
+                            className="form-select me-2"
+                            style={{ flex: 1 }}
+                            value={r.classroomId}
+                            onChange={(e) =>
+                              handleRoomChange(
+                                i,
+                                "classroomId",
+                                e.target.value
+                              )
+                            }
+                          >
+                            <option value="">
+                              -- select classroom --
+                            </option>
+                            {allClassrooms.map((c) => (
+                              <option key={c.id} value={c.id}>
+                                {c.building} {c.roomNumber}
+                              </option>
+                            ))}
+                          </select>
+                          <input
+                            type="number"
+                            className="form-control me-2"
+                            style={{ width: 100 }}
+                            placeholder="# proctors"
+                            value={r.numProctors}
+                            onChange={(e) =>
+                              handleRoomChange(
+                                i,
+                                "numProctors",
+                                e.target.value
+                              )
+                            }
+                          />
+                          {formData.examRooms.length > 1 && (
+                            <button
+                              type="button"
+                              className="btn btn-outline-danger btn-sm"
+                              onClick={() => removeRoom(i)}
                             >
-                              {cls.building} {cls.roomNumber}
-                            </label>
-                          </div>
-                        ))}
-                      </div>
+                              &times;
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                      <small className="text-muted">
+                        Total Proctors:{" "}
+                        {formData.examRooms
+                          .filter((r) => r.classroomId && r.numProctors)
+                          .reduce(
+                            (sum, r) =>
+                              sum + parseInt(r.numProctors, 10),
+                            0
+                          )}
+                      </small>
                     </div>
                   </div>
                 )}
@@ -454,7 +511,9 @@ const DefinesExamPage = () => {
                   <button
                     className="btn btn-primary"
                     onClick={
-                      modalType === "delete" ? handleDelete : handleSave
+                      modalType === "delete"
+                        ? handleDelete
+                        : handleSave
                     }
                   >
                     {modalType === "delete" ? "Delete" : "Save"}
