@@ -45,4 +45,9 @@ public class TAServiceImpl implements TAService {
     public void delete(Long id) {
         repo.deleteById(id);
     }
+
+    public List<TA> findTAsByOfferingId(Long offeringId) {
+        return repo.findTAsByOfferingId(offeringId);
+    }
+
 }

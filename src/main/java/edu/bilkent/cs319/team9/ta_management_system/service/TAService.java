@@ -9,4 +9,5 @@ public interface TAService {
     List<TA> findAll();
     TA update(Long id, TA ta);
     void delete(Long id);
+    public List<TA> findTAsByOfferingId(Long offeringId);
 }

@@ -99,4 +99,12 @@ public class TAController {
 
         return ResponseEntity.ok(filtered);
     }
+
+    @GetMapping("/by-offering/{offeringId}")
+    public ResponseEntity<List<TADto>> getTAsByOffering(@PathVariable Long offeringId) {
+        List<TADto> tas = taService.findTAsByOfferingId(offeringId).stream()
+                .map(mapper::toDto)
+                .toList();
+        return ResponseEntity.ok(tas);
+    }
 }
