@@ -49,5 +49,4 @@ public interface FacultyMemberService {
     );
 
     DutyLog reviewDutyLog(Long facultyId, Long taId, Long dutyLogId, DutyStatus status, String reason);
-
 }

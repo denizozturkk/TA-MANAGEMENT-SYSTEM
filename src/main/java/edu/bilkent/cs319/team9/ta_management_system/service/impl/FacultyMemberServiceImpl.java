@@ -3,13 +3,16 @@ package edu.bilkent.cs319.team9.ta_management_system.service.impl;
 import edu.bilkent.cs319.team9.ta_management_system.model.*;
 import edu.bilkent.cs319.team9.ta_management_system.repository.*;
 import edu.bilkent.cs319.team9.ta_management_system.service.*;
+import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -18,13 +21,6 @@ import org.springframework.web.server.ResponseStatusException;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.mail.javamail.MimeMessageHelper;
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
-import org.springframework.mail.javamail.MimeMessageHelper;
-import org.springframework.core.io.ByteArrayResource;
-import org.springframework.mail.javamail.JavaMailSender;
 
 @Slf4j
 @Service
@@ -42,6 +38,9 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
     private final ProctorAssignmentRepository paRepo;
     private final JavaMailSender mailSender;
     private final NotificationService notificationService;
+
+
+    private static final int LOCAL_UTC_SHIFT_HOURS = 3;
 
     @Override
     public FacultyMember create(FacultyMember f) {
@@ -99,18 +98,44 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
         // 1) Load the request
         LeaveRequest req = leaveRequestRepository.findById(requestId)
                 .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "No such leave request"));
+                        HttpStatus.NOT_FOUND, "No such leave request"
+                ));
 
         // 2) (Optional) Authorization check here…
 
         // 3) Update status
         req.setStatus(LeaveStatus.ACCEPTED);
+
+        // 3a) Detach & remember the ProctorAssignment so we can delete it
+        ProctorAssignment pa = req.getProctorAssignment();
+        req.setProctorAssignment(null);
+
+        // 3b) Persist the leave with no more PA reference
         LeaveRequest saved = leaveRequestRepository.save(req);
+
+        // 3c) Now delete the orphaned ProctorAssignment
+        if (pa != null) {
+            paRepo.deleteById(pa.getId());
+
+            TA ta = saved.getTa();
+            LocalDateTime examStart = pa.getExam().getDateTime();
+            LocalDateTime examEnd   = examStart.plusMinutes((long)(pa.getExam().getDuration() * 60));
+
+            // apply same manual UTC shift you used when creating it
+            LocalDateTime shiftedStart = examStart.minusHours(LOCAL_UTC_SHIFT_HOURS);
+            LocalDateTime shiftedEnd   = examEnd.minusHours(LOCAL_UTC_SHIFT_HOURS);
+
+            busyHourService.findByTaId(ta.getId()).stream()
+                    .filter(bh -> bh.getStartDateTime().equals(shiftedStart)
+                            && bh.getEndDateTime().equals(shiftedEnd))
+                    .findFirst()
+                    .ifPresent(bh -> busyHourService.delete(bh.getId()));
+        }
 
         // 4) Send in-app notification to the TA
         TA ta = saved.getTa();
         String title = "Leave Request Approved";
-        String body  = String.format(
+        String body = String.format(
                 "Your leave request (ID %d) has been approved.",
                 saved.getId()
         );
@@ -154,15 +179,13 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
         SimpleMailMessage mail = new SimpleMailMessage();
         mail.setTo(ta.getEmail());
         mail.setSubject("Your Leave Request Was Rejected");
-        mail.setText(
-                "Hello " + ta.getFirstName() + ",\n\n" +
-                        "We’re sorry to inform you that your leave request (ID " + saved.getId() +
-                        ") covering " + " to " +
-                        " has been rejected.\n\n" +
-                        "Please contact your faculty member if you have any questions.\n\n" +
-                        "Best regards,\n" +
-                        "The Administration Team"
-        );
+        StringBuilder body = new StringBuilder();
+        body.append("Hello ").append(ta.getFirstName()).append(",\n\n")
+                .append("We’re sorry to inform you that your leave request for ").append(saved.getProctorAssignment().getExam().getExamName())
+                .append(" covering ").append(" to ").append(" has been rejected.\n\n")
+                .append("Please contact your faculty member if you have any questions.\n\n")
+                .append("Best regards,\n").append("The Administration Team");
+        mail.setText(body.toString());
         mailSender.send(mail);
 
         return saved;
@@ -273,18 +296,16 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
 
             helper.setTo(ta.getEmail());
             helper.setSubject("New Duty Assigned: " + taskType);
-            helper.setText(
-                    "Hello " + ta.getFirstName() + ",\n\n" +
-                            "A new duty has been assigned to you:\n" +
-                            "- Duty Type: " + taskType + "\n" +
-                            "- Start Time: " + startTime + "\n" +
-                            "- Deadline: " + endTime + "\n" +
-                            "- Workload: " + workload + "\n\n" +
-                            "Attached is the PDF with more details.\n\n" +
-                            "Best regards,\n" +
-                            faculty.getFirstName(),
-                    false
-            );
+            StringBuilder body = new StringBuilder();
+            body.append("Hello ").append(ta.getFirstName()).append(",\n\n")
+                    .append("A new duty has been assigned to you:\n")
+                    .append("- Duty Type: ").append(taskType).append("\n")
+                    .append("- Start Time: ").append(startTime).append("\n")
+                    .append("- Deadline: ").append(endTime).append("\n")
+                    .append("- Workload: ").append(workload).append("\n\n")
+                    .append("Best regards,\n")
+                    .append(faculty.getFirstName());
+            helper.setText(body.toString(), false);
             if (hasPdf){
                 helper.addAttachment(
                         file.getOriginalFilename(),
@@ -389,7 +410,7 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
         Exam exam = examService.findById(examId);
         List<ExamRoom> rooms = examRoomService.findByExamId(examId);
 
-        // 2) compute exam window for conflict checking
+        // 2) compute an exam window for conflict checking
         LocalDateTime start = exam.getDateTime();
         LocalDateTime end   = start.plusMinutes((long)(exam.getDuration() * 60));
 
@@ -412,7 +433,7 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
 
         // 4) check for scheduling conflicts
         boolean hasConflict = busyHourService.findByTaId(taId).stream()
-                .anyMatch(bh -> bh.overlaps(start, end));
+                .anyMatch(bh -> bh.overlaps(start.minusHours(LOCAL_UTC_SHIFT_HOURS), end.minusHours(LOCAL_UTC_SHIFT_HOURS)));
         if (hasConflict) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
@@ -442,7 +463,7 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
                 msg.setSubject("You’ve Been Assigned as an Exam Proctor");
 
                 StringBuilder body = new StringBuilder();
-                body.append("Hello ").append(ta.getFirstName() + " " + ta.getLastName() ).append(",\n\n")
+                body.append("Hello ").append(ta.getFirstName()).append(" ").append(ta.getLastName()).append(",\n\n")
                         .append("You have been assigned as a proctor for the following exam:\n\n")
                         .append("  • Course: ").append(exam.getExamName()).append("\n")
                         .append("  • Date & Time: ").append(exam.getDateTime()).append("\n")
@@ -495,7 +516,7 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
         Exam exam = examService.findById(examId);
         List<ExamRoom> rooms = examRoomService.findByExamId(examId);
 
-        // 2) compute exam window
+        // 2) compute an exam window
         LocalDateTime start = exam.getDateTime();
         LocalDateTime end = start.plusMinutes((long)(exam.getDuration() * 60));
 
