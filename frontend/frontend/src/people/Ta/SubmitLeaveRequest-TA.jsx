@@ -15,6 +15,7 @@ const SubmitLeaveRequestTA = () => {
   const [leaves, setLeaves] = useState([]);
   const [exams, setExams] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [classrooms, setClassrooms] = useState([]);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [form, setForm] = useState({
@@ -24,32 +25,36 @@ const SubmitLeaveRequestTA = () => {
   const [currentAssignId, setCurrentAssignId] = useState(null);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
+    useEffect(() => {
     const load = async () => {
-      setLoading(true);
-      try {
-        const [asgnRes, leaveRes] = await Promise.all([
-          fetch(`${BASE}/proctor-assignments/ta/${taId}`, { headers: hdrs }),
-          fetch(`${BASE}/leave-requests/ta/${taId}`, { headers: hdrs }),
+        setLoading(true);
+        try {
+        const [asgnRes, leaveRes, examRes, classRes] = await Promise.all([
+            fetch(`${BASE}/proctor-assignments/ta/${taId}`, { headers: hdrs }),
+            fetch(`${BASE}/leave-requests/ta/${taId}`, { headers: hdrs }),
+            fetch(`${BASE}/exams`, { headers: hdrs }),
+            fetch(`${BASE}/classrooms`, { headers: hdrs }),
         ]);
 
         const allAsgn = await asgnRes.json();
         const allLeaves = await leaveRes.json();
+        const allExams = await examRes.json();
+        const allClassrooms = await classRes.json();
+
         setAssignments(Array.isArray(allAsgn) ? allAsgn : []);
         setLeaves(Array.isArray(allLeaves) ? allLeaves : []);
-
-        const examRes = await fetch(`${BASE}/exams`, { headers: hdrs });
-        const allExams = await examRes.json();
         setExams(Array.isArray(allExams) ? allExams : []);
-      } catch (err) {
+        setClassrooms(Array.isArray(allClassrooms) ? allClassrooms : []);
+        } catch (err) {
         console.error(err);
-        alert("Error loading assignments, leaves or exams");
-      } finally {
+        alert("Error loading assignments, leaves, exams, or classrooms");
+        } finally {
         setLoading(false);
-      }
+        }
     };
     load();
-  }, [taId]);
+    }, [taId]);
+
 
   const leaveMap = Object.fromEntries(
     leaves.map((l) => [l.proctorAssignmentId, l])
@@ -110,67 +115,79 @@ const SubmitLeaveRequestTA = () => {
         <div className="table-responsive">
 
             <table className="table table-hover align-middle w-100">
-              <thead>
-                <tr>
-                  <th>Assignment ID</th>
-                  <th>Exam</th>
-                  <th>Date</th>
-                  <th>Leave Status</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
+            <thead>
+            <tr>
+                <th>Exam</th>
+                <th>Date & Time</th>
+                <th>Classroom</th>
+                <th>Leave Status</th>
+                <th>Action</th>
+            </tr>
+            </thead>
+                <tbody>
                 {assignments.length === 0 && (
-                  <tr>
-                    <td colSpan="5" className="text-center">
-                      No assignments
-                    </td>
-                  </tr>
+                    <tr>
+                    <td colSpan="5" className="text-center">No assignments</td>
+                    </tr>
                 )}
                 {assignments.map((pa) => {
-                  const leave = leaveMap[pa.id];
-                  const exam = exams.find((e) => e.id === pa.examId) || {};
-                  const date = exam.dateTime
-                    ? new Date(exam.dateTime).toLocaleDateString()
+                    const leave = leaveMap[pa.id];
+                    const exam = exams.find((e) => e.id === pa.examId) || {};
+                    const room = classrooms.find((r) => r.id === pa.classroomId) || {};
+
+                    const date = exam.dateTime
+                    ? new Date(exam.dateTime).toLocaleString("en-GB", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        })
                     : "—";
-                  return (
+
+                    const roomInfo = room.building && room.roomNumber
+                    ? `${room.building}, Room ${room.roomNumber}`
+                    : "—";
+
+                    return (
                     <tr key={pa.id}>
-                      <td>{pa.id}</td>
-                      <td>{exam.examName || "—"}</td>
-                      <td>{date}</td>
-                      <td>
+                        <td>{exam.examName || "—"}</td>
+                        <td>{date}</td>
+                        <td>{roomInfo}</td>
+                        <td>
                         {leave ? (
-                          <span
-                            className={`badge bg-${
-                              leave.status === "ACCEPTED"
-                                ? "success"
+                            <span
+                            className={`badge text-uppercase px-2 py-1 fw-semibold text-wrap ${
+                                leave.status === "ACCEPTED"
+                                ? "bg-success text-white"
                                 : leave.status === "REJECTED"
-                                ? "danger"
-                                : "secondary"
+                                ? "bg-danger text-white"
+                                : "bg-light text-dark border"
                             }`}
-                          >
+                            style={{ fontSize: "0.75rem" }}
+                            >
                             {leave.status}
-                          </span>
+                            </span>
                         ) : (
-                          "—"
+                            "—"
                         )}
-                      </td>
-                      <td>
+                        </td>
+                        <td>
                         {leave ? (
-                          "—"
+                            "—"
                         ) : (
-                          <button
+                            <button
                             className="btn btn-sm btn-outline-primary"
                             onClick={() => openModal(pa.id)}
-                          >
+                            >
                             Request Leave
-                          </button>
+                            </button>
                         )}
-                      </td>
+                        </td>
                     </tr>
-                  );
+                    );
                 })}
-              </tbody>
+                </tbody>
             </table>
           </div>
                     </div>

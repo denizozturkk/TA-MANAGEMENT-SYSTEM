@@ -23,34 +23,74 @@ const PendingDutiesTA = () => {
   const [leaveDates, setLeaveDates] = useState({ start: "", end: "" });
   const [fileForSubmit, setFileForSubmit] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [exams, setExams] = useState([]);
+  const [classrooms, setClassrooms] = useState([]);
 
-  useEffect(() => {
+    useEffect(() => {
     const load = async () => {
-      try {
-        const [respD, respE, respP, respL] = await Promise.all([
-          fetch(`${BASE}/duty-logs/ta/${taId}`, { headers: hdrs }),
-          fetch(`${BASE}/extension-requests/ta/${taId}`, { headers: hdrs }),
-          fetch(`${BASE}/proctor-assignments/ta/${taId}`, { headers: hdrs }),
-          fetch(`${BASE}/leave-requests/ta/${taId}`, { headers: hdrs }),
+        try {
+        const [
+            respD,     // duty logs
+            respE,     // extension requests
+            respP,     // proctor assignments
+            respL,     // leave requests
+            respExams, // exams
+            respRooms  // classrooms
+        ] = await Promise.all([
+            fetch(`${BASE}/duty-logs/ta/${taId}`, { headers: hdrs }),
+            fetch(`${BASE}/extension-requests/ta/${taId}`, { headers: hdrs }),
+            fetch(`${BASE}/proctor-assignments/ta/${taId}`, { headers: hdrs }),
+            fetch(`${BASE}/leave-requests/ta/${taId}`, { headers: hdrs }),
+            fetch(`${BASE}/exams`, { headers: hdrs }),
+            fetch(`${BASE}/classrooms`, { headers: hdrs }),
         ]);
 
         if (!respD.ok) throw new Error("Duty logs fetch failed");
-        setDuties(await respD.json());
 
-        setExtReqs(await respE.json());
-        setProctors(
-          (await respP.json()).filter(
+        const [dutiesData, extData, proctorData, leaveData, examData, roomData] =
+            await Promise.all([
+            respD.json(),
+            respE.json(),
+            respP.json(),
+            respL.json(),
+            respExams.json(),
+            respRooms.json(),
+            ]);
+
+        setDuties(dutiesData);
+        setExtReqs(extData);
+        setLeaves(leaveData);
+        setExams(examData);
+        setClassrooms(roomData);
+
+        // filter and enrich proctor assignments
+        const assignedOnly = proctorData.filter(
             (p) => p.status !== "COMPLETED" && p.status !== "CANCELLED"
-          )
         );
-        setLeaves(await respL.json());
-      } catch (err) {
+
+        const enrichedProctors = assignedOnly.map((p) => {
+            const exam = examData.find((e) => e.id === p.examId);
+            const room = roomData.find((r) => r.id === p.classroomId);
+
+            return {
+            ...p,
+            examName: exam?.examName || "Unknown Exam",
+            examDateTime: exam?.dateTime || null,
+            classroomName: room
+                ? `${room.building}, Room ${room.roomNumber}`
+                : "Unknown Room",
+            };
+        });
+
+        setProctors(enrichedProctors);
+        } catch (err) {
         console.error(err);
         alert("Failed to load pending duties");
-      }
+        }
     };
     load();
-  }, [taId]);
+    }, [taId]);
+
 
   const openModal = (type, item) => {
     setModalType(type);
@@ -310,49 +350,67 @@ const PendingDutiesTA = () => {
             <h5>Proctoring Assignments</h5>
             <div className="table-responsive">
             <table className="table">
-              
-              <thead>
+                <thead>
                 <tr>
-                  <th>Assignment ID</th>
-                  <th>Status</th>
-                  <th>Leave</th>
-                  <th>Action</th>
+                    <th>Exam</th>
+                    <th>Date & Time</th>
+                    <th>Classroom</th>
+                    <th>Leave</th>
+                    <th>Action</th>
                 </tr>
-              </thead>
-              <tbody>
+                </thead>
+                <tbody>
                 {proctors
-                  .filter((p) => p.status === "ASSIGNED")
-                  .map((p) => {
+                    .filter((p) => p.status === "ASSIGNED")
+                    .map((p) => {
                     const lv = leaves.find((l) => l.proctorAssignmentId === p.id);
+                    const exam = exams.find((e) => e.id === p.examId) || {};
+                    const room = classrooms.find((r) => r.id === p.classroomId) || {};
+
+                    const formattedDate = exam.dateTime
+                        ? new Date(exam.dateTime).toLocaleString("en-GB", {
+                            day: "2-digit",
+                            month: "2-digit",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                        })
+                        : "Unknown";
+
+                    const roomStr = room.building && room.roomNumber
+                        ? `${room.building}, Room ${room.roomNumber}`
+                        : "—";
+
                     return (
-                      <tr key={p.id}>
-                        <td>{p.id}</td>
-                        <td>{p.status}</td>
+                        <tr key={p.id}>
+                        <td>{exam.examName || "Unknown Exam"}</td>
+                        <td>{formattedDate}</td>
+                        <td>{roomStr}</td>
                         <td>
-                          {lv ? (
+                            {lv ? (
                             <span className="badge bg-info">{lv.status}</span>
-                          ) : (
+                            ) : (
                             <button
-                              className="btn btn-sm btn-outline-secondary"
-                              onClick={() => openModal("leave", p)}
+                                className="btn btn-sm btn-outline-secondary"
+                                onClick={() => openModal("leave", p)}
                             >
-                              Request
+                                Request
                             </button>
-                          )}
+                            )}
                         </td>
                         <td>
-                          <button
+                            <button
                             className="btn btn-sm btn-success"
                             disabled={!!lv}
                             onClick={() => submitProctor(p.id)}
-                          >
+                            >
                             Submit
-                          </button>
+                            </button>
                         </td>
-                      </tr>
+                        </tr>
                     );
-                  })}
-              </tbody>
+                    })}
+                </tbody>
             </table>
             </div>
           </div>
