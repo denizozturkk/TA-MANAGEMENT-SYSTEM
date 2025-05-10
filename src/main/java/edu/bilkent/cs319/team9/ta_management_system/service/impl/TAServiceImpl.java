@@ -52,4 +52,18 @@ public class TAServiceImpl implements TAService {
         return repo.findTAsByOfferingId(offeringId);
     }
 
+    @Override
+    public void incrementWorkload(Long taId, float hours) {
+        TA ta = findById(taId);
+        float current = (ta.getTotalWorkload() != null) ? ta.getTotalWorkload() : 0f;
+        ta.setTotalWorkload(current + hours);
+        repo.save(ta);
+    }
+
+    @Override
+    public float getTotalWorkload(Long taId) {
+        TA ta = findById(taId);
+        return (ta.getTotalWorkload() != null) ? ta.getTotalWorkload() : 0f;
+    }
+
 }

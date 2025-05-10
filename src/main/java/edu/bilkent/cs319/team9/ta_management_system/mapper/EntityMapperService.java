@@ -502,7 +502,6 @@ public class EntityMapperService {
                 .password(c.getPassword())
                 // omit password here too if you don't want to send it back
                 .role(c.getRole())
-                .department(c.getDepartment())
                 .build();
     }
 
@@ -517,7 +516,6 @@ public class EntityMapperService {
         c.setPassword(dto.getPassword());
         // password handling / encoding in service layer
         c.setRole(dto.getRole());
-        c.setDepartment(dto.getDepartment());
         return c;
     }
 

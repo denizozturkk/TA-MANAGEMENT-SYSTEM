@@ -11,4 +11,6 @@ public interface TAService {
     TA update(Long id, TA ta);
     void delete(Long id);
     public List<TA> findTAsByOfferingId(Long offeringId);
+    void incrementWorkload(Long taId, float hours);
+    float getTotalWorkload(Long taId);
 }
