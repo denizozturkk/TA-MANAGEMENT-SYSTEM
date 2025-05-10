@@ -67,7 +67,7 @@ const DefinesExamPage = () => {
       .then((d) => setAllClassrooms(Array.isArray(d) ? d : []))
       .catch(() => setAllClassrooms([]));
 
-    fetch(`${BASE}/offerings`, { headers })
+    fetch(`${BASE}/offerings/faculty/${currentUserId}`, { headers })
       .then((r) => r.json())
       .then((d) => setAllOfferings(Array.isArray(d) ? d : []))
       .catch(() => setAllOfferings([]));

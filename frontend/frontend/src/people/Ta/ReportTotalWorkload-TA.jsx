@@ -62,42 +62,33 @@ const PendingDutiesTA = () => {
   };
   const closeModal = () => setModalType(null);
 
-const submitExtension = async (e) => {
-  e.preventDefault();
-  setSubmitting(true);
-  try {
-    const res = await fetch(`${BASE}/extension-requests`, {
-      method: "POST",
-      headers: { ...hdrs, "Content-Type": "application/json" },
-      body: JSON.stringify({
+  const submitExtension = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      const body = {
         dutyLogId: selected.id,
         taId,
         instructorId: selected.facultyId,
         excuseType: "MEDICAL_REPORT",
         requestedExtensionDays: extensionDays,
         reason,
-      }),
-    });
-
-    // parse the JSON once
-    const data = await res.json();
-
-    if (!res.ok) {
-      // if you need the server’s error message, it’s already in `data`
-      throw new Error(data.message || "Extension request failed");
+      };
+      const res = await fetch(`${BASE}/extension-requests`, {
+        method: "POST",
+        headers: { ...hdrs, "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const newExt = await res.json();
+      setExtReqs((er) => [...er, newExt]);
+      closeModal();
+    } catch (err) {
+      alert("Extension request failed: " + err.message);
+    } finally {
+      setSubmitting(false);
     }
-
-    // now update state _synchronously_
-    setExtReqs((prev) => [...prev, data]);
-
-    closeModal();
-  } catch (err) {
-    alert("Extension request failed: " + err.message);
-  } finally {
-    setSubmitting(false);
-  }
-};
-
+  };
 
   const submitLeave = async (e) => {
     e.preventDefault();

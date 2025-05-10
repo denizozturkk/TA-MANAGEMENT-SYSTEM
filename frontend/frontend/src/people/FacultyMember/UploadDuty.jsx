@@ -46,11 +46,18 @@ const UploadDutyLogPage = () => {
 
   // load offerings
   useEffect(() => {
-    fetch(`${BASE}/offerings`, { headers: jsonHeaders })
-      .then(res => res.json())
+    if (!facultyId) return;               // don’t fetch until we have a real ID
+    fetch(`${BASE}/offerings/faculty/${facultyId}`, { headers: jsonHeaders })
+      .then(res => {
+        if (!res.ok) throw new Error(res.statusText);
+        return res.json();
+      })
       .then(data => setOfferings(Array.isArray(data) ? data : []))
-      .catch(console.error);
-  }, []);
+      .catch(err => {
+        console.error("Failed to load offerings:", err);
+        setOfferings([]);
+      });
+  }, [facultyId]);
 
   // load classrooms
   useEffect(() => {
@@ -66,10 +73,19 @@ const UploadDutyLogPage = () => {
       setAvailableTAs([]);
       return;
     }
-    fetch(`${BASE}/ta?offeringId=${form.offeringId}`, { headers: jsonHeaders })
-      .then(res => res.json())
+    fetch(
+      `${BASE}/ta/by-offering/${form.offeringId}`,
+      { headers: jsonHeaders }
+    )
+      .then(res => {
+        if (!res.ok) throw new Error(res.statusText);
+        return res.json();
+      })
       .then(data => setAvailableTAs(Array.isArray(data) ? data : []))
-      .catch(console.error);
+      .catch(err => {
+        console.error("Failed to load TAs for offering:", err);
+        setAvailableTAs([]);
+      });
   }, [form.offeringId]);
 
   const handleChange = e => {
