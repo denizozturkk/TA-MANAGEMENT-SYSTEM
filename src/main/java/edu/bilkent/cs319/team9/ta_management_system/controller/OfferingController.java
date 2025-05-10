@@ -69,4 +69,16 @@ public class OfferingController {
                 );
         return ResponseEntity.ok(mapper.toDto(offering));
     }
+
+    @GetMapping("/faculty/{facultyId}")
+    public ResponseEntity<List<OfferingDto>> getByFaculty(@PathVariable Long facultyId) {
+        List<OfferingDto> dtos = offeringService
+                .findByFacultyId(facultyId)
+                .stream()
+                .map(mapper::toDto)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(dtos);
+    }
+
+
 }

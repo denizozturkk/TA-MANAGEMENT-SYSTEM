@@ -15,4 +15,6 @@ public interface OfferingService {
             String semester,
             Integer year
     );
+
+    List<Offering> findByFacultyId(Long facultyId);
 }

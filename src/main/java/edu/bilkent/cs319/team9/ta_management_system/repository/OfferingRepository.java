@@ -42,4 +42,6 @@ public interface OfferingRepository extends JpaRepository<Offering, Long> {
             int year,
             String semester
     );
+
+    List<Offering> findAllByInstructor_Id(Long facultyId);
 }

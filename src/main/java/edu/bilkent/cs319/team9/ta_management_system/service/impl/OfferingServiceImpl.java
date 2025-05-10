@@ -55,4 +55,9 @@ public class OfferingServiceImpl implements OfferingService {
     ) {
         return repo.findByCourse_CourseCodeAndSemesterAndYear(courseCode, semester, year);
     }
+
+    @Override
+    public List<Offering> findByFacultyId(Long facultyId) {
+        return repo.findAllByInstructor_Id(facultyId);
+    }
 }

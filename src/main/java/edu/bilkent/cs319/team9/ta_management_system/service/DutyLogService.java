@@ -10,4 +10,6 @@ public interface DutyLogService {
     DutyLog update(Long id, DutyLog d);
     void delete(Long id);
     List<DutyLog> findByTaId(Long taId);
+
+    List<DutyLog> findByFacultyId(Long facId);
 }

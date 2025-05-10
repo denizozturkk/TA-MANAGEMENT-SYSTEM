@@ -1,6 +1,7 @@
 package edu.bilkent.cs319.team9.ta_management_system.controller;
 
 import edu.bilkent.cs319.team9.ta_management_system.dto.DutyLogDto;
+import edu.bilkent.cs319.team9.ta_management_system.dto.OfferingDto;
 import edu.bilkent.cs319.team9.ta_management_system.mapper.EntityMapperService;
 import edu.bilkent.cs319.team9.ta_management_system.model.DutyLog;
 import edu.bilkent.cs319.team9.ta_management_system.model.DutyStatus;
@@ -141,5 +142,16 @@ public class DutyLogController {
                 .contentType(MediaType.parseMediaType(dl.getContentTypeTa()))
                 .body(dl.getDataTa());
     }
+
+    @GetMapping("/faculty/{facultyId}")
+    public ResponseEntity<List<DutyLogDto>> getByFaculty(@PathVariable Long facultyId) {
+        List<DutyLogDto> dtos = dutyLogService
+                .findByFacultyId(facultyId)
+                .stream()
+                .map(mapper::toDto)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(dtos);
+    }
+
 
 }

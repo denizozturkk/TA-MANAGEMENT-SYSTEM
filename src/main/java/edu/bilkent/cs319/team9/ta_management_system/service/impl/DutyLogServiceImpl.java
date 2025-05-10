@@ -51,4 +51,9 @@ public class DutyLogServiceImpl implements DutyLogService {
         return repo.findByTa_Id(taId);
     }
 
+    @Override
+    public List<DutyLog> findByFacultyId(Long facId) {
+        return repo.findAllByFaculty_Id(facId);
+    }
+
 }
