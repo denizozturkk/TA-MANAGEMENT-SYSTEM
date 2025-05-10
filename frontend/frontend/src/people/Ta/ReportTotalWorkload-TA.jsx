@@ -187,8 +187,8 @@ const PendingDutiesTA = () => {
   };
 
   return (
-    <div className="d-flex flex-column flex-lg-row">
-      <div className="w-100 w-lg-auto" style={{ maxWidth: "300px" }}>
+<div className="d-flex flex-column flex-md-row">      
+  <div className="w-100 w-lg-auto" style={{ maxWidth: "300px" }}>
         <LayoutTA />
       </div>
 
@@ -198,6 +198,7 @@ const PendingDutiesTA = () => {
         <div className="card mb-5 shadow-sm">
           <div className="card-body">
             <h5>Other Duties</h5>
+         <div className="table-responsive">
             <table className="table">
               <thead>
                 <tr>
@@ -274,11 +275,14 @@ const PendingDutiesTA = () => {
             </table>
           </div>
         </div>
+          </div>
 
         <div className="card shadow-sm">
           <div className="card-body">
             <h5>Proctoring Assignments</h5>
+            <div className="table-responsive">
             <table className="table">
+              
               <thead>
                 <tr>
                   <th>Assignment ID</th>
@@ -321,6 +325,7 @@ const PendingDutiesTA = () => {
                 })}
               </tbody>
             </table>
+            </div>
           </div>
         </div>
       </div>

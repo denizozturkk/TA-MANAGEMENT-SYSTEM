@@ -96,8 +96,8 @@ const SubmitLeaveRequestTA = () => {
   }
 
   return (
-    <div className="d-flex flex-column flex-lg-row">
-      <div className="w-100 w-lg-auto" style={{ maxWidth: "300px" }}>
+<div className="d-flex flex-column flex-md-row">      
+  <div className="w-100 w-lg-auto" style={{ maxWidth: "300px" }}>
         <LayoutTA />
       </div>
 
@@ -107,6 +107,7 @@ const SubmitLeaveRequestTA = () => {
             <h4 className="fw-bold mb-4 text-primary">
               Proctoring Assignments & Leave Requests
             </h4>
+        <div className="table-responsive">
 
             <table className="table table-hover align-middle w-100">
               <thead>
@@ -172,6 +173,8 @@ const SubmitLeaveRequestTA = () => {
               </tbody>
             </table>
           </div>
+                    </div>
+
         </div>
 
         {modalOpen && (

@@ -39,13 +39,16 @@ const UserHeader = () => {
   };
 
   return (
-    <nav className="navbar bg-light py-3 px-4 px-md-5">
+    <nav
+      className="navbar border-bottom border-secondary py-3 px-4 px-md-5"
+      style={{ backgroundColor: "#e9ecef" }}
+    >
       <div
         className="container-xxl d-flex flex-wrap flex-md-nowrap align-items-center justify-content-between"
         style={{ position: 'relative' }}
       >
         {/* Logo */}
-        <div className="navbar-brand p-0" >
+        <div className="navbar-brand p-0">
           <img src={logo} alt="Bilkent Logo" height="80" />
         </div>
 
@@ -92,7 +95,6 @@ const UserHeader = () => {
                 height="36"
                 className="rounded-circle me-2"
               />
-              {/* Name and role always visible, including mobile */}
               <div className="text-start">
                 <div className="fw-bold fs-6">{fullName}</div>
                 <small className="text-muted">{displayRole}</small>

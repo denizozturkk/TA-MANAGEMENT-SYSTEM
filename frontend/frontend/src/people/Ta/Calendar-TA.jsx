@@ -1,4 +1,3 @@
-// src/people/TA/Calendar-TA.jsx
 import React, { useState, useEffect } from "react";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
@@ -27,11 +26,20 @@ const CalendarTA = () => {
     recurring: false,
   });
 
+  // adjust fetched busy-hours by +3 hours for display
+  const adjustPlusThree = (dateTimeStr) => {
+    const date = new Date(dateTimeStr);
+    date.setHours(date.getHours() + 3);
+    return date.toISOString();
+  };
+
+  // convert JS Date to ISO string without timezone offset for user input
   const toLocalIso = (date) => {
     const tzOffset = date.getTimezoneOffset() * 60000;
     return new Date(date.getTime() - tzOffset).toISOString().slice(0, 19);
   };
 
+  // user clicks on empty slot
   const handleDateClick = (info) => {
     const startDate = info.date;
     const endDate = new Date(startDate.getTime() + 30 * 60000);
@@ -47,6 +55,7 @@ const CalendarTA = () => {
     setModalOpen(true);
   };
 
+  // user clicks on existing event
   const handleEventClick = (info) => {
     const e = info.event;
     setModalInfo({
@@ -60,6 +69,7 @@ const CalendarTA = () => {
     setModalOpen(true);
   };
 
+  // load events from server, adjust only fetched busy-hours for display
   const loadEvents = async () => {
     setLoading(true);
     try {
@@ -70,28 +80,35 @@ const CalendarTA = () => {
       if (!res.ok) throw new Error(`Server responded ${res.status}`);
       const dtos = await res.json();
 
+      // one-off events
       const oneOff = dtos
         .filter((d) => !d.recurring)
         .map((d) => ({
           id: String(d.id),
           title: d.name || "Busy Hour",
-          start: d.startDateTime,
-          end: d.endDateTime,
+          start: adjustPlusThree(d.startDateTime),
+          end: adjustPlusThree(d.endDateTime),
           extendedProps: { originalId: d.id, recurring: false },
         }));
 
+      // recurring events -> generate weekly occurrences
       const recur = dtos
         .filter((d) => d.recurring)
         .flatMap((d) => {
-          const start0 = new Date(d.startDateTime);
-          const end0 = new Date(d.endDateTime);
-          const duration = end0.getTime() - start0.getTime();
+          // base times adjusted by +3
+          const startBase = new Date(d.startDateTime);
+          startBase.setHours(startBase.getHours() + 3);
+          const endBase = new Date(d.endDateTime);
+          endBase.setHours(endBase.getHours() + 3);
+          const duration = endBase.getTime() - startBase.getTime();
           const windowStart = new Date(`${RANGE_START}T00:00:00`);
           const windowEnd = new Date(`${RANGE_END}T23:59:59`);
-          let cur = new Date(start0);
+
+          let cur = new Date(startBase);
           while (cur < windowStart) {
             cur.setDate(cur.getDate() + 7);
           }
+
           const instances = [];
           while (cur <= windowEnd) {
             instances.push({
@@ -119,19 +136,17 @@ const CalendarTA = () => {
     loadEvents();
   }, []);
 
+  // save or update busy-hour: convert user input to UTC before sending
   const saveBusyHour = async () => {
     const { isEdit, id, start, end } = modalInfo;
-
     if (!start || !end || !taId) {
       alert("Start time, end time, and TA ID are required.");
       return;
     }
-
-    const payload = {
-      startDateTime: start,
-      endDateTime: end,
-      taId: Number(taId),
-    };
+    // convert local ISO to full UTC ISO
+    const startUtc = new Date(start).toISOString();
+    const endUtc = new Date(end).toISOString();
+    const payload = { startDateTime: startUtc, endDateTime: endUtc, taId: Number(taId) };
 
     const baseUrl = `http://localhost:8080/api/ta/${taId}/busy-hours`;
     const url = isEdit ? `${baseUrl}/${id}` : baseUrl;
@@ -140,10 +155,7 @@ const CalendarTA = () => {
     try {
       const res = await fetch(url, {
         method,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         credentials: "include",
         body: JSON.stringify(payload),
       });
@@ -159,14 +171,13 @@ const CalendarTA = () => {
     }
   };
 
+  // delete busy-hour
   const deleteBusyHour = async () => {
     if (!window.confirm("Are you sure you want to delete this busy hour?")) return;
     try {
       const res = await fetch(`${baseUrl}/${modalInfo.id}`, {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
         credentials: "include",
       });
       if (!res.ok) throw new Error(`Server responded ${res.status}`);
