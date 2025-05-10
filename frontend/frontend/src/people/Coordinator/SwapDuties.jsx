@@ -5,6 +5,7 @@ const DutySwapTwo = () => {
   const [dutyLogs, setDutyLogs] = useState([]);
   const [selectedA, setSelectedA] = useState("");
   const [selectedB, setSelectedB] = useState("");
+  const [taMap, setTaMap] = useState({});
 
   const token = localStorage.getItem("authToken");
   const headers = {
@@ -13,15 +14,38 @@ const DutySwapTwo = () => {
   };
 
   // ————— LOAD DUTIES —————
-  useEffect(() => {
+    useEffect(() => {
     fetch("http://localhost:8080/api/duty-logs", { headers })
-      .then(res => {
+        .then(res => {
         if (!res.ok) throw new Error(`Status ${res.status}`);
         return res.json();
-      })
-      .then(data => setDutyLogs(Array.isArray(data) ? data : []))
-      .catch(err => console.error("Duty-logs fetch error:", err));
-  }, []);
+        })
+        .then(async (data) => {
+        const dutyList = Array.isArray(data) ? data : [];
+        setDutyLogs(dutyList);
+
+        // Unique TA IDs
+        const uniqueTaIds = [...new Set(dutyList.map(d => d.taId))];
+
+        // Fetch TA details
+        const taEntries = await Promise.all(
+            uniqueTaIds.map(async (id) => {
+            try {
+                const res = await fetch(`http://localhost:8080/api/ta/${id}`, { headers });
+                if (!res.ok) throw new Error();
+                const ta = await res.json();
+                return [id, ta.fullName || ta.name || `TA #${id}`];
+            } catch {
+                return [id, `TA #${id}`];
+            }
+            })
+        );
+
+        setTaMap(Object.fromEntries(taEntries));
+        })
+        .catch(err => console.error("Duty-logs fetch error:", err));
+    }, []);
+
 
   const handleSwap = () => {
     if (!selectedA || !selectedB) return;
@@ -77,11 +101,11 @@ const DutySwapTwo = () => {
               }}
             >
               <option value="">-- Select Duty A --</option>
-              {dutyLogs.map(d => (
-                <option key={d.id} value={d.id}>
-                  {d.taskType} @ {new Date(d.startTime).toLocaleString()} (TA #{d.taId})
-                </option>
-              ))}
+                {dutyLogs.map(d => (
+                    <option key={d.id} value={d.id}>
+                        {d.taskType} @ {new Date(d.startTime).toLocaleString()} ({taMap[d.taId] || `TA #${d.taId}`})
+                    </option>
+                ))}
             </select>
           </div>
 
@@ -94,12 +118,12 @@ const DutySwapTwo = () => {
               disabled={!selectedA}
             >
               <option value="">-- Select Duty B --</option>
-              {dutyLogs
+                {dutyLogs
                 .filter(d => String(d.id) !== selectedA)
                 .map(d => (
-                  <option key={d.id} value={d.id}>
-                    {d.taskType} @ {new Date(d.startTime).toLocaleString()} (TA #{d.taId})
-                  </option>
+                    <option key={d.id} value={d.id}>
+                    {d.taskType} @ {new Date(d.startTime).toLocaleString()} ({taMap[d.taId] || `TA #${d.taId}`})
+                    </option>
                 ))}
             </select>
           </div>
