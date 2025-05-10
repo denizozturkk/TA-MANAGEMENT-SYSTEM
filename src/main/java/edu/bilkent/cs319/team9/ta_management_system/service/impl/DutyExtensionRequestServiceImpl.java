@@ -36,9 +36,9 @@ public class DutyExtensionRequestServiceImpl implements DutyExtensionRequestServ
 
         if (status == ExtensionRequestStatus.ACCEPTED) {
             DutyLog dl = req.getDutyLog();
-            LocalDateTime newDeadline = dl.getDateTime().plusDays(req.getRequestedExtensionDays());
-            dl.setDateTime(newDeadline);
-            dutyLogRepository.save(dl); // güncellenmiş deadline kaydedilir
+            LocalDateTime newDeadline = dl.getEndTime().plusDays(req.getRequestedExtensionDays());
+            dl.setEndTime(newDeadline);
+            dutyLogRepository.save(dl);
         }
 
         return repo.save(req);

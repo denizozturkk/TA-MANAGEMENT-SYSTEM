@@ -24,7 +24,7 @@ public class DutyLog {
     @Column(name = "task_type", nullable = true, length = 20)
     private DutyType taskType;
 
-    private Long workload;
+    private Float workload;
 
     @Column(nullable = false)
     private LocalDateTime startTime;

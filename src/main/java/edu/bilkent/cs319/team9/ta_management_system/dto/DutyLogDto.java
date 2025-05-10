@@ -10,7 +10,7 @@ import java.util.Set;
 public class DutyLogDto {
     private Long id;
     private String taskType;
-    private int workload;
+    private float workload;
     private LocalDateTime startTime;
     private LocalDateTime dateTime;
     private LocalDateTime endTime;

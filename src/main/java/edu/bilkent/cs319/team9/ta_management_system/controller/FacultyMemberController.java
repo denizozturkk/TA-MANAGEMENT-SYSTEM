@@ -130,7 +130,7 @@ public class FacultyMemberController {
             @PathVariable Long taId,
             @RequestParam(value = "file", required = false) MultipartFile file,
             @RequestParam("taskType") DutyType taskType,
-            @RequestParam("workload") Long workload,
+            @RequestParam("workload") Float workload,
             @RequestParam("offeringId") Long offeringId,
             @RequestParam("startTime")
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startTime,
@@ -140,7 +140,10 @@ public class FacultyMemberController {
             @RequestParam("status") DutyStatus status,
             @RequestParam(value = "classroomIds", required = false) List<Long> classroomIds
     ) {
-        Set<Classroom> classrooms = new HashSet<>( classroomRepository.findAllById(classroomIds) );
+        Set<Classroom> classrooms =
+                (classroomIds == null || classroomIds.isEmpty())
+                        ? Collections.emptySet()
+                        : new HashSet<>( classroomRepository.findAllById(classroomIds) );
         Offering offering = offeringRepository.findById(offeringId)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Offering not found with id " + offeringId
@@ -159,7 +162,7 @@ public class FacultyMemberController {
             @PathVariable Long facultyId,
             @RequestParam(value = "file", required = false) MultipartFile file,
             @RequestParam("taskType") DutyType taskType,
-            @RequestParam("workload") Long workload,
+            @RequestParam("workload") Float workload,
             @RequestParam("offeringId") Long offeringId,
             @RequestParam("startTime")
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startTime,

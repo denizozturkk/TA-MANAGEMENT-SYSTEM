@@ -180,7 +180,7 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
                                  Offering offering,
                                  MultipartFile file,
                                  DutyType taskType,
-                                 Long workload,
+                                 Float workload,
                                  LocalDateTime startTime,
                                  LocalDateTime endTime,
                                  Long duration,
@@ -278,7 +278,7 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
                             "A new duty has been assigned to you:\n" +
                             "- Duty Type: " + taskType + "\n" +
                             "- Start Time: " + startTime + "\n" +
-                            "- Duration: " + duration + " minutes\n" +
+                            "- Deadline: " + endTime + "\n" +
                             "- Workload: " + workload + "\n\n" +
                             "Attached is the PDF with more details.\n\n" +
                             "Best regards,\n" +
@@ -313,7 +313,7 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
             Offering offering,
             MultipartFile file,
             DutyType taskType,
-            Long workload,
+            Float workload,
             LocalDateTime startTime,
             LocalDateTime endTime,
             Long duration,
