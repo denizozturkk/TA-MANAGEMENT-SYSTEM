@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import LayoutTA from "./Layout-TA";
 
 const ViewWorkloadTA = () => {
-  const [items, setItems] = useState([]); // enriched duty list with workload
+  const [items, setItems] = useState([]); // enriched duty list
   const [totalWorkload, setTotalWorkload] = useState(0);
   const [loading, setLoading] = useState(true);
 
@@ -17,7 +17,9 @@ const ViewWorkloadTA = () => {
         setLoading(false);
         return;
       }
+
       try {
+        // 1) load approved duties for the list
         const res = await fetch(`${BASE}/duty-logs?taId=${taId}`, {
           headers: {
             "Accept": "application/json",
@@ -28,29 +30,34 @@ const ViewWorkloadTA = () => {
         const all = await res.json();
         const approved = all.filter(d => d.status === "APPROVED");
 
-        let total = 0;
-
         const enriched = await Promise.all(
           approved.map(async d => {
             const fRes = await fetch(`${BASE}/faculty-members/${d.facultyId}`, {
               headers: {
                 "Accept": "application/json",
                 "Authorization": `Bearer ${token}`,
-              }
+              },
             });
             if (!fRes.ok) throw new Error("Failed to load faculty");
             const faculty = await fRes.json();
             const dateStr = new Date(d.dateTime || d.startTime).toLocaleDateString();
-            const facultyName = `${faculty.firstName} ${faculty.lastName}`;
-            total += d.workload || 0;
             return {
-              description: `${d.taskType} — ${dateStr} — ${facultyName}`,
+              description: `${d.taskType} — ${dateStr} — ${faculty.firstName} ${faculty.lastName}`,
               workload: d.workload || 0
             };
           })
         );
-
         setItems(enriched);
+
+        // 2) fetch total workload directly from DB
+        const totalRes = await fetch(`${BASE}/ta/${taId}/workload/total`, {
+          headers: {
+            "Accept": "application/json",
+            "Authorization": `Bearer ${token}`,
+          },
+        });
+        if (!totalRes.ok) throw new Error("Failed to load total workload");
+        const total = await totalRes.json();
         setTotalWorkload(total);
       } catch (err) {
         console.error("Error loading approved duties:", err);
@@ -65,12 +72,9 @@ const ViewWorkloadTA = () => {
 
   return (
     <div className="d-flex flex-column flex-lg-row">
-      {/* Sidebar */}
       <div className="w-100 w-lg-auto" style={{ maxWidth: "300px" }}>
         <LayoutTA />
       </div>
-
-      {/* Main Content */}
       <div className="container-fluid py-4">
         <div className="card shadow-sm border-0 mb-4">
           <div className="card-body">
@@ -84,7 +88,9 @@ const ViewWorkloadTA = () => {
                     items.map((item, i) => (
                       <li key={i} className="list-group-item">
                         <div>{item.description}</div>
-                        <small className="text-muted">Workload: {item.workload} hours</small>
+                        <small className="text-muted">
+                          Workload: {item.workload} hours
+                        </small>
                       </li>
                     ))
                   ) : (
