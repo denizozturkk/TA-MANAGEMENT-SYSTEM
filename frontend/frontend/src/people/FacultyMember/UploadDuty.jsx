@@ -3,7 +3,13 @@ import React, { useState, useEffect } from "react";
 import FacultyMemberLayout from "../FacultyMember/FacultyMemberLayout";
 
 const UploadDutyLogPage = () => {
-  const dutyTypes = ["LAB", "GRADING", "RECITATION", "OFFICE_HOUR", "PROCTORING"];
+  const dutyTypes = [
+    "LAB",
+    "GRADING",
+    "RECITATION",
+    "OFFICE_HOUR",
+    "PROCTORING",
+  ];
 
   const [facultyId, setFacultyId] = useState(null);
   const [offerings, setOfferings] = useState([]);
@@ -29,143 +35,114 @@ const UploadDutyLogPage = () => {
     Accept: "application/json",
   };
 
-  // 1) Who am I?
+  // fetch current user
   useEffect(() => {
     if (!token) return;
     fetch(`${BASE}/users/me`, { headers: jsonHeaders })
-      .then(r => r.json())
+      .then(res => res.json())
       .then(u => setFacultyId(u.id))
       .catch(console.error);
   }, [token]);
 
-  // 2) Load offerings
+  // load offerings
   useEffect(() => {
     fetch(`${BASE}/offerings`, { headers: jsonHeaders })
-      .then(r => r.json())
+      .then(res => res.json())
       .then(data => setOfferings(Array.isArray(data) ? data : []))
       .catch(console.error);
   }, []);
 
-  // 3) Load classrooms
+  // load classrooms
   useEffect(() => {
     fetch(`${BASE}/classrooms`, { headers: jsonHeaders })
-      .then(r => r.json())
+      .then(res => res.json())
       .then(data => setClassrooms(Array.isArray(data) ? data : []))
       .catch(console.error);
   }, []);
 
-  // 4) Fetch only the TAs for the selected offering
+  // load TAs when offering changes
   useEffect(() => {
     if (!form.offeringId) {
       setAvailableTAs([]);
       return;
     }
     fetch(`${BASE}/ta?offeringId=${form.offeringId}`, { headers: jsonHeaders })
-      .then(r => r.json())
+      .then(res => res.json())
       .then(data => setAvailableTAs(Array.isArray(data) ? data : []))
       .catch(console.error);
   }, [form.offeringId]);
 
-  // handle text & select inputs
   const handleChange = e => {
     const { name, value, type, selectedOptions } = e.target;
     if (type === "select-multiple") {
-      const vals = Array.from(selectedOptions).map(o => o.value);
-      setForm(f => ({ ...f, [name]: vals }));
+      setForm(f => ({
+        ...f,
+        [name]: Array.from(selectedOptions).map(o => o.value),
+      }));
     } else {
       setForm(f => ({ ...f, [name]: value }));
     }
   };
 
-  // handle file input separately
   const handleFileChange = e => {
-    const selected = e.target.files[0] || null;
-    console.log("📄 selected file:", selected);
-    setForm(f => ({ ...f, file: selected }));
+    setForm(f => ({ ...f, file: e.target.files[0] || null }));
   };
 
   const handleSubmit = async () => {
-    // 1) basic validation
-    if (!facultyId) {
-      return alert("❌ Faculty ID hasn’t loaded yet.");
-    }
-    if (!form.offeringId) {
-      return alert("❌ Please select an offering.");
-    }
-    if (!form.taskType) {
-      return alert("❌ Please select a task type.");
-    }
-    if (form.assignmentMode === "MANUAL" && !form.taId) {
+    if (!facultyId) return alert("❌ Faculty ID hasn’t loaded yet.");
+    if (!form.offeringId) return alert("❌ Please select an offering.");
+    if (!form.taskType) return alert("❌ Please select a task type.");
+    if (form.assignmentMode === "MANUAL" && !form.taId)
       return alert("❌ Please select a TA for manual assignment.");
+
+    const workloadFloat = parseFloat(form.workload);
+    if (isNaN(workloadFloat) || workloadFloat <= 0) {
+      return alert("❌ Please enter a valid workload in hours.");
     }
 
-// calculate duration in hours
-const start = new Date(form.startTime);
-const end   = new Date(form.endTime);
+    // —————————————
+    // UPDATED: round duration to whole hours (Java Long)
+    const start = new Date(form.startTime);
+    const end = new Date(form.endTime);
+    const rawHours = (end - start) / (1000 * 60 * 60);
+    const duration = Math.round(rawHours);
+    if (isNaN(duration) || duration <= 0) {
+      return alert("❌ Please enter valid start and end times.");
+    }
+    // —————————————
 
-// raw hours difference (may be fractional)
-const rawHours = (end - start) / (1000 * 60 * 60);
-
-// round to 2 decimals
-const duration = Math.round(rawHours * 100) / 100;
-
-if (isNaN(duration) || duration <= 0) {
-  return alert("❌ Please enter valid start and end times.");
-}
-
-// now `duration` is in hours (e.g. 1.50 for one and a half hours)
-
-
-    // 3) build FormData
     const fd = new FormData();
-    // append file if present, otherwise explicit null
     if (form.file) {
       fd.append("file", form.file);
-    } else {
-      fd.append("file", null);
     }
     fd.append("taskType", form.taskType);
-    fd.append("workload", form.workload);
+    fd.append("workload", workloadFloat);
     fd.append("offeringId", form.offeringId);
     fd.append("startTime", form.startTime);
     fd.append("endTime", form.endTime);
     fd.append("duration", duration);
     fd.append("status", form.status);
 
-    if (form.taskType === "LAB") {
-      if (form.classroomIds.length === 0) {
-        return alert("❌ Please select at least one classroom for LAB tasks.");
-      }
-    }
-    // if there are any selected rooms, append them…
-    if (form.classroomIds.length > 0) {
-      form.classroomIds.forEach(id => fd.append("classroomIds", id));
-    } else {
-      // …otherwise append a dummy empty value so the param exists
-      fd.append("classroomIds", "");
-    }
+    form.classroomIds.forEach(id => fd.append("classroomIds", id));
 
-    // 4) choose URL
     const url =
       form.assignmentMode === "AUTOMATIC"
         ? `${BASE}/faculty-members/${facultyId}/duty-logs/automatic`
         : `${BASE}/faculty-members/${facultyId}/tas/${form.taId}/duty-logs`;
 
-    // 5) submit
     try {
       const res = await fetch(url, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` }, // leave out content-type for multipart
+        headers: { Authorization: `Bearer ${token}` },
         body: fd,
       });
       if (!res.ok) {
-        const errorBody = await res.text();
-        console.error("Upload error:", errorBody);
+        const err = await res.text();
+        console.error("Upload error:", err);
         throw new Error(res.statusText);
       }
       await res.json();
       alert("✅ Duty log uploaded successfully");
-      // reset form (preserve assignmentMode)
       setForm(f => ({
         ...f,
         taskType: "",
@@ -221,22 +198,24 @@ if (isNaN(duration) || duration <= 0) {
             >
               <option value="">-- select type --</option>
               {dutyTypes.map(dt => (
-                <option key={dt} value={dt}>{dt}</option>
+                <option key={dt} value={dt}>
+                  {dt}
+                </option>
               ))}
             </select>
           </div>
-
           <div className="col-md-2">
             <label className="form-label">Workload (hours)</label>
             <input
               type="number"
               className="form-control"
               name="workload"
+              step="any"
+              min="0"
               value={form.workload}
               onChange={handleChange}
             />
           </div>
-
           <div className="col-md-3">
             <label className="form-label">Start Time</label>
             <input
@@ -247,7 +226,6 @@ if (isNaN(duration) || duration <= 0) {
               onChange={handleChange}
             />
           </div>
-
           <div className="col-md-3">
             <label className="form-label">End Time</label>
             <input
@@ -329,7 +307,6 @@ if (isNaN(duration) || duration <= 0) {
           </div>
         )}
 
-        {/* Submit */}
         <button
           className="btn btn-primary"
           onClick={handleSubmit}
