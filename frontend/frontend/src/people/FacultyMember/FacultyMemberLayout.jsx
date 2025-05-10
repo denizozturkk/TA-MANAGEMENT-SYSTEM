@@ -4,17 +4,20 @@ import { Link } from "react-router-dom";
 
 const Sidebar = () => (
   <>
-    {/* Mobile toggle button */}
+    {/* Mobile toggle button - moved to right and custom color */}
     <button
-      className="btn btn-link text-light d-md-none p-2 position-fixed"
-      style={{ top: '1rem', left: '1rem', zIndex: 1050 }}
+      className="btn btn-link p-2 position-fixed d-md-none"
+      style={{ top: '1rem', right: '1rem', zIndex: 1050 }}
       type="button"
       data-bs-toggle="offcanvas"
       data-bs-target="#mobileSidebar"
       aria-controls="mobileSidebar"
       aria-label="Toggle sidebar"
     >
-      <i className="icofont-navigation-menu fs-3"></i>
+      <i
+        className="icofont-navigation-menu fs-3"
+        style={{ color: '#2a2d62' }}
+      ></i>
     </button>
 
     {/* Mobile offcanvas sidebar */}
@@ -26,7 +29,9 @@ const Sidebar = () => (
       style={{ backgroundColor: '#2D2A62', width: '240px' }}
     >
       <div className="offcanvas-header">
-        <h5 className="offcanvas-title text-light" id="mobileSidebarLabel">My-Task</h5>
+        <h5 className="offcanvas-title text-light" id="mobileSidebarLabel">
+          My-Task
+        </h5>
         <button
           type="button"
           className="btn-close btn-close-white"
@@ -56,7 +61,6 @@ const Sidebar = () => (
               <li><Link className="ms-link text-light d-block py-2" to="/defineexam">Define Exam</Link></li>
               <li><Link className="ms-link text-light d-block py-2" to="/assignassignment">Assign Assignment</Link></li>
               <li><Link className="ms-link text-light d-block py-2" to="/uploaddutylog">Upload Duty Log</Link></li>
-
             </ul>
           </li>
           <li className="border-bottom">
@@ -80,7 +84,7 @@ const Sidebar = () => (
       </div>
     </div>
 
-    {/* Desktop sidebar */}
+    {/* Desktop sidebar (same as original) */}
     <aside
       className="sidebar d-none d-md-flex flex-column px-4 py-4 py-md-5"
       style={{ backgroundColor: '#2D2A62', width: '240px' }}
@@ -126,7 +130,6 @@ const Sidebar = () => (
             <li><Link className="ms-link text-light d-block py-1 px-2" to="/defineexam">Define Exam</Link></li>
             <li><Link className="ms-link text-light d-block py-1 px-2" to="/assignassignment">Assign Assignment</Link></li>
             <li><Link className="ms-link text-light d-block py-1 px-2" to="/uploaddutylog">Upload Duty Log</Link></li>
-
           </ul>
         </li>
         <li className="collapsed mt-3">
@@ -143,9 +146,18 @@ const Sidebar = () => (
         </li>
       </ul>
 
-      <button type="button" className="btn btn-link sidebar-mini-btn text-light mt-auto">
+     
+      <button
+        type="button"
+        className="btn btn-link sidebar-mini-btn text-light mt-auto"
+        onClick={() => {
+          localStorage.removeItem("authToken");
+          window.location.href = "/login";
+        }}
+      >
         <i className="icofont-bubble-right"></i>
       </button>
+
     </aside>
   </>
 );

@@ -4,10 +4,15 @@ import { Link } from "react-router-dom";
 
 const Sidebar = () => (
   <>
-    {/* Mobile toggle button */}
+    {/* Mobile toggle button (right side, custom color) */}
     <button
-      className="btn btn-link text-light d-md-none p-2 position-fixed"
-      style={{ top: '1rem', left: '1rem', zIndex: 1050 }}
+      className="btn btn-link d-md-none p-2 position-fixed"
+      style={{
+        top: '1rem',
+        right: '1rem',
+        zIndex: 1050,
+        color: '#2a2d62',       // hamburger icon color
+      }}
       type="button"
       data-bs-toggle="offcanvas"
       data-bs-target="#mobileSidebar"
@@ -26,7 +31,9 @@ const Sidebar = () => (
       style={{ backgroundColor: '#2D2A62', width: '240px' }}
     >
       <div className="offcanvas-header">
-        <h5 className="offcanvas-title text-light" id="mobileSidebarLabel">My-Task</h5>
+        <h5 className="offcanvas-title text-light" id="mobileSidebarLabel">
+          My-Task
+        </h5>
         <button
           type="button"
           className="btn-close btn-close-white"
@@ -47,14 +54,15 @@ const Sidebar = () => (
               <i className="icofont-dotted-down ms-auto"></i>
             </a>
             <ul className="collapse ms-4" id="facultyMenuMobile">
-              <li><Link className="ms-link text-light d-block py-2" to="/generateclassroomlist">Generate Classroom List</Link></li>
-              <li><Link className="ms-link text-light d-block py-2" to="/printstudentdistribution">Print Student Distribution</Link></li>
-              <li><Link className="ms-link text-light d-block py-2" to="/leaverequest">Review TA Leave Request</Link></li>
-              <li><Link className="ms-link text-light d-block py-2" to="/excelupload">Upload Semester Excel</Link></li>
-              <li><Link className="ms-link text-light d-block py-2" to="/dutyextension">Review Duty Extension</Link></li>
-              <li><Link className="ms-link text-light d-block py-2" to="/reviewworkload">Review TA Workload</Link></li>
-              <li><Link className="ms-link text-light d-block py-2" to="/defineexam">Define Exam</Link></li>
-              <li><Link className="ms-link text-light d-block py-2" to="/assignassignment">Assign Assignment</Link></li>
+                <li>
+              <Link
+                className="ms-link text-light d-block py-1 px-2"
+                to="/tutorgraderformview"
+              >
+                Tutor / Grader Form View
+              </Link>
+            </li>
+              
             </ul>
           </li>
           <li className="border-bottom">
@@ -68,17 +76,45 @@ const Sidebar = () => (
               <i className="icofont-dotted-down ms-auto"></i>
             </a>
             <ul className="collapse ms-4" id="profileMenuMobile">
-              <li><Link className="ms-link text-light d-block py-2" to="/changecontactinformation">Change Contact Info</Link></li>
-              <li><Link className="ms-link text-light d-block py-2" to="/changepassword">Change Password</Link></li>
-              <li><Link className="ms-link text-light d-block py-2" to="/notification">Notifications</Link></li>
-              <li><Link className="ms-link text-light d-block py-2" to="/viewprofile">View Profile</Link></li>
+              <li>
+                <Link
+                  className="ms-link text-light d-block py-2"
+                  to="/changecontactinformation"
+                >
+                  Change Contact Info
+                </Link>
+              </li>
+              <li>
+                <Link
+                  className="ms-link text-light d-block py-2"
+                  to="/changepassword"
+                >
+                  Change Password
+                </Link>
+              </li>
+              <li>
+                <Link
+                  className="ms-link text-light d-block py-2"
+                  to="/notification"
+                >
+                  Notifications
+                </Link>
+              </li>
+              <li>
+                <Link
+                  className="ms-link text-light d-block py-2"
+                  to="/viewprofile"
+                >
+                  View Profile
+                </Link>
+              </li>
             </ul>
           </li>
         </ul>
       </div>
     </div>
 
-    {/* Desktop sidebar */}
+    {/* Desktop sidebar (unchanged) */}
     <aside
       className="sidebar d-none d-md-flex flex-column px-4 py-4 py-md-5"
       style={{ backgroundColor: '#2D2A62', width: '240px' }}
@@ -110,31 +146,85 @@ const Sidebar = () => (
 
       <ul className="menu-list flex-grow-1 list-unstyled">
         <li className="collapsed">
-          <a className="m-link text-light d-flex align-items-center mb-2" data-bs-toggle="collapse" data-bs-target="#facultyMenuDesktop" href="#">
+          <a
+            className="m-link text-light d-flex align-items-center mb-2"
+            data-bs-toggle="collapse"
+            data-bs-target="#facultyMenuDesktop"
+            href="#"
+          >
             <i className="icofont-user-male me-2"></i>Department Staff Panel
             <span className="arrow icofont-dotted-down ms-auto fs-5"></span>
           </a>
           <ul className="collapse sub-menu" id="facultyMenuDesktop">
-            <li><Link className="ms-link text-light d-block py-1 px-2" to="/tutorgraderformview">Tutor / Grader Form View</Link></li>
-              </ul>
+            <li>
+              <Link
+                className="ms-link text-light d-block py-1 px-2"
+                to="/tutorgraderformview"
+              >
+                Tutor / Grader Form View
+              </Link>
+            </li>
+          </ul>
         </li>
         <li className="collapsed mt-3">
-          <a className="m-link text-light d-flex align-items-center mb-2" data-bs-toggle="collapse" data-bs-target="#profileMenuDesktop" href="#">
+          <a
+            className="m-link text-light d-flex align-items-center mb-2"
+            data-bs-toggle="collapse"
+            data-bs-target="#profileMenuDesktop"
+            href="#"
+          >
             <i className="icofont-user-alt-2 me-2"></i>My Profile
             <span className="arrow icofont-dotted-down ms-auto fs-5"></span>
           </a>
           <ul className="collapse sub-menu" id="profileMenuDesktop">
-            <li><Link className="ms-link text-light d-block py-1 px-2" to="/changecontactinformation">Change Contact Info</Link></li>
-            <li><Link className="ms-link text-light d-block py-1 px-2" to="/changepassword">Change Password</Link></li>
-            <li><Link className="ms-link text-light d-block py-1 px-2" to="/notification">Notifications</Link></li>
-            <li><Link className="ms-link text-light d-block py-1 px-2" to="/viewprofile">View Profile</Link></li>
+            <li>
+              <Link
+                className="ms-link text-light d-block py-1 px-2"
+                to="/changecontactinformation"
+              >
+                Change Contact Info
+              </Link>
+            </li>
+            <li>
+              <Link
+                className="ms-link text-light d-block py-1 px-2"
+                to="/changepassword"
+              >
+                Change Password
+              </Link>
+            </li>
+            <li>
+              <Link
+                className="ms-link text-light d-block py-1 px-2"
+                to="/notification"
+              >
+                Notifications
+              </Link>
+            </li>
+            <li>
+              <Link
+                className="ms-link text-light d-block py-1 px-2"
+                to="/viewprofile"
+              >
+                View Profile
+              </Link>
+            </li>
           </ul>
         </li>
       </ul>
 
-      <button type="button" className="btn btn-link sidebar-mini-btn text-light mt-auto">
+      
+      <button
+        type="button"
+        className="btn btn-link sidebar-mini-btn text-light mt-auto"
+        onClick={() => {
+          localStorage.removeItem("authToken");
+          window.location.href = "/login";
+        }}
+      >
         <i className="icofont-bubble-right"></i>
       </button>
+
     </aside>
   </>
 );

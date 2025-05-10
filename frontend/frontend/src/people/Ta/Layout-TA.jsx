@@ -1,12 +1,18 @@
+// src/people/TA/LayoutTA.jsx
 import React from "react";
 import { Link } from "react-router-dom";
 
 const LayoutTA = () => (
   <>
-    {/* Mobile toggle button */}
+    {/* Mobile toggle button (right side, custom color) */}
     <button
-      className="btn btn-link text-light d-md-none p-2 position-fixed"
-      style={{ top: '1rem', left: '1rem', zIndex: 1050 }}
+      className="btn btn-link d-md-none p-2 position-fixed"
+      style={{
+        top: '1rem',
+        right: '1rem',
+        zIndex: 1050,
+        color: '#2a2d62',
+      }}
       type="button"
       data-bs-toggle="offcanvas"
       data-bs-target="#mobileSidebar"
@@ -25,7 +31,9 @@ const LayoutTA = () => (
       style={{ backgroundColor: '#2D2A62', width: '240px' }}
     >
       <div className="offcanvas-header">
-        <h5 className="offcanvas-title text-light" id="mobileSidebarLabel">TA Panel</h5>
+        <h5 className="offcanvas-title text-light" id="mobileSidebarLabel">
+          TA Panel
+        </h5>
         <button
           type="button"
           className="btn-close btn-close-white"
@@ -48,12 +56,36 @@ const LayoutTA = () => (
               <i className="icofont-dotted-down ms-auto"></i>
             </button>
             <ul className="collapse ms-4" id="taMenuMobile">
-              <li><Link className="ms-link text-light d-block py-2" to="/workload/view">View Workload</Link></li>
-              <li><Link className="ms-link text-light d-block py-2" to="/workload/report">Report Workload</Link></li>
-              <li><Link className="ms-link text-light d-block py-2" to="/leave">Submit Leave</Link></li>
-              <li><Link className="ms-link text-light d-block py-2" to="/swap">Swap Proctor</Link></li>
-              <li><Link className="ms-link text-light d-block py-2" to="/past-tasks">Past Tasks</Link></li>
-              <li><Link className="ms-link text-light d-block py-2" to="/calendar">Calendar</Link></li>
+              <li>
+                <Link className="ms-link text-light d-block py-2" to="/workload/view">
+                  View Workload
+                </Link>
+              </li>
+              <li>
+                <Link className="ms-link text-light d-block py-2" to="/workload/report">
+                  Report Workload
+                </Link>
+              </li>
+              <li>
+                <Link className="ms-link text-light d-block py-2" to="/leave">
+                  Submit Leave
+                </Link>
+              </li>
+              <li>
+                <Link className="ms-link text-light d-block py-2" to="/swap">
+                  Swap Proctor
+                </Link>
+              </li>
+              <li>
+                <Link className="ms-link text-light d-block py-2" to="/past-tasks">
+                  Past Tasks
+                </Link>
+              </li>
+              <li>
+                <Link className="ms-link text-light d-block py-2" to="/calendar">
+                  Calendar
+                </Link>
+              </li>
             </ul>
           </li>
           <li className="border-bottom">
@@ -69,10 +101,26 @@ const LayoutTA = () => (
               <i className="icofont-dotted-down ms-auto"></i>
             </button>
             <ul className="collapse ms-4" id="profileMenuMobile">
-              <li><Link className="ms-link text-light d-block py-2" to="/changecontactinformation">Change Contact Info</Link></li>
-              <li><Link className="ms-link text-light d-block py-2" to="/changepassword">Change Password</Link></li>
-              <li><Link className="ms-link text-light d-block py-2" to="/notification">Notifications</Link></li>
-              <li><Link className="ms-link text-light d-block py-2" to="/viewprofile">View Profile</Link></li>
+              <li>
+                <Link className="ms-link text-light d-block py-2" to="/changecontactinformation">
+                  Change Contact Info
+                </Link>
+              </li>
+              <li>
+                <Link className="ms-link text-light d-block py-2" to="/changepassword">
+                  Change Password
+                </Link>
+              </li>
+              <li>
+                <Link className="ms-link text-light d-block py-2" to="/notification">
+                  Notifications
+                </Link>
+              </li>
+              <li>
+                <Link className="ms-link text-light d-block py-2" to="/viewprofile">
+                  View Profile
+                </Link>
+              </li>
             </ul>
           </li>
         </ul>
@@ -101,7 +149,10 @@ const LayoutTA = () => (
       <Link to="/" className="mb-4 text-light d-flex align-items-center">
         <span className="logo-icon me-2">
           <svg width="35" height="35" fill="currentColor" viewBox="0 0 16 16">
-            <path fillRule="evenodd" d="M10.854 7.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 9.793l2.646-2.647a.5.5 0 0 1 .708 0z" />
+            <path
+              fillRule="evenodd"
+              d="M10.854 7.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 9.793l2.646-2.647a.5.5 0 0 1 .708 0z"
+            />
             <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z" />
           </svg>
         </span>
@@ -122,12 +173,36 @@ const LayoutTA = () => (
             <span className="arrow icofont-dotted-down ms-auto fs-5"></span>
           </button>
           <ul className="collapse sub-menu" id="taMenuDesktop">
-            <li><Link className="ms-link text-light d-block py-1 px-2" to="/workload/view">View Workload</Link></li>
-            <li><Link className="ms-link text-light d-block py-1 px-2" to="/workload/report">Report Workload</Link></li>
-            <li><Link className="ms-link text-light d-block py-1 px-2" to="/leave">Submit Leave</Link></li>
-            <li><Link className="ms-link text-light d-block py-1 px-2" to="/swap">Swap Proctor</Link></li>
-            <li><Link className="ms-link text-light d-block py-1 px-2" to="/past-tasks">Past Tasks</Link></li>
-            <li><Link className="ms-link text-light d-block py-1 px-2" to="/calendar">Calendar</Link></li>
+            <li>
+              <Link className="ms-link text-light d-block py-1 px-2" to="/workload/view">
+                View Workload
+              </Link>
+            </li>
+            <li>
+              <Link className="ms-link text-light d-block py-1 px-2" to="/workload/report">
+                Report Workload
+              </Link>
+            </li>
+            <li>
+              <Link className="ms-link text-light d-block py-1 px-2" to="/leave">
+                Submit Leave
+              </Link>
+            </li>
+            <li>
+              <Link className="ms-link text-light d-block py-1 px-2" to="/swap">
+                Swap Proctor
+              </Link>
+            </li>
+            <li>
+              <Link className="ms-link text-light d-block py-1 px-2" to="/past-tasks">
+                Past Tasks
+              </Link>
+            </li>
+            <li>
+              <Link className="ms-link text-light d-block py-1 px-2" to="/calendar">
+                Calendar
+              </Link>
+            </li>
           </ul>
         </li>
         <li className="collapsed mt-3">
@@ -143,15 +218,38 @@ const LayoutTA = () => (
             <span className="arrow icofont-dotted-down ms-auto fs-5"></span>
           </button>
           <ul className="collapse sub-menu" id="profileMenuDesktop">
-            <li><Link className="ms-link text-light d-block py-1 px-2" to="/changecontactinformation">Change Contact Info</Link></li>
-            <li><Link className="ms-link text-light d-block py-1 px-2" to="/changepassword">Change Password</Link></li>
-            <li><Link className="ms-link text-light d-block py-1 px-2" to="/notification">Notifications</Link></li>
-            <li><Link className="ms-link text-light d-block py-1 px-2" to="/viewprofile">View Profile</Link></li>
+            <li>
+              <Link className="ms-link text-light d-block py-1 px-2" to="/changecontactinformation">
+                Change Contact Info
+              </Link>
+            </li>
+            <li>
+              <Link className="ms-link text-light d-block py-1 px-2" to="/changepassword">
+                Change Password
+              </Link>
+            </li>
+            <li>
+              <Link className="ms-link text-light d-block py-1 px-2" to="/notification">
+                Notifications
+              </Link>
+            </li>
+            <li>
+              <Link className="ms-link text-light d-block py-1 px-2" to="/viewprofile">
+                View Profile
+              </Link>
+            </li>
           </ul>
         </li>
       </ul>
 
-      <button type="button" className="btn btn-link sidebar-mini-btn text-light mt-auto">
+      <button
+        type="button"
+        className="btn btn-link sidebar-mini-btn text-light mt-auto"
+        onClick={() => {
+          localStorage.removeItem("authToken");
+          window.location.href = "/login";
+        }}
+      >
         <i className="icofont-bubble-right"></i>
       </button>
     </aside>
