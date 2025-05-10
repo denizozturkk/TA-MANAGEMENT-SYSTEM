@@ -1,36 +1,16 @@
-// src/people/Admin/ReviewReportRequests-Admin.jsx
 import React, { useState, useEffect } from "react";
 import LayoutAdmin from "./Layout-Admin";
 
-function Modal({ title, children, onClose }) {
-  return (
-    <div className="modal-backdrop">
-      <div className="modal-dialog">
-        <div className="modal-content p-4">
-          <div className="modal-header">
-            <h5>{title}</h5>
-            <button className="btn-close" onClick={onClose} />
-          </div>
-          <div className="modal-body">{children}</div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 const ReviewReportRequestsAdmin = () => {
   const [requests, setRequests] = useState([]);
-  const [modalReq, setModalReq] = useState(null);
-  const [pdfFile, setPdfFile] = useState(null);
-  const [uploading, setUploading] = useState(false);
 
   const token = localStorage.getItem("authToken");
   const BASE = "http://localhost:8080/api/admin";
-  const hdrs = { "Authorization": `Bearer ${token}` };
+  const hdrs = { Authorization: `Bearer ${token}` };
 
   useEffect(() => {
     fetch(`${BASE}/report-requests`, {
-      headers: { ...hdrs, "Accept": "application/json" }
+      headers: { ...hdrs, Accept: "application/json" },
     })
       .then(res => {
         if (!res.ok) throw new Error(res.statusText);
@@ -43,46 +23,29 @@ const ReviewReportRequestsAdmin = () => {
       });
   }, []);
 
-  const openAcceptModal = req => {
-    setModalReq(req);
-    setPdfFile(null);
-  };
-
-  const closeModal = () => setModalReq(null);
-
-  const handleUploadAndAccept = () => {
-    if (!pdfFile) {
-      return alert("Please select a PDF to upload");
-    }
-    setUploading(true);
-    const form = new FormData();
-    form.append("file", pdfFile);
-
-    fetch(`${BASE}/report-requests/${modalReq.id}/accept`, {
+  const handleApprove = id => {
+    fetch(`${BASE}/report-requests/${id}/accept`, {
       method: "POST",
       headers: hdrs,
-      body: form
     })
       .then(res => {
         if (!res.ok) throw new Error(res.statusText);
         setRequests(reqs =>
           reqs.map(r =>
-            r.id === modalReq.id ? { ...r, status: "ACCEPTED" } : r
+            r.id === id ? { ...r, status: "APPROVED" } : r
           )
         );
-        closeModal();
       })
       .catch(err => {
-        console.error("Upload + accept failed:", err);
-        alert("Could not accept request");
-      })
-      .finally(() => setUploading(false));
+        console.error("Approve failed:", err);
+        alert("Could not approve request");
+      });
   };
 
   const handleReject = id => {
     fetch(`${BASE}/report-requests/${id}/reject`, {
       method: "POST",
-      headers: hdrs
+      headers: hdrs,
     })
       .then(res => {
         if (!res.ok) throw new Error(res.statusText);
@@ -100,12 +63,12 @@ const ReviewReportRequestsAdmin = () => {
 
   return (
     <div className="d-flex flex-column flex-lg-row">
-      {/* Sol Sidebar */}
+      {/* Sidebar */}
       <div className="w-100 w-lg-auto" style={{ maxWidth: "300px" }}>
         <LayoutAdmin />
       </div>
 
-      {/* Sağ Ana İçerik */}
+      {/* Main Content */}
       <div className="container-fluid py-4">
         <div className="row justify-content-center">
           <div className="col-12 col-md-10 col-lg-8">
@@ -131,7 +94,7 @@ const ReviewReportRequestsAdmin = () => {
                             <span className={
                               r.status === "PENDING"
                                 ? "badge bg-warning text-dark"
-                                : r.status === "ACCEPTED"
+                                : r.status === "APPROVED"
                                   ? "badge bg-success"
                                   : "badge bg-danger"
                             }>
@@ -143,9 +106,9 @@ const ReviewReportRequestsAdmin = () => {
                               <>
                                 <button
                                   className="btn btn-sm btn-success me-2"
-                                  onClick={() => openAcceptModal(r)}
+                                  onClick={() => handleApprove(r.id)}
                                 >
-                                  Accept
+                                  Approve
                                 </button>
                                 <button
                                   className="btn btn-sm btn-danger"
@@ -172,33 +135,6 @@ const ReviewReportRequestsAdmin = () => {
           </div>
         </div>
       </div>
-
-      {/* Modal */}
-      {modalReq && (
-        <Modal
-          title={`Send PDF to ${modalReq.requesterFirstName} ${modalReq.requesterLastName}`}
-          onClose={closeModal}
-        >
-          <div className="mb-3">
-            <label className="form-label">Upload PDF</label>
-            <input
-              type="file"
-              accept="application/pdf"
-              className="form-control"
-              onChange={e => setPdfFile(e.target.files[0])}
-            />
-          </div>
-          <div className="text-end">
-            <button
-              className="btn btn-primary"
-              onClick={handleUploadAndAccept}
-              disabled={uploading}
-            >
-              {uploading ? "Uploading…" : "Send PDF & Accept"}
-            </button>
-          </div>
-        </Modal>
-      )}
     </div>
   );
 };
