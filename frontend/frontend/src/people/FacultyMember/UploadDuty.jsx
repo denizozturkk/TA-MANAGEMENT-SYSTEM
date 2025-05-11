@@ -7,6 +7,7 @@ const UploadDutyLogPage = () => {
     "LAB",
     "GRADING",
     "RECITATION",
+    "OFFICE_HOUR",
     "PROCTORING",
   ];
 
@@ -254,8 +255,8 @@ const UploadDutyLogPage = () => {
           </div>
         </div>
 
-        {/* Classrooms (only for LAB) */}
-        {(form.taskType === "LAB" || form.taskType === "RECITATION") && (
+        {/* Classrooms */}
+        {form.taskType === "LAB" && (
           <div className="mb-4">
             <label className="form-label">Classrooms</label>
             <select
@@ -274,7 +275,7 @@ const UploadDutyLogPage = () => {
           </div>
         )}
 
-        {/* File Upload (optional) */}
+        {/* File Upload */}
         <div className="mb-4">
           <label className="form-label">Upload PDF (optional)</label>
           <input
