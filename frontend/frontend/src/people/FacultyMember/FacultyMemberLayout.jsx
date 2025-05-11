@@ -57,10 +57,10 @@ const Sidebar = () => (
               <li><Link className="ms-link text-light d-block py-2" to="/leaverequest">Review TA Leave Request</Link></li>
               {/* <li><Link className="ms-link text-light d-block py-2" to="/excelupload">Upload Semester Excel</Link></li> */}
               <li><Link className="ms-link text-light d-block py-2" to="/dutyextension">Review Duty Extension</Link></li>
-              <li><Link className="ms-link text-light d-block py-2" to="/reviewworkload">Review TA Workload</Link></li>
+              <li><Link className="ms-link text-light d-block py-2" to="/reviewworkload">Review TA Submissions</Link></li>
               <li><Link className="ms-link text-light d-block py-2" to="/defineexam">Define Exam</Link></li>
-              <li><Link className="ms-link text-light d-block py-2" to="/assignassignment">Assign Assignment</Link></li>
-              <li><Link className="ms-link text-light d-block py-2" to="/uploaddutylog">Upload Duty Log</Link></li>
+              <li><Link className="ms-link text-light d-block py-2" to="/assignassignment">Assign Proctor</Link></li>
+              <li><Link className="ms-link text-light d-block py-2" to="/uploaddutylog">Upload TA Duty </Link></li>
             </ul>
           </li>
           <li className="border-bottom">
@@ -126,10 +126,10 @@ const Sidebar = () => (
             <li><Link className="ms-link text-light d-block py-1 px-2" to="/leaverequest">Review TA Leave Request</Link></li>
             {/* <li><Link className="ms-link text-light d-block py-1 px-2" to="/excelupload">Upload Semester Excel</Link></li> */}
             <li><Link className="ms-link text-light d-block py-1 px-2" to="/dutyextension">Review Duty Extension</Link></li>
-            <li><Link className="ms-link text-light d-block py-1 px-2" to="/reviewworkload">Review TA Workload</Link></li>
+            <li><Link className="ms-link text-light d-block py-1 px-2" to="/reviewworkload">Review TA Submissions</Link></li>
             <li><Link className="ms-link text-light d-block py-1 px-2" to="/defineexam">Define Exam</Link></li>
-            <li><Link className="ms-link text-light d-block py-1 px-2" to="/assignassignment">Assign Assignment</Link></li>
-            <li><Link className="ms-link text-light d-block py-1 px-2" to="/uploaddutylog">Upload Duty Log</Link></li>
+            <li><Link className="ms-link text-light d-block py-1 px-2" to="/assignassignment">Assign Proctor</Link></li>
+            <li><Link className="ms-link text-light d-block py-1 px-2" to="/uploaddutylog">Upload TA Duty </Link></li>
           </ul>
         </li>
         <li className="collapsed mt-3">
