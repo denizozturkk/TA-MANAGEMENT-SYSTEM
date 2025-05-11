@@ -72,7 +72,7 @@ const DeanLayout = () => (
               className="ms-link text-light d-block py-3 px-3"
               to="/reschedule-exam"
             >
-              Reschedule Exam
+              Edit Exam
             </Link>
           </li>
 
@@ -194,7 +194,7 @@ const DeanLayout = () => (
             className="ms-link text-light d-block py-2 px-2"
             to="/reschedule-exam"
           >
-            Reschedule Exam
+            Edit Exam
           </Link>
         </li>
 

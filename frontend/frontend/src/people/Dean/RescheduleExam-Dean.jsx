@@ -1,73 +1,118 @@
+// src/people/Dean/RescheduleExamDean.jsx
 import React, { useState, useEffect } from "react";
 import LayoutDean from "./Layout-Dean";
 
 const RescheduleExamDean = () => {
   const [exams, setExams] = useState([]);
+  const [classrooms, setClassrooms] = useState([]);
+  const [assignedRooms, setAssignedRooms] = useState([]); // always an array
   const [loading, setLoading] = useState(true);
   const [editingExam, setEditingExam] = useState(null);
   const [form, setForm] = useState({
     examName: "",
     examType: "MIDTERM",
-    dateTime: "",
-    duration: 2,       // hours, float
+    duration: 2,
     department: "",
-    numProctors: 1,
-    rooms: ""
+    classroomId: "",
+    proctorCount: 1
   });
   const [saving, setSaving] = useState(false);
 
   const token = localStorage.getItem("authToken");
   const deanId = localStorage.getItem("userId");
 
+  // 1️⃣ Load all exams + all classrooms up front
   useEffect(() => {
-    fetch("http://localhost:8080/api/exams", {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-      .then(r => r.ok ? r.json() : Promise.reject())
-      .then(setExams)
-      .catch(() => alert("Could not load exams"))
+    Promise.all([
+      fetch("http://localhost:8080/api/exams", {
+        headers: { Authorization: `Bearer ${token}` }
+      }).then(r => r.ok ? r.json() : Promise.reject()),
+      fetch("http://localhost:8080/api/classrooms", {
+        headers: { Authorization: `Bearer ${token}` }
+      }).then(r => r.ok ? r.json() : Promise.reject())
+    ])
+      .then(([exList, roomList]) => {
+        setExams(exList);
+        setClassrooms(roomList);
+      })
+      .catch(() => alert("Could not load exams or classrooms"))
       .finally(() => setLoading(false));
   }, [token]);
 
-  const openEdit = (exam) => {
+  // 2️⃣ When opening an exam, fetch its ExamRoomDto list and merge with classrooms
+  const openEdit = async exam => {
     setEditingExam(exam);
-    setForm({
-      examName: exam.examName || "",
-      examType: exam.examType || "MIDTERM",
-      dateTime: (exam.dateTime || "").slice(0, 16),
-      duration: exam.duration ?? 2,
-      department: exam.department || "",
-      numProctors: exam.numProctors || 1,
-      rooms: (exam.examRooms || []).map(er => er.classroomId).join(",")
-    });
+    setForm(f => ({
+      ...f,
+      examName: exam.examName,
+      examType: exam.examType,
+      duration: exam.duration,
+      department: exam.department
+    }));
+
+    try {
+      const erDtos = await fetch(
+        `http://localhost:8080/api/exam-rooms/exam/${exam.id}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      ).then(r => r.json());
+
+      // build assignedRooms array with building+roomNumber
+      const merged = erDtos.map(er => {
+        const cls = classrooms.find(c => c.id === er.classroomId) || {};
+        return {
+          classroomId: er.classroomId.toString(),
+          building: cls.building || "—",
+          roomNumber: cls.roomNumber || "—",
+          numProctors: er.numProctors
+        };
+      });
+
+      setAssignedRooms(merged);
+
+      if (merged.length > 0) {
+        setForm(f => ({
+          ...f,
+          classroomId: merged[0].classroomId,
+          proctorCount: merged[0].numProctors
+        }));
+      } else {
+        setForm(f => ({
+          ...f,
+          classroomId: "",
+          proctorCount: 1
+        }));
+      }
+    } catch {
+      alert("Could not load assigned rooms");
+      setAssignedRooms([]);
+    }
   };
 
-  const closeEdit = () => {
-    setEditingExam(null);
-  };
+  const closeEdit = () => setEditingExam(null);
 
   const handleChange = e => {
     const { name, value } = e.target;
-    setForm(f => ({ ...f, [name]: value }));
+    setForm(f => ({
+      ...f,
+      [name]:
+        name === "duration" || name === "proctorCount"
+          ? parseFloat(value)
+          : value
+    }));
+  };
+
+  const adjustProctors = delta => {
+    setForm(f => ({
+      ...f,
+      proctorCount: Math.max(0, f.proctorCount + delta)
+    }));
   };
 
   const handleSubmit = async e => {
     e.preventDefault();
     setSaving(true);
     try {
-      // Reschedule date/time
-      await fetch(
-        `http://localhost:8080/api/dean/${deanId}/reschedule?examId=${editingExam.id}&newDateTime=${form.dateTime}`,
-        { method: "PUT", headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      // Update proctor count
-      await fetch(
-        `http://localhost:8080/api/dean/${deanId}/update-proctor-count?examId=${editingExam.id}&newProctorCount=${form.numProctors}`,
-        { method: "PUT", headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      // Update core exam fields (now sending duration as hours)
+      // update exam core fields
       await fetch(`http://localhost:8080/api/exams/${editingExam.id}`, {
         method: "PUT",
         headers: {
@@ -78,49 +123,50 @@ const RescheduleExamDean = () => {
           ...editingExam,
           examName: form.examName,
           examType: form.examType,
-          department: form.department,
-          duration: parseFloat(form.duration)
+          duration: form.duration,
+          department: form.department
         })
       });
 
-      // Remove old rooms
-      for (const er of editingExam.examRooms) {
-        await fetch(
-          `http://localhost:8080/api/dean/${deanId}/exam-classrooms/remove?examId=${editingExam.id}&classroomId=${er.classroomId}`,
-          { method: "DELETE", headers: { Authorization: `Bearer ${token}` } }
-        );
-      }
+      // update only the selected classroom’s numProctors
+      await fetch(
+        `http://localhost:8080/api/exam-rooms/${editingExam.id}/${form.classroomId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            examId: editingExam.id,
+            classroomId: Number(form.classroomId),
+            numProctors: form.proctorCount
+          })
+        }
+      );
 
-      // Add new rooms
-      for (const roomId of form.rooms.split(",").map(r => r.trim()).filter(Boolean)) {
-        await fetch(
-          `http://localhost:8080/api/dean/${deanId}/exam-classrooms/add?examId=${editingExam.id}&classroomId=${roomId}&proctorCount=${form.numProctors}`,
-          { method: "PUT", headers: { Authorization: `Bearer ${token}` } }
-        );
-      }
-
-      alert("Exam updated successfully");
-      // Refresh list
+      alert("Saved successfully");
+      // refresh exams
       const refreshed = await fetch("http://localhost:8080/api/exams", {
         headers: { Authorization: `Bearer ${token}` }
       }).then(r => r.json());
       setExams(refreshed);
       closeEdit();
     } catch (err) {
-      alert("Update failed: " + err.message);
+      alert("Save failed: " + err.message);
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!window.confirm(`Delete exam #${editingExam.id}?`)) return;
+    if (!window.confirm(`Delete exam "${form.examName}"?`)) return;
     try {
       await fetch(`http://localhost:8080/api/exams/${editingExam.id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` }
       });
-      setExams(prev => prev.filter(e => e.id !== editingExam.id));
+      setExams(e => e.filter(x => x.id !== editingExam.id));
       closeEdit();
     } catch (err) {
       alert("Delete failed: " + err.message);
@@ -129,57 +175,53 @@ const RescheduleExamDean = () => {
 
   return (
     <div className="d-flex flex-column flex-md-row">
-      {/* Sidebar */}
-      <div className="flex-shrink-0" style={{ width: "300px" }}>
+      <div className="flex-shrink-0" style={{ width: 300 }}>
         <LayoutDean />
       </div>
 
-      {/* Main Content */}
       <div className="container py-4 flex-grow-1">
-        <h4 className="fw-bold mb-4">Reschedule Exams</h4>
+        <h4 className="fw-bold mb-4">Edit Exams</h4>
+
         {loading ? (
           <div className="card">
-            <div className="card-body">Loading exams…</div>
+            <div className="card-body">Loading…</div>
           </div>
         ) : (
           <table className="table table-hover">
             <thead>
-            <tr>
-                <th>ID</th>
+              <tr>
                 <th>Name</th>
                 <th>Type</th>
-                <th>Date & Time</th>
                 <th>Duration</th>
-                <th>Action</th> {/* Removed Proctors & Rooms */}
-            </tr>
+                <th>Dept</th>
+                <th>Action</th>
+              </tr>
             </thead>
             <tbody>
-            {exams.map(ex => (
+              {exams.map(ex => (
                 <tr key={ex.id}>
-                <td>{ex.id}</td>
-                <td>{ex.examName}</td>
-                <td>{ex.examType}</td>
-                <td>{new Date(ex.dateTime).toLocaleString()}</td>
-                <td>{ex.duration} hr</td>
-                <td>
+                  <td>{ex.examName}</td>
+                  <td>{ex.examType}</td>
+                  <td>{ex.duration} hr</td>
+                  <td>{ex.department}</td>
+                  <td>
                     <button
-                    className="btn btn-sm btn-outline-primary"
-                    onClick={() => openEdit(ex)}
+                      className="btn btn-sm btn-outline-primary"
+                      onClick={() => openEdit(ex)}
                     >
-                    Edit
+                      Edit
                     </button>
-                </td>
+                  </td>
                 </tr>
-            ))}
+              ))}
             </tbody>
           </table>
         )}
 
-        {/* Modal */}
         {editingExam && (
           <div
             className="modal fade show d-block"
-            tabIndex="-1"
+            tabIndex={-1}
             style={{
               backgroundColor: "rgba(0,0,0,0.5)",
               position: "fixed",
@@ -192,11 +234,11 @@ const RescheduleExamDean = () => {
           >
             <div
               className="modal-dialog modal-dialog-centered"
-              style={{ maxWidth: "600px" }}
+              style={{ maxWidth: 600 }}
             >
               <form className="modal-content p-4" onSubmit={handleSubmit}>
                 <div className="modal-header">
-                  <h5 className="modal-title">Edit Exam #{editingExam.id}</h5>
+                  <h5 className="modal-title">Edit "{form.examName}"</h5>
                   <button
                     type="button"
                     className="btn-close"
@@ -204,10 +246,11 @@ const RescheduleExamDean = () => {
                     disabled={saving}
                   />
                 </div>
+
                 <div className="modal-body row gx-3">
-                  {/* Fields */}
+                  {/* Exam Name */}
                   <div className="col-md-6 mb-3">
-                    <label className="form-label">Exam Name</label>
+                    <label className="form-label">Name</label>
                     <input
                       name="examName"
                       value={form.examName}
@@ -216,8 +259,10 @@ const RescheduleExamDean = () => {
                       required
                     />
                   </div>
+
+                  {/* Type */}
                   <div className="col-md-6 mb-3">
-                    <label className="form-label">Exam Type</label>
+                    <label className="form-label">Type</label>
                     <select
                       name="examType"
                       value={form.examType}
@@ -228,22 +273,12 @@ const RescheduleExamDean = () => {
                       <option value="FINAL">Final</option>
                     </select>
                   </div>
-                  <div className="col-md-6 mb-3">
-                    <label className="form-label">Date & Time</label>
-                    <input
-                      type="datetime-local"
-                      name="dateTime"
-                      value={form.dateTime}
-                      onChange={handleChange}
-                      className="form-control"
-                      required
-                    />
-                  </div>
-                  <div className="col-md-3 mb-3">
-                    <label className="form-label">Duration (hours)</label>
+
+                  {/* Duration */}
+                  <div className="col-md-4 mb-3">
+                    <label className="form-label">Duration (hr)</label>
                     <input
                       type="number"
-                      lang="tr"
                       name="duration"
                       min="0"
                       step="0.1"
@@ -252,7 +287,9 @@ const RescheduleExamDean = () => {
                       className="form-control"
                     />
                   </div>
-                  <div className="col-md-6 mb-3">
+
+                  {/* Department */}
+                  <div className="col-md-8 mb-3">
                     <label className="form-label">Department</label>
                     <input
                       name="department"
@@ -261,7 +298,57 @@ const RescheduleExamDean = () => {
                       className="form-control"
                     />
                   </div>
+
+                  {/* Assigned Classroom */}
+                  <div className="col-md-12 mb-3">
+                    <label className="form-label">Classroom</label>
+                    <select
+                      name="classroomId"
+                      value={form.classroomId}
+                      onChange={handleChange}
+                      className="form-select"
+                      required
+                    >
+                      <option value="">— select room —</option>
+                      {assignedRooms.map(r => (
+                        <option key={r.classroomId} value={r.classroomId}>
+                          {r.building} {r.roomNumber} (proctors: {r.numProctors})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Proctor Controls */}
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label"># of Proctors</label>
+                    <div className="input-group">
+                      <button
+                        type="button"
+                        className="btn btn-outline-secondary"
+                        onClick={() => adjustProctors(-1)}
+                        disabled={saving || form.proctorCount <= 0}
+                      >
+                        –
+                      </button>
+                      <input
+                        type="number"
+                        name="proctorCount"
+                        className="form-control text-center"
+                        value={form.proctorCount}
+                        readOnly
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-outline-secondary"
+                        onClick={() => adjustProctors(1)}
+                        disabled={saving}
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
                 </div>
+
                 <div className="modal-footer">
                   <button
                     type="button"
