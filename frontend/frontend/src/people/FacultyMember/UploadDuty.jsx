@@ -140,7 +140,7 @@ const UploadDutyLogPage = () => {
           backendMessage = json.message || backendMessage;
         } catch (_) {}
         console.error("Upload error:", backendMessage);
-        return showToast(`Server error: ${backendMessage}`);
+        return showToast(`${backendMessage}`);
       }
 
       await res.json();
