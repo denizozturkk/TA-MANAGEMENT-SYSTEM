@@ -480,7 +480,6 @@ const PendingDutiesTA = () => {
                       accept="application/pdf"
                       className="form-control"
                       onChange={(e) => setFileForSubmit(e.target.files[0])}
-                      required
                     />
                   </div>
                 </div>
@@ -491,7 +490,7 @@ const PendingDutiesTA = () => {
                   <button
                     type="submit"
                     className="btn btn-primary"
-                    disabled={submitting || !fileForSubmit}
+                    disabled={submitting}
                   >
                     {submitting ? "Submitting..." : "Submit Duty"}
                   </button>
