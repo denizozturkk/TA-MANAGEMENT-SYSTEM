@@ -69,6 +69,24 @@ const CalendarTA = () => {
     setModalOpen(true);
   };
 
+const renderCenteredEvent = (arg) => {
+    return {
+        html: `
+        <div style="
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: 500;
+            color: white;
+            padding: 0 4px;
+        ">
+            ${arg.timeText}
+        </div>
+        `,
+    };
+    };
+
   // load events from server, adjust only fetched busy-hours for display
   const loadEvents = async () => {
     setLoading(true);
@@ -131,6 +149,21 @@ const CalendarTA = () => {
       setLoading(false);
     }
   };
+
+  const handleSelect = (selectionInfo) => {
+    const { start, end } = selectionInfo;
+
+    setModalInfo({
+        isEdit: false,
+        id: null,
+        title: "",
+        recurring: false,
+        start: toLocalIso(start),
+        end: toLocalIso(end),
+    });
+
+    setModalOpen(true);
+    };
 
   useEffect(() => {
     loadEvents();
@@ -197,6 +230,15 @@ const CalendarTA = () => {
     }
   };
 
+  const styleEventBox = (info) => {
+    info.el.style.backgroundColor = "#6366f1"; // Tailwind indigo-500
+    info.el.style.border = "none";
+    info.el.style.borderRadius = "10px";
+    info.el.style.color = "white";
+    info.el.style.fontWeight = "500";
+    info.el.style.textAlign = "center";
+    };
+
   const baseUrl = `http://localhost:8080/api/ta/${taId}/busy-hours`;
 
   if (loading) {
@@ -220,20 +262,29 @@ const CalendarTA = () => {
       <div className="container-fluid py-4">
         <h3 className="fw-bold mb-4 text-primary">My Calendar</h3>
         <FullCalendar
-          plugins={[timeGridPlugin, interactionPlugin]}
-          initialView="timeGridWeek"
-          timeZone="local"
-          validRange={{ start: RANGE_START, end: RANGE_END }}
-          slotMinTime="08:30:00"
-          slotMaxTime="21:30:00"
-          slotDuration="00:30:00"
-          headerToolbar={{ left: "prev", center: "title", right: "next" }}
-          dateClick={handleDateClick}
-          eventClick={handleEventClick}
-          events={events}
-          height="auto"
+        plugins={[timeGridPlugin, interactionPlugin]}
+        allDaySlot={false}
+        selectAllow={(selectInfo) => !selectInfo.allDay}
+        initialView="timeGridWeek"
+        timeZone="local"
+        validRange={{ start: RANGE_START, end: RANGE_END }}
+        slotMinTime="08:30:00"
+        slotMaxTime="21:30:00"
+        slotDuration="00:30:00"
+        headerToolbar={{ left: "prev", center: "title", right: "next" }}
+        events={events}
+        selectable={true}
+        editable={true}
+        eventResizableFromStart={true}
+        dateClick={handleDateClick}
+        eventClick={handleEventClick}
+        select={handleSelect}
+        eventContent={renderCenteredEvent}
+        eventDidMount={styleEventBox}
+        height="auto"
         />
 
+        a
         {modalOpen && (
           <div className="modal fade show" style={{ display: "block", background: "rgba(0,0,0,0.5)" }}>
             <div className="modal-dialog modal-dialog-centered">
@@ -242,10 +293,26 @@ const CalendarTA = () => {
                   <h5 className="modal-title">{modalInfo.isEdit ? "Edit" : "Add"} Busy Hour</h5>
                   <button type="button" className="btn-close" onClick={() => setModalOpen(false)} />
                 </div>
-                <div className="modal-body">
-                  <p><strong>Start:</strong> {modalInfo.start}</p>
-                  <p><strong>End:</strong> {modalInfo.end}</p>
-                </div>
+                    <div className="modal-body">
+                    <div className="mb-3">
+                        <label className="form-label">Start</label>
+                        <input
+                        type="datetime-local"
+                        className="form-control"
+                        value={modalInfo.start}
+                        onChange={(e) => setModalInfo((prev) => ({ ...prev, start: e.target.value }))}
+                        />
+                    </div>
+                    <div className="mb-3">
+                        <label className="form-label">End</label>
+                        <input
+                        type="datetime-local"
+                        className="form-control"
+                        value={modalInfo.end}
+                        onChange={(e) => setModalInfo((prev) => ({ ...prev, end: e.target.value }))}
+                        />
+                    </div>
+                    </div>
                 <div className="modal-footer">
                   {modalInfo.isEdit && (
                     <button className="btn btn-danger me-auto" onClick={deleteBusyHour}>Delete</button>
