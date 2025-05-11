@@ -46,14 +46,6 @@ const DeanLayout = () => (
           <li>
             <Link
               className="ms-link text-light d-block py-3 px-3"
-              to="/manage-course-data"
-            >
-              Manage Course Data
-            </Link>
-          </li>
-          <li>
-            <Link
-              className="ms-link text-light d-block py-3 px-3"
               to="/exam-scheduling"
             >
               Exam Scheduling
@@ -173,14 +165,6 @@ const DeanLayout = () => (
       </div>
 
       <ul className="menu-list flex-grow-1 list-unstyled">
-        <li>
-          <Link
-            className="ms-link text-light d-block py-2 px-2"
-            to="/manage-course-data"
-          >
-            Manage Course Data
-          </Link>
-        </li>
         <li>
           <Link
             className="ms-link text-light d-block py-2 px-2"
