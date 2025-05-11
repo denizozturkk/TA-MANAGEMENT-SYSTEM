@@ -282,8 +282,8 @@ const SwapProctorTA = () => {
               <thead>
                 <tr>
                 <th>From TA</th>
-                <th>Giving</th>
                 <th>Taking</th>
+                <th>Giving</th>
                 <th>Decision</th>
                 </tr>
               </thead>
