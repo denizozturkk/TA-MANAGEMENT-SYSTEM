@@ -52,10 +52,10 @@ const Sidebar = () => (
               <i className="icofont-dotted-down ms-auto"></i>
             </a>
             <ul className="collapse ms-4" id="facultyMenuMobile">
-              <li><Link className="ms-link text-light d-block py-2" to="/generateclassroomlist">Generate Classroom List</Link></li>
+              {/* <li><Link className="ms-link text-light d-block py-2" to="/generateclassroomlist">Generate Classroom List</Link></li> */}
               <li><Link className="ms-link text-light d-block py-2" to="/printstudentdistribution">Print Student Distribution</Link></li>
               <li><Link className="ms-link text-light d-block py-2" to="/leaverequest">Review TA Leave Request</Link></li>
-              <li><Link className="ms-link text-light d-block py-2" to="/excelupload">Upload Semester Excel</Link></li>
+              {/* <li><Link className="ms-link text-light d-block py-2" to="/excelupload">Upload Semester Excel</Link></li> */}
               <li><Link className="ms-link text-light d-block py-2" to="/dutyextension">Review Duty Extension</Link></li>
               <li><Link className="ms-link text-light d-block py-2" to="/reviewworkload">Review TA Workload</Link></li>
               <li><Link className="ms-link text-light d-block py-2" to="/defineexam">Define Exam</Link></li>
@@ -121,10 +121,10 @@ const Sidebar = () => (
             <span className="arrow icofont-dotted-down ms-auto fs-5"></span>
           </a>
           <ul className="collapse sub-menu" id="facultyMenuDesktop">
-            <li><Link className="ms-link text-light d-block py-1 px-2" to="/generateclassroomlist">Generate Classroom List</Link></li>
+            {/* <li><Link className="ms-link text-light d-block py-1 px-2" to="/generateclassroomlist">Generate Classroom List</Link></li> */}
             <li><Link className="ms-link text-light d-block py-1 px-2" to="/printstudentdistribution">Print Student Distribution</Link></li>
             <li><Link className="ms-link text-light d-block py-1 px-2" to="/leaverequest">Review TA Leave Request</Link></li>
-            <li><Link className="ms-link text-light d-block py-1 px-2" to="/excelupload">Upload Semester Excel</Link></li>
+            {/* <li><Link className="ms-link text-light d-block py-1 px-2" to="/excelupload">Upload Semester Excel</Link></li> */}
             <li><Link className="ms-link text-light d-block py-1 px-2" to="/dutyextension">Review Duty Extension</Link></li>
             <li><Link className="ms-link text-light d-block py-1 px-2" to="/reviewworkload">Review TA Workload</Link></li>
             <li><Link className="ms-link text-light d-block py-1 px-2" to="/defineexam">Define Exam</Link></li>
