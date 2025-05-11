@@ -69,6 +69,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/error").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/applications").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/applications/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/feedback").hasAnyAuthority(
                                 "ROLE_TA","ROLE_FACULTY","ROLE_FACULTY_MEMBER",
                                 "ROLE_COORDINATOR","ROLE_DEAN","ROLE_DEPARTMENT_STAFF")
