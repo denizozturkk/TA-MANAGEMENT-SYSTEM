@@ -65,8 +65,8 @@ public class BusyHourServiceImpl implements BusyHourService {
     public BusyHour makeBusyHour(TA ta, LocalDateTime start, LocalDateTime end) {
         return BusyHour.builder()
                 .ta(ta)
-                .startDateTime(start.minusHours(LOCAL_UTC_SHIFT_HOURS))
-                .endDateTime(end.minusHours(LOCAL_UTC_SHIFT_HOURS))
+                .startDateTime(start)
+                .endDateTime(end)
                 .build();
     }
 }

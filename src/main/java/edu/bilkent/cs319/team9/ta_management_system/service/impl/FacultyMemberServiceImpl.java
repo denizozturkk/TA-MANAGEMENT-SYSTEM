@@ -235,13 +235,15 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
         }
 
         // 4) Busy-hour conflict check
-        boolean hasConflict = busyHourService.findByTaId(taId).stream()
-                .anyMatch(bh -> bh.overlaps(startTime, endTime));
-        if (hasConflict) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    String.format("TA %d has a scheduling conflict during %s – %s", taId, startTime, endTime)
-            );
+        if ( taskType == DutyType.LAB || taskType == DutyType.RECITATION ) {
+            boolean hasConflict = busyHourService.findByTaId(taId).stream()
+                    .anyMatch(bh -> bh.overlaps(startTime, endTime));
+            if (hasConflict) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        String.format("TA %d has a scheduling conflict during %s – %s", taId, startTime, endTime)
+                );
+            }
         }
 
         boolean hasPdf = file != null && !file.isEmpty();
@@ -351,8 +353,17 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
         List<TA> candidates = taService.findAll().stream()
                 .filter(ta -> faculty.getDepartment().equals(ta.getDepartment()))
                 .filter(ta -> ta.getOfferings().contains(offering))
-                .filter(ta -> busyHourService.findByTaId(ta.getId()).stream()
-                        .noneMatch(bh -> bh.overlaps(startTime, endTime)))
+                .filter(ta -> {
+                    if ( taskType == DutyType.LAB || taskType == DutyType.RECITATION ) {
+                        // enforce no overlap
+                        return busyHourService.findByTaId(ta.getId())
+                                .stream()
+                                .noneMatch(bh -> bh.overlaps(startTime, endTime));
+                    } else {
+                        // for other types, always allow
+                        return true;
+                    }
+                })
                 .toList();
 
         if (candidates.isEmpty()) {
@@ -433,7 +444,7 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
 
         // 4) check for scheduling conflicts
         boolean hasConflict = busyHourService.findByTaId(taId).stream()
-                .anyMatch(bh -> bh.overlaps(start.minusHours(LOCAL_UTC_SHIFT_HOURS), end.minusHours(LOCAL_UTC_SHIFT_HOURS)));
+                .anyMatch(bh -> bh.overlaps(start, end));
         if (hasConflict) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,

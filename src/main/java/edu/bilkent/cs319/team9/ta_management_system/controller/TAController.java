@@ -151,10 +151,6 @@ public class TAController {
             return ResponseEntity.badRequest().build();
         }
 
-        Exam ownExam = ownAssignment.getExam();
-        LocalDateTime targetStart = ownExam.getDateTime();
-        LocalDateTime targetEnd = targetStart.plusMinutes(Math.round(ownExam.getDuration() * 60));
-
         TA requestingTA = taService.findById(taId);
         if (requestingTA == null || requestingTA.getDepartment() == null) {
             return ResponseEntity.badRequest().build();
@@ -170,8 +166,8 @@ public class TAController {
                     Exam exam = a.getExam();
                     if (exam == null) return false;
 
-                    LocalDateTime start = exam.getDateTime();
-                    LocalDateTime end = start.plusMinutes(Math.round(exam.getDuration() * 60));
+                    LocalDateTime start = exam.getDateTime().minusHours(3);
+                    LocalDateTime end = start.plusMinutes(Math.round(exam.getDuration() * 60)).minusHours(3);
 
                     // is requesting TA available during this assignment's exam time?
                     return busyHourService.isTAAvailable(taId, start, end);
