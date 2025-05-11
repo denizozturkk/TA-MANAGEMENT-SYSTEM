@@ -2,6 +2,7 @@ package edu.bilkent.cs319.team9.ta_management_system.service.impl;
 
 import edu.bilkent.cs319.team9.ta_management_system.exception.NotFoundException;
 import edu.bilkent.cs319.team9.ta_management_system.model.*;
+import edu.bilkent.cs319.team9.ta_management_system.repository.BusyHourRepository;
 import edu.bilkent.cs319.team9.ta_management_system.repository.SwapRequestRepository;
 import edu.bilkent.cs319.team9.ta_management_system.service.*;
 import jakarta.persistence.EntityNotFoundException;
@@ -19,14 +20,16 @@ import java.util.stream.Collectors;
 @Transactional
 public class SwapRequestServiceImpl implements SwapRequestService {
     private final SwapRequestRepository swapRequestRepository;
+    private final BusyHourRepository busyHourRepository;
     private final ProctorAssignmentService paService;
     private final BusyHourService busyHourService;
     private final TAService taService;
     private final NotificationService notificationService;
     private final JavaMailSender mailSender;
 
-    public SwapRequestServiceImpl(SwapRequestRepository swapRequestRepository, ProctorAssignmentService paService, BusyHourService busyHourService, TAService taService, NotificationService notificationService, JavaMailSender mailSender) {
+    public SwapRequestServiceImpl(SwapRequestRepository swapRequestRepository, BusyHourRepository busyHourRepository, ProctorAssignmentService paService, BusyHourService busyHourService, TAService taService, NotificationService notificationService, JavaMailSender mailSender) {
         this.swapRequestRepository = swapRequestRepository;
+        this.busyHourRepository = busyHourRepository;
         this.paService = paService;
         this.busyHourService = busyHourService;
         this.taService = taService;
@@ -142,42 +145,58 @@ public class SwapRequestServiceImpl implements SwapRequestService {
 
         req.setStatus(newStatus);
 
-        //  Extract TAs
+        // Extract TAs
         TA requester = req.getTa();
-        TA target    = req.getTargetProctorAssignment().getAssignedTA();
+        TA target = req.getTargetProctorAssignment().getAssignedTA();
 
         String title;
         String bodyRequester;
         String bodyTarget;
+
         if (newStatus == SwapStatus.APPROVED) {
-            // perform the swap
+            // Perform the swap
             ProctorAssignment aAssign = req.getProctorAssignment();
             ProctorAssignment bAssign = req.getTargetProctorAssignment();
             TA a = aAssign.getAssignedTA();
             TA b = bAssign.getAssignedTA();
 
+            // Swap Proctor Assignments
             aAssign.setAssignedTA(b);
             bAssign.setAssignedTA(a);
             paService.update(aAssign.getId(), aAssign);
             paService.update(bAssign.getId(), bAssign);
-            // you may also want to adjust TA workloads here
 
-             title = "Swap Request Approved";
-             bodyRequester = String.format(
+            // Also update BusyHours accordingly
+            LocalDateTime examStart = aAssign.getExam().getDateTime();
+            float durationHours = aAssign.getExam().getDuration();
+            LocalDateTime examEnd = examStart.plusMinutes((long)(durationHours * 60));
+
+            List<BusyHour> aBusyHours = busyHourRepository.findByTAAndTimeRange(a.getId(), examStart, examEnd);
+            List<BusyHour> bBusyHours = busyHourRepository.findByTAAndTimeRange(b.getId(), examStart, examEnd);
+
+            for (BusyHour bh : aBusyHours) {
+                bh.setTa(b);
+                busyHourRepository.save(bh);
+            }
+            for (BusyHour bh : bBusyHours) {
+                bh.setTa(a);
+                busyHourRepository.save(bh);
+            }
+
+            // Notify both parties
+            title = "Swap Request Approved";
+            bodyRequester = String.format(
                     "Your swap request (ID %d) has been approved. Your assignment will be swapped with TA %s.",
                     swapRequestId, target.getFirstName());
-             bodyTarget = String.format(
+            bodyTarget = String.format(
                     "Your swap request (ID %d) has been approved. You will swap assignment with TA %s.",
                     swapRequestId, requester.getFirstName());
 
-            // 4a) Send in-app notifications only
-            notificationService.notifyUser(
-                    requester.getId(), requester.getEmail(), title, bodyRequester);
-            notificationService.notifyUser(
-                    target.getId(), target.getEmail(), title, bodyTarget);
-        }
-        else
-        {
+            notificationService.notifyUser(requester.getId(), requester.getEmail(), title, bodyRequester);
+            notificationService.notifyUser(target.getId(), target.getEmail(), title, bodyTarget);
+
+        } else {
+            // Rejection handling
             title = "Swap Request Rejected";
             bodyRequester = String.format(
                     "Your swap request (ID %d) has been rejected. Please review and try again if needed.",
@@ -186,23 +205,18 @@ public class SwapRequestServiceImpl implements SwapRequestService {
                     "You have declined swap request (ID %d) from TA %s.",
                     swapRequestId, requester.getFirstName());
 
-            // 4b) Send in-app notifications
-            notificationService.notifyUser(
-                    requester.getId(), requester.getEmail(), title, bodyRequester);
-            notificationService.notifyUser(
-                    target.getId(), target.getEmail(), title, bodyTarget);
+            // In-app notifications
+            notificationService.notifyUser(requester.getId(), requester.getEmail(), title, bodyRequester);
+            notificationService.notifyUser(target.getId(), target.getEmail(), title, bodyTarget);
 
-            // 4c) Send rejection emails
+            // Email notification to requester
             SimpleMailMessage mail = new SimpleMailMessage();
             mail.setTo(requester.getEmail());
             mail.setSubject("Swap Request Rejected (ID " + swapRequestId + ")");
-            mail.setText(
-                    "Hello " + requester.getFirstName() + ",\n\n" +
-                            "Your swap request (ID " + swapRequestId + ") has been rejected.\n" +
-                            "Please log into the system for details or to submit a new request.\n\n" +
-                            "Best regards,\n" +
-                            "Examination Office"
-            );
+            mail.setText("Hello " + requester.getFirstName() + ",\n\n" +
+                    "Your swap request (ID " + swapRequestId + ") has been rejected.\n" +
+                    "Please log into the system for details or to submit a new request.\n\n" +
+                    "Best regards,\nExamination Office");
             mailSender.send(mail);
         }
 
