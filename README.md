@@ -71,7 +71,11 @@ This TA Management System is designed to streamline workload distribution and pr
 
 ## Import & Export Functionality
 - Only **Excel (.xlsx)** files are supported for semester data imports.
-- Faculty members can review and verify uploaded data before final submission.
+- Coordinators can review and verify uploaded data before final submission.
+- Coordinators must first upload the Facult Member excel sheet and then Offering excel sheet with these faculty members' name.
+- After importing these, Coordinator is able to upload TA and Student excel files by selecting proper offerings.
+- In any time, the Coordinator is able to upload Course excel file.
+- This excel import system provides easy data implementation to the system.
 
 ## System Constraints
 - Runs on **Linux servers with Apache2**.
