@@ -91,39 +91,33 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
         }
 
     }
-
-
     @Override
     public LeaveRequest approveLeaveRequest(Long requestId) {
-        // 1) Load the request
         LeaveRequest req = leaveRequestRepository.findById(requestId)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "No such leave request"
                 ));
 
-        // 2) (Optional) Authorization check here…
-
-        // 3) Update status
         req.setStatus(LeaveStatus.ACCEPTED);
 
-        // 3a) Detach & remember the ProctorAssignment so we can delete it
+        // Cache related entities BEFORE removing them
         ProctorAssignment pa = req.getProctorAssignment();
-        req.setProctorAssignment(null);
+        Exam exam = pa != null ? pa.getExam() : null;
+        TA ta = req.getTa(); // Save for notifications
+        String examName = exam != null ? exam.getExamName() : "an exam";
 
-        // 3b) Persist the leave with no more PA reference
+        // Detach ProctorAssignment before persisting
+        req.setProctorAssignment(null);
         LeaveRequest saved = leaveRequestRepository.save(req);
 
-        // 3c) Now delete the orphaned ProctorAssignment
-        if (pa != null) {
+        // Delete ProctorAssignment and BusyHour if present
+        if (pa != null && exam != null) {
             paRepo.deleteById(pa.getId());
 
-            TA ta = saved.getTa();
-            LocalDateTime examStart = pa.getExam().getDateTime();
-            LocalDateTime examEnd   = examStart.plusMinutes((long)(pa.getExam().getDuration() * 60));
-
-            // apply same manual UTC shift you used when creating it
+            LocalDateTime examStart = exam.getDateTime();
+            LocalDateTime examEnd = examStart.plusMinutes((long) (exam.getDuration() * 60));
             LocalDateTime shiftedStart = examStart.minusHours(LOCAL_UTC_SHIFT_HOURS);
-            LocalDateTime shiftedEnd   = examEnd.minusHours(LOCAL_UTC_SHIFT_HOURS);
+            LocalDateTime shiftedEnd = examEnd.minusHours(LOCAL_UTC_SHIFT_HOURS);
 
             busyHourService.findByTaId(ta.getId()).stream()
                     .filter(bh -> bh.getStartDateTime().equals(shiftedStart)
@@ -132,22 +126,17 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
                     .ifPresent(bh -> busyHourService.delete(bh.getId()));
         }
 
-        // 4) Send in-app notification to the TA
-        TA ta = saved.getTa();
-        String title = "Leave Request Approved";
-        String body = String.format(
-                "Your leave request for %s has been approved.",
-                saved.getProctorAssignment().getExam().getExamName()
-        );
+        // ✅ Now it's safe to send notification
         notificationService.notifyUser(
                 ta.getId(),
                 ta.getEmail(),
-                title,
-                body
+                "Leave Request Approved",
+                String.format("Your leave request for %s has been approved.", examName)
         );
 
         return saved;
     }
+
 
     @Override
     public LeaveRequest rejectLeaveRequest(Long requestId) {
