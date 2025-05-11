@@ -209,14 +209,12 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
                                  Long duration,
                                  DutyStatus status,
                                  Set<Classroom> classrooms) {
-        // 1) Verify faculty exists
         FacultyMember faculty = facultyMemberRepository.findById(facultyId)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
                         "FacultyMember not found with id " + facultyId
                 ));
 
-        // 2) Verify TA exists
         TA ta = taService.findById(taId);
         if (ta == null) {
             throw new ResponseStatusException(
@@ -225,8 +223,6 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
             );
         }
 
-
-        // 3) Department check
         if (!Objects.equals(faculty.getDepartment(), ta.getDepartment())) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
@@ -234,8 +230,7 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
             );
         }
 
-        // 4) Busy-hour conflict check
-        if ( taskType == DutyType.LAB || taskType == DutyType.RECITATION ) {
+        if (taskType == DutyType.LAB || taskType == DutyType.RECITATION) {
             boolean hasConflict = busyHourService.findByTaId(taId).stream()
                     .anyMatch(bh -> bh.overlaps(startTime, endTime));
             if (hasConflict) {
@@ -247,17 +242,14 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
         }
 
         boolean hasPdf = file != null && !file.isEmpty();
-        if (hasPdf) {
-            if (!"application/pdf".equalsIgnoreCase(file.getContentType())) {
-                throw new ResponseStatusException(
-                        HttpStatus.UNSUPPORTED_MEDIA_TYPE,
-                        "Only PDF files are allowed"
-                );
-            }
+        if (hasPdf && !"application/pdf".equalsIgnoreCase(file.getContentType())) {
+            throw new ResponseStatusException(
+                    HttpStatus.UNSUPPORTED_MEDIA_TYPE,
+                    "Only PDF files are allowed"
+            );
         }
 
         try {
-            // 6) Build and save the DutyLog
             DutyLog.DutyLogBuilder builder = DutyLog.builder()
                     .faculty(faculty)
                     .ta(ta)
@@ -272,30 +264,27 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
                     .classrooms(classrooms);
 
             if (hasPdf) {
-                builder
-                        .fileName(file.getOriginalFilename())
+                builder.fileName(file.getOriginalFilename())
                         .contentType(file.getContentType())
                         .data(file.getBytes());
             }
+
             DutyLog dutyLog = dutyLogRepository.save(builder.build());
 
-            // 5) In-app notification
-            String notificationTitle = "Duty Assigned";
-            String notificationBody = String.format(
-                    "You’ve been assigned a %s duty starting at %s, with deadline %s.",
-                    taskType, startTime, endTime
-            );
+            if (taskType == DutyType.LAB || taskType == DutyType.RECITATION) {
+                busyHourService.create(busyHourService.makeBusyHour(ta, startTime, endTime));
+            }
+
             notificationService.notifyUser(
                     ta.getId(),
                     ta.getEmail(),
-                    notificationTitle,
-                    notificationBody
+                    "Duty Assigned",
+                    String.format("You’ve been assigned a %s duty starting at %s, with deadline %s.",
+                            taskType, startTime, endTime)
             );
 
-            // 6) Email with attachment
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
             helper.setTo(ta.getEmail());
             helper.setSubject("New Duty Assigned: " + taskType);
             StringBuilder body = new StringBuilder();
@@ -308,12 +297,9 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
                     .append("Best regards,\n")
                     .append(faculty.getFirstName());
             helper.setText(body.toString(), false);
-            if (hasPdf){
-                helper.addAttachment(
-                        file.getOriginalFilename(),
-                        new ByteArrayResource(file.getBytes()),
-                        file.getContentType()
-                );
+
+            if (hasPdf) {
+                helper.addAttachment(file.getOriginalFilename(), new ByteArrayResource(file.getBytes()), file.getContentType());
             }
 
             mailSender.send(message);
@@ -327,7 +313,6 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
                     e
             );
         }
-
     }
 
     @Override
@@ -342,25 +327,22 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
             Long duration,
             DutyStatus status,
             Set<Classroom> classrooms) {
-        // 1) find faculty
+
         FacultyMember faculty = facultyMemberRepository.findById(facultyId)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
                         "FacultyMember not found with id " + facultyId
                 ));
 
-        // 3) pick the first available TA in the same department with the lowest workload
         List<TA> candidates = taService.findAll().stream()
                 .filter(ta -> faculty.getDepartment().equals(ta.getDepartment()))
                 .filter(ta -> ta.getOfferings().contains(offering))
                 .filter(ta -> {
-                    if ( taskType == DutyType.LAB || taskType == DutyType.RECITATION ) {
-                        // enforce no overlap
+                    if (taskType == DutyType.LAB || taskType == DutyType.RECITATION) {
                         return busyHourService.findByTaId(ta.getId())
                                 .stream()
                                 .noneMatch(bh -> bh.overlaps(startTime, endTime));
                     } else {
-                        // for other types, always allow
                         return true;
                     }
                 })
@@ -373,28 +355,21 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
             );
         }
 
-        // 2) find minimum workload
         Float minWorkload = candidates.stream()
                 .map(TA::getTotalWorkload)
                 .min(Float::compareTo)
                 .orElse(0f);
 
-        // 3) select all with that workload
         List<TA> leastLoaded = candidates.stream()
                 .filter(ta -> Objects.equals(ta.getTotalWorkload(), minWorkload))
                 .toList();
 
-        // 4) within those, exclude any with adjacent‐day busy hours
         List<TA> preferred = leastLoaded.stream()
                 .filter(ta -> !hasAdjacentBusyHourConflict(ta, startTime, endTime))
                 .toList();
 
-        // final pick
-        TA assigned = !preferred.isEmpty()
-                ? preferred.get(0)
-                : leastLoaded.get(0);
+        TA assigned = !preferred.isEmpty() ? preferred.get(0) : leastLoaded.get(0);
 
-        // 5) delegate to the existing uploadDutyLog
         return uploadDutyLog(
                 facultyId,
                 assigned.getId(),
@@ -410,12 +385,6 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
         );
     }
 
-    /**
-     * Manually assigns a single TA to the first available proctor slot for the given exam.
-     * @param examId  the ID of the exam to proctor
-     * @param taId    the ID of the TA to assign
-     * @return        the created ProctorAssignment
-     */
     private ProctorAssignment assignManually(Long examId, long taId) {
         // 1) load exam and its rooms
         Exam exam = examService.findById(examId);
