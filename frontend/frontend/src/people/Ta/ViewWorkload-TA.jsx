@@ -74,7 +74,7 @@ const ViewWorkloadTA = () => {
       <div className="container-fluid py-4">
         <div className="card shadow-sm border-0 mb-4">
           <div className="card-body">
-            <h4 className="fw-bold mb-4 text-primary">Approved Duties</h4>
+            <h4 className="fw-bold mb-4 text-primary">Completed Duties</h4>
             {loading ? (
               <p>Loading approved duties…</p>
             ) : (

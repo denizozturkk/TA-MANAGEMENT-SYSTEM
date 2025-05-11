@@ -273,10 +273,10 @@ const PendingDutiesTA = () => {
                 <th>Deadline</th>
                 <th>Type</th>
                 <th>Workload</th>
-                <th>Status</th>
-                <th>Proof</th>
-                <th>Extension</th>
-                <th>Action</th>
+                <th>Completion Status</th>
+                <th>Prompt File</th>
+                <th>Extension Request Status</th>
+                <th>Complete Duty</th>
                 </tr>
             </thead>
             <tbody>
@@ -355,8 +355,8 @@ const PendingDutiesTA = () => {
                     <th>Exam</th>
                     <th>Date & Time</th>
                     <th>Classroom</th>
-                    <th>Leave</th>
-                    <th>Action</th>
+                    <th>Leave Request Status</th>
+                    <th>Complete Proctoring</th>
                 </tr>
                 </thead>
                 <tbody>

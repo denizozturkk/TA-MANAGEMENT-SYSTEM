@@ -46,7 +46,7 @@ const UploadDutyLogPage = () => {
 
   // load offerings
   useEffect(() => {
-    if (!facultyId) return;               // don’t fetch until we have a real ID
+    if (!facultyId) return;
     fetch(`${BASE}/offerings/faculty/${facultyId}`, { headers: jsonHeaders })
       .then(res => {
         if (!res.ok) throw new Error(res.statusText);
@@ -73,10 +73,7 @@ const UploadDutyLogPage = () => {
       setAvailableTAs([]);
       return;
     }
-    fetch(
-      `${BASE}/ta/by-offering/${form.offeringId}`,
-      { headers: jsonHeaders }
-    )
+    fetch(`${BASE}/ta/by-offering/${form.offeringId}`, { headers: jsonHeaders })
       .then(res => {
         if (!res.ok) throw new Error(res.statusText);
         return res.json();
@@ -116,8 +113,6 @@ const UploadDutyLogPage = () => {
       return alert("❌ Please enter a valid workload in hours.");
     }
 
-    // —————————————
-    // UPDATED: round duration to whole hours (Java Long)
     const start = new Date(form.startTime);
     const end = new Date(form.endTime);
     const rawHours = (end - start) / (1000 * 60 * 60);
@@ -125,7 +120,6 @@ const UploadDutyLogPage = () => {
     if (isNaN(duration) || duration <= 0) {
       return alert("❌ Please enter valid start and end times.");
     }
-    // —————————————
 
     const fd = new FormData();
     if (form.file) {
@@ -138,7 +132,6 @@ const UploadDutyLogPage = () => {
     fd.append("endTime", form.endTime);
     fd.append("duration", duration);
     fd.append("status", form.status);
-
     form.classroomIds.forEach(id => fd.append("classroomIds", id));
 
     const url =
@@ -152,11 +145,19 @@ const UploadDutyLogPage = () => {
         headers: { Authorization: `Bearer ${token}` },
         body: fd,
       });
+
       if (!res.ok) {
-        const err = await res.text();
-        console.error("Upload error:", err);
-        throw new Error(res.statusText);
+        let backendMessage = await res.text();
+        try {
+          const json = JSON.parse(backendMessage);
+          backendMessage = json.message || backendMessage;
+        } catch (_) {
+          // plain text olarak bırak
+        }
+        console.error("Upload error:", backendMessage);
+        return alert(`❌ Server error: ${backendMessage}`);
       }
+
       await res.json();
       alert("✅ Duty log uploaded successfully");
       setForm(f => ({
@@ -254,7 +255,7 @@ const UploadDutyLogPage = () => {
           </div>
         </div>
 
-        {/* Classrooms (only for LAB) */}
+        {/* Classrooms */}
         {form.taskType === "LAB" && (
           <div className="mb-4">
             <label className="form-label">Classrooms</label>
@@ -274,7 +275,7 @@ const UploadDutyLogPage = () => {
           </div>
         )}
 
-        {/* File Upload (optional) */}
+        {/* File Upload */}
         <div className="mb-4">
           <label className="form-label">Upload PDF (optional)</label>
           <input

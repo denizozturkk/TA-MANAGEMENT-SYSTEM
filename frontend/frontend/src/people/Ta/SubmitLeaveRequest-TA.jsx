@@ -120,7 +120,7 @@ const SubmitLeaveRequestTA = () => {
                 <th>Exam</th>
                 <th>Date & Time</th>
                 <th>Classroom</th>
-                <th>Leave Status</th>
+                <th>Leave Request Status</th>
                 <th>Action</th>
             </tr>
             </thead>
