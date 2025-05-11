@@ -136,7 +136,7 @@ const RescheduleExamDean = () => {
 
       {/* Main Content */}
       <div className="container py-4 flex-grow-1">
-        <h4 className="fw-bold mb-4">Reschedule & Edit Exams</h4>
+        <h4 className="fw-bold mb-4">Reschedule Exams</h4>
         {loading ? (
           <div className="card">
             <div className="card-body">Loading exams…</div>
@@ -144,44 +144,33 @@ const RescheduleExamDean = () => {
         ) : (
           <table className="table table-hover">
             <thead>
-              <tr>
+            <tr>
                 <th>ID</th>
                 <th>Name</th>
                 <th>Type</th>
                 <th>Date & Time</th>
                 <th>Duration</th>
-                <th>Proctors</th>
-                <th>Rooms</th>
-                <th>Action</th>
-              </tr>
+                <th>Action</th> {/* Removed Proctors & Rooms */}
+            </tr>
             </thead>
             <tbody>
-              {exams.map(ex => (
+            {exams.map(ex => (
                 <tr key={ex.id}>
-                  <td>{ex.id}</td>
-                  <td>{ex.examName}</td>
-                  <td>{ex.examType}</td>
-                  <td>{new Date(ex.dateTime).toLocaleString()}</td>
-                  <td>{ex.duration} hr</td>
-                  <td>{ex.numProctors}</td>
-                  <td>{ex.examRooms.map(er => er.roomName).join(", ")}</td>
-                  <td>
+                <td>{ex.id}</td>
+                <td>{ex.examName}</td>
+                <td>{ex.examType}</td>
+                <td>{new Date(ex.dateTime).toLocaleString()}</td>
+                <td>{ex.duration} hr</td>
+                <td>
                     <button
-                      className="btn btn-sm btn-outline-primary"
-                      onClick={() => openEdit(ex)}
+                    className="btn btn-sm btn-outline-primary"
+                    onClick={() => openEdit(ex)}
                     >
-                      Edit
+                    Edit
                     </button>
-                  </td>
+                </td>
                 </tr>
-              ))}
-              {exams.length === 0 && (
-                <tr>
-                  <td colSpan="8" className="text-center text-muted">
-                    No exams found.
-                  </td>
-                </tr>
-              )}
+            ))}
             </tbody>
           </table>
         )}
@@ -263,31 +252,11 @@ const RescheduleExamDean = () => {
                       className="form-control"
                     />
                   </div>
-                  <div className="col-md-3 mb-3">
-                    <label className="form-label">Proctors</label>
-                    <input
-                      type="number"
-                      name="numProctors"
-                      min="1"
-                      value={form.numProctors}
-                      onChange={handleChange}
-                      className="form-control"
-                    />
-                  </div>
                   <div className="col-md-6 mb-3">
                     <label className="form-label">Department</label>
                     <input
                       name="department"
                       value={form.department}
-                      onChange={handleChange}
-                      className="form-control"
-                    />
-                  </div>
-                  <div className="col-md-6 mb-3">
-                    <label className="form-label">Room IDs (e.g. 1,2)</label>
-                    <input
-                      name="rooms"
-                      value={form.rooms}
                       onChange={handleChange}
                       className="form-control"
                     />
