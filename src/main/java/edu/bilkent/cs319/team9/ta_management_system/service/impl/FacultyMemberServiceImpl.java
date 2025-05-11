@@ -136,8 +136,8 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
         TA ta = saved.getTa();
         String title = "Leave Request Approved";
         String body = String.format(
-                "Your leave request (ID %d) has been approved.",
-                saved.getId()
+                "Your leave request for %s has been approved.",
+                saved.getProctorAssignment().getExam().getExamName()
         );
         notificationService.notifyUser(
                 ta.getId(),
@@ -165,8 +165,8 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
         TA ta = saved.getTa();
         String notifTitle = "Leave Request Rejected";
         String notifBody  = String.format(
-                "Your leave request (ID %d) has been rejected.",
-                saved.getId()
+                "Your leave request for %s has been rejected.",
+                saved.getProctorAssignment().getExam().getExamName()
         );
         notificationService.notifyUser(
                 ta.getId(),
@@ -282,8 +282,8 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
             // 5) In-app notification
             String notificationTitle = "Duty Assigned";
             String notificationBody = String.format(
-                    "You’ve been assigned a %s duty starting at %s for %d minutes.",
-                    taskType, startTime, duration
+                    "You’ve been assigned a %s duty starting at %s, with deadline %s.",
+                    taskType, startTime, endTime
             );
             notificationService.notifyUser(
                     ta.getId(),
@@ -680,8 +680,8 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
                 ? "Duty Approved"
                 : "Duty Rejected";
         String body = (status == DutyStatus.APPROVED)
-                ? String.format("Your duty (ID %d) has been approved.", dutyLogId)
-                : String.format("Your duty (ID %d) has been rejected. Please review and resubmit.", dutyLogId);
+                ? String.format("Your %s duty has been approved.", dutyLog.getTaskType())
+                : String.format("Your %s duty has been rejected. Please contact your instructor.", dutyLog.getTaskType());
 
         notificationService.notifyUser(
                 ta.getId(),
@@ -697,9 +697,9 @@ public class FacultyMemberServiceImpl implements FacultyMemberService {
             mail.setSubject("Duty Submission Rejected");
             mail.setText(
                     "Hello " + ta.getFirstName() + ",\n\n" +
-                            "Your submission for duty ID " + dutyLogId + " has been rejected by "
+                            "Your submission for " + dutyLog.getTaskType() + " with duty ID " + dutyLogId + " has been rejected by "
                             + faculty.getFirstName() + ".\n" +
-                            "Please check the system for feedback and resubmit at your earliest convenience.\n\n" +
+                            "Please contact your instructor at your earliest convenience.\n\n" +
                             "Best regards,\n" +
                             faculty.getFirstName()
             );
