@@ -25,12 +25,15 @@ const UserHeader = () => {
   const [notifications, setNotifications] = useState([]);
 
   useEffect(() => {
-    if (!token) return;
-    fetch("/api/notifications", { headers: { Authorization: `Bearer ${token}` } })
-      .then(res => (res.ok ? res.json() : []))
-      .then(data => setNotifications(Array.isArray(data) ? data : []))
-      .catch(() => setNotifications([]));
-  }, [token]);
+  if (!token) return;
+
+  fetch("http://localhost:8080/api/notifications/myBox", {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+    .then((res) => (res.ok ? res.json() : []))
+    .then((data) => setNotifications(Array.isArray(data) ? data : []))
+    .catch(() => setNotifications([]));
+}, [token]);
 
   const handleLogout = () => {
     localStorage.removeItem("authToken");
@@ -70,14 +73,30 @@ const UserHeader = () => {
         {/* Controls (notifications + user) */}
         <div className="d-flex align-items-center">
           {/* Notification */}
-          <Link to="/notification" className="text-dark position-relative me-3 fs-4">
-            <i className="icofont-alarm"></i>
-            {notifications.length > 0 && (
-              <span className="position-absolute top-0 start-100 translate-middle badge bg-danger rounded-pill">
-                {notifications.length}
-              </span>
-            )}
-          </Link>
+          {/* Notification Icon */}
+<Link to="/notification" className="text-dark position-relative me-3" style={{ fontSize: "1.5rem" }}>
+  <i
+    className={`icofont-alarm`}
+    style={{
+      color: notifications.some((n) => !n.read) ? "#2a2d62" : "#6c757d", // aktifse lacivert, değilse gri
+      fontSize: "1.4rem"
+    }}
+  ></i>
+  {notifications.filter((n) => !n.read).length > 0 && (
+    <span
+      className="position-absolute top-0 start-100 translate-middle badge rounded-pill"
+      style={{
+        backgroundColor: "#2a2d62",
+        fontSize: "0.65rem",
+        padding: "0.25em 0.4em"
+      }}
+    >
+      {notifications.filter((n) => !n.read).length}
+    </span>
+  )}
+</Link>
+
+
 
           {/* User dropdown + profile info always shown */}
           <div className="dropdown d-flex align-items-center">
