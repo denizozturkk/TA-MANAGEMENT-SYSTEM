@@ -29,7 +29,7 @@ const CalendarTA = () => {
   // adjust fetched busy-hours by +3 hours for display
   const adjustPlusThree = (dateTimeStr) => {
     const date = new Date(dateTimeStr);
-    date.setHours(date.getHours() + 3);
+    date.setHours(date.getHours());
     return date.toISOString();
   };
 
@@ -144,9 +144,17 @@ const CalendarTA = () => {
       return;
     }
     // convert local ISO to full UTC ISO
-    const startUtc = new Date(start).toISOString();
-    const endUtc = new Date(end).toISOString();
-    const payload = { startDateTime: startUtc, endDateTime: endUtc, taId: Number(taId) };
+    const startDate = new Date(start);
+    startDate.setHours(startDate.getHours() + 3);
+
+    const endDate = new Date(end);
+    endDate.setHours(endDate.getHours() + 3);
+
+    const payload = {
+    startDateTime: startDate.toISOString(),
+    endDateTime: endDate.toISOString(),
+    taId: Number(taId)
+    };
 
     const baseUrl = `http://localhost:8080/api/ta/${taId}/busy-hours`;
     const url = isEdit ? `${baseUrl}/${id}` : baseUrl;
