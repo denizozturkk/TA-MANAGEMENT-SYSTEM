@@ -9,6 +9,7 @@ const AssignDutyPage = () => {
   const [selectedExamId, setSelectedExamId] = useState("");
   const [selectedTA, setSelectedTA] = useState("");
   const [facultyId, setFacultyId] = useState(null);
+  const [toast, setToast] = useState(null);
 
   const BASE = "http://localhost:8080/api";
   const token = localStorage.getItem("authToken");
@@ -17,7 +18,11 @@ const AssignDutyPage = () => {
     Authorization: `Bearer ${token}`,
   };
 
-  // 1) get facultyId
+  const showToast = (message, type = "error") => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 4000);
+  };
+
   useEffect(() => {
     if (!token) return;
     fetch(`${BASE}/users/me`, { headers })
@@ -26,7 +31,6 @@ const AssignDutyPage = () => {
       .catch(console.error);
   }, [token]);
 
-  // 2) load this faculty’s exams
   useEffect(() => {
     if (!facultyId) return;
     fetch(`${BASE}/faculty-members/${facultyId}/exams`, { headers })
@@ -35,7 +39,6 @@ const AssignDutyPage = () => {
       .catch(console.error);
   }, [facultyId]);
 
-  // 3) load all TAs
   useEffect(() => {
     if (!token) return;
     fetch(`${BASE}/ta`, { headers })
@@ -44,22 +47,17 @@ const AssignDutyPage = () => {
       .catch(console.error);
   }, [token]);
 
-  // helper to load assignments for the selected exam
   const loadAssignments = useCallback(() => {
     if (!selectedExamId) {
       setAssignments([]);
       return;
     }
-    fetch(
-      `${BASE}/proctor-assignments/exam/${selectedExamId}`,
-      { headers }
-    )
+    fetch(`${BASE}/proctor-assignments/exam/${selectedExamId}`, { headers })
       .then(r => r.json())
       .then(data => setAssignments(Array.isArray(data) ? data : []))
       .catch(console.error);
   }, [selectedExamId]);
 
-  // whenever exam changes, reload assignments & reset selects
   useEffect(() => {
     loadAssignments();
     setSelectedTA("");
@@ -67,38 +65,45 @@ const AssignDutyPage = () => {
 
   const handleExamChange = e => setSelectedExamId(e.target.value);
 
-  // Manual Assignment
   const handleManualAssign = () => {
     if (!facultyId || !selectedExamId || !selectedTA) {
-      return alert("Please select exam and TA.");
+      return showToast("Please select exam and TA.");
     }
-    const url =
-      `${BASE}/faculty-members/${facultyId}/exams/${selectedExamId}/proctor` +
-      `?mode=MANUAL_ASSIGNMENT&taId=${selectedTA}`;
+    const url = `${BASE}/faculty-members/${facultyId}/exams/${selectedExamId}/proctor?mode=MANUAL_ASSIGNMENT&taId=${selectedTA}`;
 
     fetch(url, { method: "POST", headers })
-      .then(r => {
-        if (!r.ok) throw new Error();
-        alert("Assigned successfully");
+      .then(async r => {
+        if (!r.ok) {
+          const text = await r.text();
+          let msg = "Failed to assign TA.";
+          if (text.includes("No such TA")) msg = "The selected TA does not exist.";
+          else if (text.includes("not in department")) msg = "The selected TA is from a different department.";
+          else if (text.includes("scheduling conflict")) msg = "TA has a scheduling conflict during the exam time.";
+          else if (text.includes("proctor slots are already filled")) msg = "All proctor slots for this exam are already filled.";
+          throw new Error(msg);
+        }
+        showToast("Assigned successfully", "success");
         loadAssignments();
       })
-      .catch(() => alert("Failed to assign TA."));
+      .catch(err => showToast(err.message || "Failed to assign TA."));
   };
 
-  // Automatic Assignment
   const handleAutoAssign = () => {
     if (!facultyId || !selectedExamId) return;
-    const url =
-      `${BASE}/faculty-members/${facultyId}/exams/${selectedExamId}/proctor` +
-      `?mode=AUTOMATIC_ASSIGNMENT`;
+    const url = `${BASE}/faculty-members/${facultyId}/exams/${selectedExamId}/proctor?mode=AUTOMATIC_ASSIGNMENT`;
 
     fetch(url, { method: "POST", headers })
-      .then(r => {
-        if (!r.ok) throw new Error();
-        alert("Auto-assignment complete");
+      .then(async r => {
+        if (!r.ok) {
+          const text = await r.text();
+          let msg = "No available TA or assignment failed.";
+          if (text.includes("proctor slots are already filled")) msg = "All proctor slots for this exam are already filled.";
+          throw new Error(msg);
+        }
+        showToast("Auto-assignment complete", "success");
         loadAssignments();
       })
-      .catch(() => alert("No available TA or assignment failed."));
+      .catch(err => showToast(err.message || "Auto-assignment failed."));
   };
 
   const getTaName = taId => {
@@ -115,6 +120,25 @@ const AssignDutyPage = () => {
       </div>
       <div className="container py-4 flex-grow-1">
         <h3 className="mb-4">Assign Proctors</h3>
+
+        {toast && (
+          <div
+            style={{
+              position: "fixed",
+              bottom: "20px",
+              right: "20px",
+              padding: "12px 20px",
+              backgroundColor: toast.type === "success" ? "#28a745" : "#dc3545",
+              color: "white",
+              borderRadius: "5px",
+              boxShadow: "0 0 10px rgba(0,0,0,0.2)",
+              zIndex: 9999,
+              maxWidth: "300px",
+            }}
+          >
+            {toast.message}
+          </div>
+        )}
 
         <div className="mb-3">
           <label className="form-label">Select Exam</label>
@@ -134,7 +158,6 @@ const AssignDutyPage = () => {
 
         {selectedExamId && (
           <>
-            {/* Manual Assignment */}
             <div className="card mb-4 p-3">
               <h5 className="mb-3">Manual Assignment</h5>
               <div className="row g-3 align-items-end">
@@ -166,7 +189,6 @@ const AssignDutyPage = () => {
               </div>
             </div>
 
-            {/* Automatic Assignment */}
             <div className="card mb-4 p-3">
               <h5 className="mb-3">Automatic Assignment</h5>
               <button
@@ -177,7 +199,6 @@ const AssignDutyPage = () => {
               </button>
             </div>
 
-            {/* Current Assignments */}
             <div className="card">
               <div className="card-body">
                 <h5 className="mb-3">Current Assignments</h5>

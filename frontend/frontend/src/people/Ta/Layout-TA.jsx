@@ -146,7 +146,7 @@ const LayoutTA = () => (
         }
       `}</style>
 
-      <Link to="/" className="mb-4 text-light d-flex align-items-center">
+      <div to="/" className="mb-4 text-light d-flex align-items-center">
         <span className="logo-icon me-2">
           <svg width="35" height="35" fill="currentColor" viewBox="0 0 16 16">
             <path
@@ -157,7 +157,7 @@ const LayoutTA = () => (
           </svg>
         </span>
         <span className="logo-text fs-5">TA Panel</span>
-      </Link>
+      </div>
 
       <ul className="menu-list flex-grow-1 list-unstyled">
         <li className="collapsed">

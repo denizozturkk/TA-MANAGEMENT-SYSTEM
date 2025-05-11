@@ -62,64 +62,76 @@ const SignInPage = () => {
                     </svg>
                   </div>
                   <div className="mb-5">
-                    <h2 className="color-900 text-center">My-Task Let's Management Better</h2>
+                    <h2 className="color-900 text-center">TA Management System</h2>
                   </div>
                   <img src={Loginimg} alt="login-img" className="img-fluid" />
                 </div>
               </div>
 
               {/* Sign In Form Panel */}
-              <div className="col-lg-6 d-flex justify-content-center align-items-center border-0 rounded-lg auth-h100">
-                <div className="w-100 p-3 p-md-5 card border-0 bg-dark text-light" style={{ maxWidth: "32rem" }}>
-                  <form className="row g-1 p-3 p-md-4" onSubmit={handleSubmit}>
-                    {error && (
-                      <div className="col-12">
-                        <p className="text-center text-danger">{error}</p>
-                      </div>
-                    )}
-                    <div className="col-12 text-center mb-4">
-                      <h1>Sign in</h1>
-                    </div>
-                    <div className="col-12">
-                      <label className="form-label">Email address</label>
-                      <input
-                        type="email"
-                        className="form-control form-control-lg"
-                        placeholder="name@example.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div className="col-12">
-                      <label className="form-label">Password</label>
-                      <input
-                        type="password"
-                        className="form-control form-control-lg"
-                        placeholder="***************"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div className="col-12 text-center mt-4">
-                      <button type="submit" className="btn btn-lg btn-block btn-light lift text-uppercase">
-                        SIGN IN
-                      </button>
-                    </div>
-                    {/* New public button below */}
-                    <div className="col-12 text-center mt-3">
-                      <button
-                        type="button"
-                        className="btn btn-secondary btn-sm"
-                        onClick={() => navigate("/tutorgraderform")}
-                      >
-                        Tutor/Grader Application Form
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              </div>
+              {/* Sign In Form Panel */}
+<div className="col-lg-6 d-flex justify-content-center align-items-center border-0 rounded-lg auth-h100">
+  <div className="w-100 p-3 p-md-5 card border-0 text-light" style={{ maxWidth: "32rem", backgroundColor:"#2a2d62" }}>
+    <form className="row g-1 p-3 p-md-4" onSubmit={handleSubmit}>
+      {error && (
+        <div className="col-12">
+          <p className="text-center text-danger">{error}</p>
+        </div>
+      )}
+      <div className="col-12 text-center mb-4">
+        <h1>Sign in</h1>
+      </div>
+      <div className="col-12">
+        <label className="form-label">Email address</label>
+        <input
+          type="email"
+          className="form-control form-control-lg"
+          placeholder="name@example.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
+      </div>
+      <div className="col-12">
+        <label className="form-label">Password</label>
+        <input
+          type="password"
+          className="form-control form-control-lg"
+          placeholder="***************"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
+      </div>
+      <div className="col-12 text-center mt-4">
+        <button type="submit" className="btn btn-lg btn-block btn-light lift text-uppercase">
+          SIGN IN
+        </button>
+      </div>
+      {/* New public button below */}
+      <div className="col-12 text-center mt-3">
+        <button
+          type="button"
+          className="btn btn-success"
+          onClick={() => navigate("/tutorgraderform")}
+        >
+          Tutor/Grader Application Form
+        </button>
+      </div>
+      {/* Recover Password link */}
+      <div className="col-12 text-center mt-2">
+        <button
+          type="button"
+          className="btn btn-link text-light"
+          onClick={() => navigate("/forgetpassword")}
+        >
+          Forgot your password?
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
 
             </div>
           </div>

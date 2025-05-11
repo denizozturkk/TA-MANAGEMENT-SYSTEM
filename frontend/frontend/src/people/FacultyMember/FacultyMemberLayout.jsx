@@ -30,7 +30,7 @@ const Sidebar = () => (
     >
       <div className="offcanvas-header">
         <h5 className="offcanvas-title text-light" id="mobileSidebarLabel">
-          My-Task
+          Faculty Member Layout
         </h5>
         <button
           type="button"
@@ -52,15 +52,15 @@ const Sidebar = () => (
               <i className="icofont-dotted-down ms-auto"></i>
             </a>
             <ul className="collapse ms-4" id="facultyMenuMobile">
-              <li><Link className="ms-link text-light d-block py-2" to="/generateclassroomlist">Generate Classroom List</Link></li>
+              {/* <li><Link className="ms-link text-light d-block py-2" to="/generateclassroomlist">Generate Classroom List</Link></li> */}
               <li><Link className="ms-link text-light d-block py-2" to="/printstudentdistribution">Print Student Distribution</Link></li>
               <li><Link className="ms-link text-light d-block py-2" to="/leaverequest">Review TA Leave Request</Link></li>
-              <li><Link className="ms-link text-light d-block py-2" to="/excelupload">Upload Semester Excel</Link></li>
+              {/* <li><Link className="ms-link text-light d-block py-2" to="/excelupload">Upload Semester Excel</Link></li> */}
               <li><Link className="ms-link text-light d-block py-2" to="/dutyextension">Review Duty Extension</Link></li>
-              <li><Link className="ms-link text-light d-block py-2" to="/reviewworkload">Review TA Workload</Link></li>
+              <li><Link className="ms-link text-light d-block py-2" to="/reviewworkload">Review TA Submissions</Link></li>
               <li><Link className="ms-link text-light d-block py-2" to="/defineexam">Define Exam</Link></li>
-              <li><Link className="ms-link text-light d-block py-2" to="/assignassignment">Assign Assignment</Link></li>
-              <li><Link className="ms-link text-light d-block py-2" to="/uploaddutylog">Upload Duty Log</Link></li>
+              <li><Link className="ms-link text-light d-block py-2" to="/assignassignment">Assign Proctor</Link></li>
+              <li><Link className="ms-link text-light d-block py-2" to="/uploaddutylog">Upload TA Duty </Link></li>
             </ul>
           </li>
           <li className="border-bottom">
@@ -103,7 +103,7 @@ const Sidebar = () => (
         }
       `}</style>
 
-      <Link to="/" className="mb-4 text-light d-flex align-items-center">
+      <div to="/" className="mb-4 text-light d-flex align-items-center">
         <span className="logo-icon me-2">
           <svg width="35" height="35" fill="currentColor" viewBox="0 0 16 16">
             <path fillRule="evenodd" d="M10.854 7.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 9.793l2.646-2.647a.5.5 0 0 1 .708 0z" />
@@ -111,8 +111,8 @@ const Sidebar = () => (
             <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z" />
           </svg>
         </span>
-        <span className="logo-text fs-5">My-Task</span>
-      </Link>
+        <span className="logo-text fs-5">Faculty Member Layout</span>
+      </div>
 
       <ul className="menu-list flex-grow-1 list-unstyled">
         <li className="collapsed">
@@ -121,15 +121,15 @@ const Sidebar = () => (
             <span className="arrow icofont-dotted-down ms-auto fs-5"></span>
           </a>
           <ul className="collapse sub-menu" id="facultyMenuDesktop">
-            <li><Link className="ms-link text-light d-block py-1 px-2" to="/generateclassroomlist">Generate Classroom List</Link></li>
+            {/* <li><Link className="ms-link text-light d-block py-1 px-2" to="/generateclassroomlist">Generate Classroom List</Link></li> */}
             <li><Link className="ms-link text-light d-block py-1 px-2" to="/printstudentdistribution">Print Student Distribution</Link></li>
             <li><Link className="ms-link text-light d-block py-1 px-2" to="/leaverequest">Review TA Leave Request</Link></li>
-            <li><Link className="ms-link text-light d-block py-1 px-2" to="/excelupload">Upload Semester Excel</Link></li>
+            {/* <li><Link className="ms-link text-light d-block py-1 px-2" to="/excelupload">Upload Semester Excel</Link></li> */}
             <li><Link className="ms-link text-light d-block py-1 px-2" to="/dutyextension">Review Duty Extension</Link></li>
-            <li><Link className="ms-link text-light d-block py-1 px-2" to="/reviewworkload">Review TA Workload</Link></li>
+            <li><Link className="ms-link text-light d-block py-1 px-2" to="/reviewworkload">Review TA Submissions</Link></li>
             <li><Link className="ms-link text-light d-block py-1 px-2" to="/defineexam">Define Exam</Link></li>
-            <li><Link className="ms-link text-light d-block py-1 px-2" to="/assignassignment">Assign Assignment</Link></li>
-            <li><Link className="ms-link text-light d-block py-1 px-2" to="/uploaddutylog">Upload Duty Log</Link></li>
+            <li><Link className="ms-link text-light d-block py-1 px-2" to="/assignassignment">Assign Proctor</Link></li>
+            <li><Link className="ms-link text-light d-block py-1 px-2" to="/uploaddutylog">Upload TA Duty </Link></li>
           </ul>
         </li>
         <li className="collapsed mt-3">

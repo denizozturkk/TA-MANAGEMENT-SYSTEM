@@ -18,7 +18,7 @@ const DefinesExamPage = () => {
   const [formData, setFormData] = useState({
     examName: "",
     department: "",
-    examType: "Written",
+    examType: "Midterm",
     dateTime: "",
     duration: "",
     offeringId: "",
@@ -91,7 +91,7 @@ const DefinesExamPage = () => {
       setFormData({
         examName: exam.examName || "",
         department: exam.department || "",
-        examType: exam.examType || "Written",
+        examType: exam.examType || "Midterm",
         dateTime: exam.dateTime?.slice(0, 16) || "",
         duration: exam.duration?.toString() || "",
         offeringId: exam.offeringId?.toString() || "",
@@ -108,7 +108,7 @@ const DefinesExamPage = () => {
       setFormData({
         examName: "",
         department: "",
-        examType: "Written",
+        examType: "Midterm",
         dateTime: "",
         duration: "",
         offeringId: "",
@@ -126,7 +126,7 @@ const DefinesExamPage = () => {
     setFormData({
       examName: "",
       department: "",
-      examType: "Written",
+      examType: "Midterm",
       dateTime: "",
       duration: "",
       offeringId: "",
@@ -255,7 +255,7 @@ const DefinesExamPage = () => {
       </div>
       <div className="container py-4 flex-grow-1">
         <div className="d-flex justify-content-between mb-4">
-          <h3>Defines Exam</h3>
+          <h3>Defined Exams</h3>
           <button
             className="btn btn-secondary"
             onClick={() => openModal("create")}

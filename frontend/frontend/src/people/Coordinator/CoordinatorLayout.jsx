@@ -32,7 +32,7 @@ const Sidebar = () => (
     >
       <div className="offcanvas-header">
         <h5 className="offcanvas-title text-light" id="mobileSidebarLabel">
-          My-Task
+          Coordinator Panel
         </h5>
         <button
           type="button"
@@ -223,7 +223,7 @@ const Sidebar = () => (
         }
       `}</style>
 
-      <Link to="/" className="mb-4 text-light d-flex align-items-center">
+      <div to="/" className="mb-4 text-light d-flex align-items-center">
         <span className="logo-icon me-2">
           <svg
             width="35"
@@ -239,8 +239,8 @@ const Sidebar = () => (
             <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z" />
           </svg>
         </span>
-        <span className="logo-text fs-5">My-Task</span>
-      </Link>
+        <span className="logo-text fs-5">Coordinator Panel</span>
+      </div>
 
       <ul className="menu-list flex-grow-1 list-unstyled">
         {/* Coordinator Panel - Desktop */}

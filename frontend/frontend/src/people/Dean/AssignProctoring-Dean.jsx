@@ -129,8 +129,8 @@ const AssignProctoringDean = () => {
                       <th>Name</th>
                       <th>Department</th>
                       <th>Date & Time</th>
-                      <th>Required</th>
-                      <th>Action</th>
+                      <th>Required Proctors</th>
+                      <th>Assign</th>
                     </tr>
                   </thead>
                   <tbody>

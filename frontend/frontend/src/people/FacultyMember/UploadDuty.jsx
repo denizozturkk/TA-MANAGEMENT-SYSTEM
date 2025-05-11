@@ -1,20 +1,14 @@
-// src/people/FacultyMember/UploadDutyLogPage.jsx
 import React, { useState, useEffect } from "react";
 import FacultyMemberLayout from "../FacultyMember/FacultyMemberLayout";
 
 const UploadDutyLogPage = () => {
-  const dutyTypes = [
-    "LAB",
-    "GRADING",
-    "RECITATION",
-    "OFFICE_HOUR",
-    "PROCTORING",
-  ];
+  const dutyTypes = ["LAB", "GRADING", "RECITATION", "PROCTORING"];
 
   const [facultyId, setFacultyId] = useState(null);
   const [offerings, setOfferings] = useState([]);
   const [availableTAs, setAvailableTAs] = useState([]);
   const [classrooms, setClassrooms] = useState([]);
+  const [toast, setToast] = useState(null); // Toast state
   const [form, setForm] = useState({
     offeringId: "",
     taskType: "",
@@ -35,7 +29,11 @@ const UploadDutyLogPage = () => {
     Accept: "application/json",
   };
 
-  // fetch current user
+  const showToast = (message, type = "error") => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 4000);
+  };
+
   useEffect(() => {
     if (!token) return;
     fetch(`${BASE}/users/me`, { headers: jsonHeaders })
@@ -44,14 +42,10 @@ const UploadDutyLogPage = () => {
       .catch(console.error);
   }, [token]);
 
-  // load offerings
   useEffect(() => {
-    if (!facultyId) return;               // don’t fetch until we have a real ID
+    if (!facultyId) return;
     fetch(`${BASE}/offerings/faculty/${facultyId}`, { headers: jsonHeaders })
-      .then(res => {
-        if (!res.ok) throw new Error(res.statusText);
-        return res.json();
-      })
+      .then(res => res.ok ? res.json() : Promise.reject(res.statusText))
       .then(data => setOfferings(Array.isArray(data) ? data : []))
       .catch(err => {
         console.error("Failed to load offerings:", err);
@@ -59,7 +53,6 @@ const UploadDutyLogPage = () => {
       });
   }, [facultyId]);
 
-  // load classrooms
   useEffect(() => {
     fetch(`${BASE}/classrooms`, { headers: jsonHeaders })
       .then(res => res.json())
@@ -67,20 +60,13 @@ const UploadDutyLogPage = () => {
       .catch(console.error);
   }, []);
 
-  // load TAs when offering changes
   useEffect(() => {
     if (!form.offeringId) {
       setAvailableTAs([]);
       return;
     }
-    fetch(
-      `${BASE}/ta/by-offering/${form.offeringId}`,
-      { headers: jsonHeaders }
-    )
-      .then(res => {
-        if (!res.ok) throw new Error(res.statusText);
-        return res.json();
-      })
+    fetch(`${BASE}/ta/by-offering/${form.offeringId}`, { headers: jsonHeaders })
+      .then(res => res.ok ? res.json() : Promise.reject(res.statusText))
       .then(data => setAvailableTAs(Array.isArray(data) ? data : []))
       .catch(err => {
         console.error("Failed to load TAs for offering:", err);
@@ -105,32 +91,27 @@ const UploadDutyLogPage = () => {
   };
 
   const handleSubmit = async () => {
-    if (!facultyId) return alert("❌ Faculty ID hasn’t loaded yet.");
-    if (!form.offeringId) return alert("❌ Please select an offering.");
-    if (!form.taskType) return alert("❌ Please select a task type.");
+    if (!facultyId) return showToast("Faculty ID hasn’t loaded yet.");
+    if (!form.offeringId) return showToast("Please select an offering.");
+    if (!form.taskType) return showToast("Please select a task type.");
     if (form.assignmentMode === "MANUAL" && !form.taId)
-      return alert("❌ Please select a TA for manual assignment.");
+      return showToast("Please select a TA for manual assignment.");
 
     const workloadFloat = parseFloat(form.workload);
     if (isNaN(workloadFloat) || workloadFloat <= 0) {
-      return alert("❌ Please enter a valid workload in hours.");
+      return showToast("Please enter a valid workload in hours.");
     }
 
-    // —————————————
-    // UPDATED: round duration to whole hours (Java Long)
     const start = new Date(form.startTime);
     const end = new Date(form.endTime);
     const rawHours = (end - start) / (1000 * 60 * 60);
     const duration = Math.round(rawHours);
     if (isNaN(duration) || duration <= 0) {
-      return alert("❌ Please enter valid start and end times.");
+      return showToast("Please enter valid start and end times.");
     }
-    // —————————————
 
     const fd = new FormData();
-    if (form.file) {
-      fd.append("file", form.file);
-    }
+    if (form.file) fd.append("file", form.file);
     fd.append("taskType", form.taskType);
     fd.append("workload", workloadFloat);
     fd.append("offeringId", form.offeringId);
@@ -138,7 +119,6 @@ const UploadDutyLogPage = () => {
     fd.append("endTime", form.endTime);
     fd.append("duration", duration);
     fd.append("status", form.status);
-
     form.classroomIds.forEach(id => fd.append("classroomIds", id));
 
     const url =
@@ -152,13 +132,19 @@ const UploadDutyLogPage = () => {
         headers: { Authorization: `Bearer ${token}` },
         body: fd,
       });
+
       if (!res.ok) {
-        const err = await res.text();
-        console.error("Upload error:", err);
-        throw new Error(res.statusText);
+        let backendMessage = await res.text();
+        try {
+          const json = JSON.parse(backendMessage);
+          backendMessage = json.message || backendMessage;
+        } catch (_) {}
+        console.error("Upload error:", backendMessage);
+        return showToast(`${backendMessage}`);
       }
+
       await res.json();
-      alert("✅ Duty log uploaded successfully");
+      showToast("✅ Duty log uploaded successfully", "success");
       setForm(f => ({
         ...f,
         taskType: "",
@@ -172,7 +158,7 @@ const UploadDutyLogPage = () => {
       }));
     } catch (err) {
       console.error(err);
-      alert("❌ Failed to upload duty log. Please check your inputs.");
+      showToast("Failed to upload duty log. Please check your inputs.");
     }
   };
 
@@ -183,6 +169,26 @@ const UploadDutyLogPage = () => {
       </div>
       <div className="container py-4 flex-grow-1">
         <h3 className="mb-4">Upload Duty Log</h3>
+
+        {/* Toast */}
+        {toast && (
+          <div
+            style={{
+              position: "fixed",
+              bottom: "20px",
+              right: "20px",
+              padding: "12px 20px",
+              backgroundColor: toast.type === "success" ? "#28a745" : "#dc3545",
+              color: "white",
+              borderRadius: "5px",
+              boxShadow: "0 0 10px rgba(0,0,0,0.2)",
+              zIndex: 9999,
+              maxWidth: "300px",
+            }}
+          >
+            {toast.message}
+          </div>
+        )}
 
         {/* Offering */}
         <div className="mb-3">
@@ -214,9 +220,7 @@ const UploadDutyLogPage = () => {
             >
               <option value="">-- select type --</option>
               {dutyTypes.map(dt => (
-                <option key={dt} value={dt}>
-                  {dt}
-                </option>
+                <option key={dt} value={dt}>{dt}</option>
               ))}
             </select>
           </div>
@@ -254,8 +258,7 @@ const UploadDutyLogPage = () => {
           </div>
         </div>
 
-        {/* Classrooms (only for LAB) */}
-        {form.taskType === "LAB" && (
+        {(form.taskType === "LAB" || form.taskType === "RECITATION") && (
           <div className="mb-4">
             <label className="form-label">Classrooms</label>
             <select
@@ -274,7 +277,6 @@ const UploadDutyLogPage = () => {
           </div>
         )}
 
-        {/* File Upload (optional) */}
         <div className="mb-4">
           <label className="form-label">Upload PDF (optional)</label>
           <input
@@ -285,7 +287,6 @@ const UploadDutyLogPage = () => {
           />
         </div>
 
-        {/* Assignment Mode */}
         <div className="mb-4">
           <label className="form-label me-3">Assignment Mode:</label>
           {["MANUAL", "AUTOMATIC"].map(mode => (
@@ -303,7 +304,6 @@ const UploadDutyLogPage = () => {
           ))}
         </div>
 
-        {/* Select TA for Manual */}
         {form.assignmentMode === "MANUAL" && (
           <div className="mb-4">
             <label className="form-label">Select TA</label>

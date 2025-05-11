@@ -56,7 +56,7 @@ const SwapProctorTA = () => {
                   <th>ID</th>
                   <th>Type</th>
                   <th>Start Time</th>
-                  <th>Status</th>
+                  <th>Duty Status</th>
                 </tr>
               </thead>
               <tbody>
