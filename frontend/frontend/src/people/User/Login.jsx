@@ -31,7 +31,7 @@ const SignInPage = () => {
 
       let target = "/";
       switch (role) {
-        case "ROLE_ADMIN":             target = "/authorize-actors";        break;
+        case "ROLE_ADMIN":             target = "/review-requests";        break;
         case "ROLE_TA":                target = "/leave";                   break;
         case "ROLE_COORDINATOR":       target = "/manageexamclassroom";     break;
         case "ROLE_FACULTY_MEMBER":    target = "/defineexam";           break;
@@ -112,7 +112,8 @@ const SignInPage = () => {
       <div className="col-12 text-center mt-3">
         <button
           type="button"
-          className="btn btn-success"
+          className="btn btn-primary"
+          style={{backgroundColor:"#808080"}}
           onClick={() => navigate("/tutorgraderform")}
         >
           Tutor/Grader Application Form

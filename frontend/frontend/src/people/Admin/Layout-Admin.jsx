@@ -59,14 +59,6 @@ const Sidebar = () => (
               <li>
                 <Link
                   className="ms-link text-light d-block py-2"
-                  to="/authorize-actors"
-                >
-                  Authorize Actors
-                </Link>
-              </li>
-              <li>
-                <Link
-                  className="ms-link text-light d-block py-2"
                   to="/review-requests"
                 >
                   Review Report Requests
@@ -188,14 +180,6 @@ const Sidebar = () => (
             <span className="arrow icofont-dotted-down ms-auto fs-5"></span>
           </button>
           <ul className="collapse sub-menu" id="adminMenuDesktop">
-            <li>
-              <Link
-                className="ms-link text-light d-block py-1 px-2"
-                to="/authorize-actors"
-              >
-                Authorize Actors
-              </Link>
-            </li>
             <li>
               <Link
                 className="ms-link text-light d-block py-1 px-2"
