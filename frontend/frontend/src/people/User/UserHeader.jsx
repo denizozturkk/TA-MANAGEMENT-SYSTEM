@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import avatarPlaceholder from "../User/avatar3.jpg";
-import logo from "./logobilkent.png";  // Bilkent logo in same folder
+import logo from "./logobilkent.png"; // Bilkent logo in same folder
 
 function parseJwt(token) {
   try {
@@ -24,21 +24,22 @@ const UserHeader = () => {
   const [notifications, setNotifications] = useState([]);
 
   useEffect(() => {
-  if (!token) return;
-
-  fetch("http://localhost:8080/api/notifications/myBox", {
-    headers: { Authorization: `Bearer ${token}` },
-  })
-    .then((res) => (res.ok ? res.json() : []))
-    .then((data) => setNotifications(Array.isArray(data) ? data : []))
-    .catch(() => setNotifications([]));
-}, [token]);
+    if (!token) return;
+    fetch("http://localhost:8080/api/notifications/myBox", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data) => setNotifications(Array.isArray(data) ? data : []))
+      .catch(() => setNotifications([]));
+  }, [token]);
 
   const handleLogout = () => {
     localStorage.removeItem("authToken");
     localStorage.removeItem("userRole");
     navigate("/login", { replace: true });
   };
+
+  const unreadCount = notifications.filter((n) => !n.read).length;
 
   const shakeStyle = `
     @keyframes shake {
@@ -62,52 +63,54 @@ const UserHeader = () => {
       >
         <div
           className="container-xxl d-flex flex-wrap flex-md-nowrap align-items-center justify-content-between"
-          style={{ position: 'relative' }}
+          style={{ position: "relative" }}
         >
           {/* Logo */}
           <div className="navbar-brand p-0">
             <img src={logo} alt="Bilkent Logo" height="80" />
           </div>
 
-        {/* Controls (notifications + user) */}
-        <div className="d-flex align-items-center">
-          {/* Notification */}
-          {/* Notification Icon */}
-<Link to="/notification" className="text-dark position-relative me-3" style={{ fontSize: "1.5rem" }}>
-  <i
-    className={`icofont-alarm`}
-    style={{
-      color: notifications.some((n) => !n.read) ? "#2a2d62" : "#6c757d", // aktifse lacivert, değilse gri
-      fontSize: "1.4rem"
-    }}
-  ></i>
-  {notifications.filter((n) => !n.read).length > 0 && (
-    <span
-      className="position-absolute top-0 start-100 translate-middle badge rounded-pill"
-      style={{
-        backgroundColor: "#2a2d62",
-        fontSize: "0.65rem",
-        padding: "0.25em 0.4em"
-      }}
-    >
-      {notifications.filter((n) => !n.read).length}
-    </span>
-  )}
-</Link>
-
-
+          {/* Desktop centered title */}
+          <span
+            className="d-none d-md-block"
+            style={{
+              position: "absolute",
+              left: "50%",
+              transform: "translateX(-50%)",
+              color: "#2D2A62",
+              fontWeight: "bold",
+              fontSize: "1.75rem",
+            }}
+          >
+            Bilkent TA Management System
+          </span>
 
           {/* Controls (notifications + user) */}
           <div className="d-flex align-items-center">
-            {/* Notification */}
+            {/* Notification Icon */}
             <Link
               to="/notification"
-              className={`text-dark position-relative me-3 fs-4 ${notifications.length > 0 ? "shake" : ""}`}
+              className={`text-dark position-relative me-3 fs-4 ${
+                unreadCount > 0 ? "shake" : ""
+              }`}
             >
-              <i className="icofont-alarm"></i>
-              {notifications.length > 0 && (
-                <span className="position-absolute top-0 start-100 translate-middle badge bg-danger rounded-pill">
-                  {notifications.length}
+              <i
+                className="icofont-alarm"
+                style={{
+                  color: unreadCount > 0 ? "#2a2d62" : "#6c757d",
+                  fontSize: "1.4rem",
+                }}
+              ></i>
+              {unreadCount > 0 && (
+                <span
+                  className="position-absolute top-0 start-100 translate-middle badge rounded-pill"
+                  style={{
+                    backgroundColor: "#2a2d62",
+                    fontSize: "0.65rem",
+                    padding: "0.25em 0.4em",
+                  }}
+                >
+                  {unreadCount}
                 </span>
               )}
             </Link>
@@ -136,7 +139,7 @@ const UserHeader = () => {
               <ul
                 className="dropdown-menu shadow"
                 aria-labelledby="userMenu"
-                style={{ left: '50%', transform: 'translateX(-50%)', right: 'auto' }}
+                style={{ left: "50%", transform: "translateX(-50%)", right: "auto" }}
               >
                 <li>
                   <Link className="dropdown-item text-dark" to="/viewprofile">
@@ -156,6 +159,9 @@ const UserHeader = () => {
                 <li>
                   <Link className="dropdown-item text-dark" to="/notification">
                     <i className="icofont-alarm me-2"></i>Notifications
+                    {unreadCount > 0 && (
+                      <span className="badge bg-danger ms-2">{unreadCount}</span>
+                    )}
                   </Link>
                 </li>
                 <li>
@@ -163,7 +169,9 @@ const UserHeader = () => {
                     <i className="icofont-comment me-2"></i>Give Feedback
                   </Link>
                 </li>
-                <li><hr className="dropdown-divider" /></li>
+                <li>
+                  <hr className="dropdown-divider" />
+                </li>
                 <li>
                   <button className="dropdown-item text-dark" onClick={handleLogout}>
                     <i className="icofont-logout me-2"></i>Sign Out
