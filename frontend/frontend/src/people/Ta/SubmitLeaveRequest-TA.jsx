@@ -16,6 +16,7 @@ const SubmitLeaveRequestTA = () => {
   const [exams, setExams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [classrooms, setClassrooms] = useState([]);
+  const [swapRequests, setSwapRequests] = useState([]); 
 
   const [modalOpen, setModalOpen] = useState(false);
   const [form, setForm] = useState({
@@ -29,25 +30,28 @@ const SubmitLeaveRequestTA = () => {
     const load = async () => {
         setLoading(true);
         try {
-        const [asgnRes, leaveRes, examRes, classRes] = await Promise.all([
+        const [asgnRes, leaveRes, examRes, classRes, swapRes] = await Promise.all([
             fetch(`${BASE}/proctor-assignments/ta/${taId}`, { headers: hdrs }),
             fetch(`${BASE}/leave-requests/ta/${taId}`, { headers: hdrs }),
             fetch(`${BASE}/exams`, { headers: hdrs }),
             fetch(`${BASE}/classrooms`, { headers: hdrs }),
+            fetch(`${BASE}/swap-requests`, { headers: hdrs }),
         ]);
 
         const allAsgn = await asgnRes.json();
         const allLeaves = await leaveRes.json();
         const allExams = await examRes.json();
         const allClassrooms = await classRes.json();
+        const allSwaps = await swapRes.json();
 
         setAssignments(Array.isArray(allAsgn) ? allAsgn : []);
         setLeaves(Array.isArray(allLeaves) ? allLeaves : []);
         setExams(Array.isArray(allExams) ? allExams : []);
         setClassrooms(Array.isArray(allClassrooms) ? allClassrooms : []);
+        setSwapRequests(Array.isArray(allSwaps) ? allSwaps : []);
         } catch (err) {
         console.error(err);
-        alert("Error loading assignments, leaves, exams, or classrooms");
+        alert("Error loading assignments, leaves, exams, classrooms, or swaps");
         } finally {
         setLoading(false);
         }
@@ -130,10 +134,16 @@ const SubmitLeaveRequestTA = () => {
                     <td colSpan="5" className="text-center">No assignments</td>
                     </tr>
                 )}
-                {assignments.map((pa) => {
-                    const leave = leaveMap[pa.id];
-                    const exam = exams.find((e) => e.id === pa.examId) || {};
-                    const room = classrooms.find((r) => r.id === pa.classroomId) || {};
+                    {assignments.map((pa) => {
+                        const leave = leaveMap[pa.id];
+                        const exam = exams.find((e) => e.id === pa.examId) || {};
+                        const room = classrooms.find((r) => r.id === pa.classroomId) || {};
+
+                        const hasApprovedSwap = swapRequests.some(
+                            (s) =>
+                            (s.proctorAssignmentId === pa.id || s.targetProctorAssignmentId === pa.id) &&
+                            s.status === "APPROVED"
+                        );
 
                     const date = exam.dateTime
                     ? new Date(exam.dateTime).toLocaleString("en-GB", {
@@ -173,16 +183,16 @@ const SubmitLeaveRequestTA = () => {
                         )}
                         </td>
                         <td>
-                        {leave ? (
+                            {leave || hasApprovedSwap ? (
                             "—"
-                        ) : (
+                            ) : (
                             <button
-                            className="btn btn-sm btn-outline-primary"
-                            onClick={() => openModal(pa.id)}
+                                className="btn btn-sm btn-outline-primary"
+                                onClick={() => openModal(pa.id)}
                             >
-                            Request Leave
+                                Request Leave
                             </button>
-                        )}
+                            )}
                         </td>
                     </tr>
                     );
