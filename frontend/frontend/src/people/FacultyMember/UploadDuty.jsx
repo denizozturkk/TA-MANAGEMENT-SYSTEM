@@ -7,7 +7,6 @@ const UploadDutyLogPage = () => {
     "LAB",
     "GRADING",
     "RECITATION",
-    "OFFICE_HOUR",
     "PROCTORING",
   ];
 
@@ -256,7 +255,7 @@ const UploadDutyLogPage = () => {
         </div>
 
         {/* Classrooms */}
-        {form.taskType === "LAB" && (
+        {(form.taskType === "LAB" || form.taskType ==="RECITATION") && (
           <div className="mb-4">
             <label className="form-label">Classrooms</label>
             <select
